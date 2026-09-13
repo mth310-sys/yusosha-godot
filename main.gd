@@ -26,37 +26,63 @@ func _ready() -> void:
 		stop_buttons[i].pressed.connect(_on_stop_pressed.bind(i))
 		stop_buttons[i].disabled = true
 	_update_reels()
-	status_label.text = "READY"
+	status_label.text = "PRESS START"
 
 func _process(delta: float) -> void:
 	if not spinning.has(true):
 		return
+
 	accum += delta
 	if accum < SPIN_INTERVAL:
 		return
+
 	accum = 0.0
 	for i in reel_labels.size():
 		if spinning[i]:
 			symbol_index[i] = (symbol_index[i] + 1) % SYMBOLS.size()
 	_update_reels()
 
+func _unhandled_key_input(event: InputEvent) -> void:
+	if not event is InputEventKey:
+		return
+	if not event.pressed or event.echo:
+		return
+
+	match event.keycode:
+		KEY_ENTER, KEY_SPACE:
+			_on_start_pressed()
+		KEY_1:
+			_on_stop_pressed(0)
+		KEY_2:
+			_on_stop_pressed(1)
+		KEY_3:
+			_on_stop_pressed(2)
+
 func _on_start_pressed() -> void:
 	if spinning.has(true):
 		return
+
 	for i in spinning.size():
 		spinning[i] = true
 		stop_buttons[i].disabled = false
+
 	start_button.disabled = true
-	status_label.text = "SPINNING"
+	status_label.text = "SPINNING - STOP 1 / 2 / 3"
 
 func _on_stop_pressed(index: int) -> void:
+	if index < 0 or index >= spinning.size():
+		return
 	if not spinning[index]:
 		return
+
 	spinning[index] = false
 	stop_buttons[index].disabled = true
-	if not spinning.has(true):
+
+	if spinning.has(true):
+		status_label.text = "SPINNING - STOP REMAINING REELS"
+	else:
 		start_button.disabled = false
-		status_label.text = "READY"
+		status_label.text = "ALL REELS STOPPED - PRESS START"
 
 func _update_reels() -> void:
 	for i in reel_labels.size():

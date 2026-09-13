@@ -7,6 +7,7 @@ const BIG_GAMES := 55
 const REG_GAMES := 14
 const BIG_GROSS_PAYOUT := 765
 const REG_GROSS_PAYOUT := 162
+const MAX_SLIP_SYMBOLS := 4
 const SYMBOL_ASSET_BASE := "https://mth310-sys.github.io/Chappy5/src/game/slot-pachiro/machines/zelvolt/symbols/"
 
 const BIG_ODDS := {1: 330.0, 2: 310.0, 3: 290.0, 4: 270.0, 5: 250.0, 6: 210.0}
@@ -35,6 +36,13 @@ const SYMBOL_FILES := {
 	"GRAPE": "GRAPE.webp",
 	"REPLAY": "REPLAY.webp",
 }
+const PAYLINES := [
+	{"name": "TOP", "rows": [0, 0, 0]},
+	{"name": "MIDDLE", "rows": [1, 1, 1]},
+	{"name": "BOTTOM", "rows": [2, 2, 2]},
+	{"name": "DOWN", "rows": [0, 1, 2]},
+	{"name": "UP", "rows": [2, 1, 0]},
+]
 
 const REEL_STRIPS := [
 	["7R", "BELL", "GRAPE", "CHERRY", "BELL", "BAR", "GRAPE", "BELL", "REPLAY", "GRAPE", "CHERRY", "BELL", "7W", "GRAPE", "BELL", "CHERRY", "BAR", "GRAPE", "BELL", "REPLAY", "GRAPE"],
@@ -43,39 +51,24 @@ const REEL_STRIPS := [
 ]
 
 @onready var reel_rows := [
-	[
-		$Center/VBox/Reels/Reel1/Top,
-		$Center/VBox/Reels/Reel1/Middle,
-		$Center/VBox/Reels/Reel1/Bottom,
-	],
-	[
-		$Center/VBox/Reels/Reel2/Top,
-		$Center/VBox/Reels/Reel2/Middle,
-		$Center/VBox/Reels/Reel2/Bottom,
-	],
-	[
-		$Center/VBox/Reels/Reel3/Top,
-		$Center/VBox/Reels/Reel3/Middle,
-		$Center/VBox/Reels/Reel3/Bottom,
-	],
+	[$Center/VBox/Reels/Reel1/Top, $Center/VBox/Reels/Reel1/Middle, $Center/VBox/Reels/Reel1/Bottom],
+	[$Center/VBox/Reels/Reel2/Top, $Center/VBox/Reels/Reel2/Middle, $Center/VBox/Reels/Reel2/Bottom],
+	[$Center/VBox/Reels/Reel3/Top, $Center/VBox/Reels/Reel3/Middle, $Center/VBox/Reels/Reel3/Bottom],
 ]
-
 @onready var start_button: Button = $Center/VBox/StartButton
 @onready var bet_button: Button = $Center/VBox/BetControls/BetButton
 @onready var max_bet_button: Button = $Center/VBox/BetControls/MaxBetButton
-@onready var stop_buttons: Array[Button] = [
-	$Center/VBox/Stops/Stop1,
-	$Center/VBox/Stops/Stop2,
-	$Center/VBox/Stops/Stop3,
-]
+@onready var stop_buttons: Array[Button] = [$Center/VBox/Stops/Stop1, $Center/VBox/Stops/Stop2, $Center/VBox/Stops/Stop3]
 @onready var status_label: Label = $Center/VBox/Status
 @onready var credit_label: Label = $Center/VBox/Info/CreditBox/Value
 @onready var bet_label: Label = $Center/VBox/Info/BetBox/Value
 @onready var payout_label: Label = $Center/VBox/Info/PayoutBox/Value
+@onready var payline_label: Label = $Center/VBox/Payline
 
 var spinning: Array[bool] = [false, false, false]
 var reel_index: Array[int] = [0, 1, 3]
 var reel_accum: Array[float] = [0.0, 0.0, 0.0]
+var stop_slips: Array[int] = [0, 0, 0]
 var credit: int = 50
 var bet: int = 0
 var payout: int = 0
@@ -86,6 +79,7 @@ var bonus_type: String = ""
 var bonus_games_total: int = 0
 var bonus_games_played: int = 0
 var bonus_gross_paid: int = 0
+var active_payline_index: int = 1
 var symbol_textures: Dictionary = {}
 var reel_images: Array = []
 
@@ -100,6 +94,7 @@ func _ready() -> void:
 		stop_buttons[i].pressed.connect(_on_stop_pressed.bind(i))
 		stop_buttons[i].disabled = true
 	_update_all_reels()
+	_refresh_payline_label()
 	_refresh_ui()
 
 func _build_reel_image_layers() -> void:
@@ -147,24 +142,15 @@ func _process(delta: float) -> void:
 			_update_reel(i)
 
 func _unhandled_key_input(event: InputEvent) -> void:
-	if not event is InputEventKey:
+	if not event is InputEventKey or not event.pressed or event.echo:
 		return
-	if not event.pressed or event.echo:
-		return
-
 	match event.keycode:
-		KEY_B:
-			_on_bet_pressed()
-		KEY_M:
-			_on_max_bet_pressed()
-		KEY_ENTER, KEY_SPACE:
-			_on_start_pressed()
-		KEY_1:
-			_on_stop_pressed(0)
-		KEY_2:
-			_on_stop_pressed(1)
-		KEY_3:
-			_on_stop_pressed(2)
+		KEY_B: _on_bet_pressed()
+		KEY_M: _on_max_bet_pressed()
+		KEY_ENTER, KEY_SPACE: _on_start_pressed()
+		KEY_1: _on_stop_pressed(0)
+		KEY_2: _on_stop_pressed(1)
+		KEY_3: _on_stop_pressed(2)
 
 func _on_bet_pressed() -> void:
 	if spinning.has(true) or _in_bonus():
@@ -188,19 +174,18 @@ func _on_max_bet_pressed() -> void:
 func _on_start_pressed() -> void:
 	if spinning.has(true):
 		return
-
 	if _in_bonus():
 		_start_bonus_spin()
 		return
-
 	if bet != MAX_BET:
 		status_label.text = "BET 3 TO START"
 		return
-
 	_choose_result()
+	_choose_active_payline()
 	_start_reels()
 	payout = 0
-	status_label.text = "SPINNING - STOP 1 / 2 / 3"
+	status_label.text = "SPINNING - %s LINE - STOP 1 / 2 / 3" % _active_payline_name()
+	_refresh_payline_label()
 	_refresh_controls()
 	_refresh_counters()
 
@@ -210,35 +195,33 @@ func _start_bonus_spin() -> void:
 		return
 	result_type = "BONUS"
 	target_symbol = "BELL"
+	active_payline_index = 1
 	_start_reels()
 	payout = 0
 	status_label.text = "%s %d/%d - STOP 1 / 2 / 3" % [bonus_type, bonus_games_played + 1, bonus_games_total]
+	_refresh_payline_label()
 	_refresh_controls()
 	_refresh_counters()
 
 func _start_reels() -> void:
+	stop_slips = [0, 0, 0]
 	for i in spinning.size():
 		spinning[i] = true
 		reel_accum[i] = 0.0
 		stop_buttons[i].disabled = false
 
 func _on_stop_pressed(index: int) -> void:
-	if index < 0 or index >= spinning.size():
+	if index < 0 or index >= spinning.size() or not spinning[index]:
 		return
-	if not spinning[index]:
-		return
-
 	spinning[index] = false
 	stop_buttons[index].disabled = true
-
 	if _in_bonus():
-		_set_reel_middle_to_symbol(index, "BELL")
+		_apply_slip_stop(index, "BELL", int(PAYLINES[active_payline_index]["rows"][index]))
 	else:
 		_apply_result_stop(index)
 	_update_reel(index)
-
 	if spinning.has(true):
-		status_label.text = "SPINNING - STOP REMAINING REELS"
+		status_label.text = "STOP REMAINING - SLIP %d/%d/%d" % [stop_slips[0], stop_slips[1], stop_slips[2]]
 	else:
 		if _in_bonus():
 			_resolve_bonus_spin()
@@ -248,65 +231,106 @@ func _on_stop_pressed(index: int) -> void:
 func _choose_result() -> void:
 	var roll: float = randf()
 	var edge: float = 0.0
-
 	edge += 1.0 / BIG_ODDS[SETTING]
 	if roll < edge:
 		result_type = "BIG"
 		target_symbol = "7R" if randf() < 0.8 else "7W"
 		return
-
 	edge += 1.0 / REG_ODDS[SETTING]
 	if roll < edge:
 		result_type = "REG"
 		target_symbol = "BAR"
 		return
-
 	for role in ["REPLAY", "BELL", "GRAPE", "CHERRY"]:
 		edge += 1.0 / float(ROLE_ODDS[role])
 		if roll < edge:
 			result_type = role
 			target_symbol = role
 			return
-
 	result_type = "MISS"
 	target_symbol = ""
 
-func _apply_result_stop(reel: int) -> void:
-	if result_type in ["BIG", "REG", "REPLAY", "BELL", "GRAPE"]:
-		_set_reel_middle_to_symbol(reel, target_symbol)
-	elif result_type == "CHERRY" and reel == 0:
-		_set_reel_middle_to_symbol(reel, "CHERRY")
+func _choose_active_payline() -> void:
+	active_payline_index = randi_range(0, PAYLINES.size() - 1)
 
-func _set_reel_middle_to_symbol(reel: int, symbol: String) -> void:
+func _active_payline_name() -> String:
+	return str(PAYLINES[active_payline_index]["name"])
+
+func _active_payline_rows() -> Array:
+	return PAYLINES[active_payline_index]["rows"]
+
+func _refresh_payline_label() -> void:
+	payline_label.text = "5 LINES / ACTIVE: %s / MAX SLIP: %d" % [_active_payline_name(), MAX_SLIP_SYMBOLS]
+
+func _apply_result_stop(reel: int) -> void:
+	var row: int = int(_active_payline_rows()[reel])
+	if result_type in ["BIG", "REG", "REPLAY", "BELL", "GRAPE"]:
+		_apply_slip_stop(reel, target_symbol, row)
+	elif result_type == "CHERRY" and reel == 0:
+		_apply_slip_stop(reel, "CHERRY", row)
+	else:
+		stop_slips[reel] = 0
+
+func _apply_slip_stop(reel: int, symbol: String, row: int) -> bool:
 	var strip: Array = REEL_STRIPS[reel]
-	for i in strip.size():
-		if str(strip[i]) == symbol:
-			reel_index[reel] = i
-			return
+	var start_middle: int = reel_index[reel]
+	for slip in range(MAX_SLIP_SYMBOLS + 1):
+		var candidate_middle: int = posmod(start_middle + slip, strip.size())
+		var visible_index: int = posmod(candidate_middle + row - 1, strip.size())
+		if str(strip[visible_index]) == symbol:
+			reel_index[reel] = candidate_middle
+			stop_slips[reel] = slip
+			return true
+	stop_slips[reel] = 0
+	return false
+
+func _symbol_at_row(reel: int, row: int) -> String:
+	var strip: Array = REEL_STRIPS[reel]
+	var index: int = posmod(reel_index[reel] + row - 1, strip.size())
+	return str(strip[index])
+
+func _active_line_symbols() -> Array[String]:
+	var symbols: Array[String] = []
+	var rows: Array = _active_payline_rows()
+	for reel in range(3):
+		symbols.append(_symbol_at_row(reel, int(rows[reel])))
+	return symbols
+
+func _landed_result() -> String:
+	var symbols: Array[String] = _active_line_symbols()
+	if result_type == "BIG" and symbols[0] == target_symbol and symbols[1] == target_symbol and symbols[2] == target_symbol:
+		return "BIG"
+	if result_type == "REG" and symbols[0] == "BAR" and symbols[1] == "BAR" and symbols[2] == "BAR":
+		return "REG"
+	if result_type in ["REPLAY", "BELL", "GRAPE"] and symbols[0] == target_symbol and symbols[1] == target_symbol and symbols[2] == target_symbol:
+		return result_type
+	if result_type == "CHERRY" and symbols[0] == "CHERRY":
+		return "CHERRY"
+	return "MISS"
 
 func _resolve_result() -> void:
 	total_games += 1
-	payout = int(ROLE_PAYOUT[result_type])
+	var landed: String = _landed_result()
+	payout = int(ROLE_PAYOUT[landed])
 	credit += payout
-
-	if result_type == "REPLAY":
+	result_type = landed
+	if landed == "REPLAY":
 		bet = MAX_BET
-		status_label.text = "REPLAY - PRESS START"
-	elif result_type == "BIG":
+		status_label.text = "REPLAY / %s LINE / SLIP %d-%d-%d" % [_active_payline_name(), stop_slips[0], stop_slips[1], stop_slips[2]]
+	elif landed == "BIG":
 		bet = 0
 		_begin_bonus("BIG")
 		return
-	elif result_type == "REG":
+	elif landed == "REG":
 		bet = 0
 		_begin_bonus("REG")
 		return
 	else:
 		bet = 0
-		if result_type == "MISS":
-			status_label.text = "MISS - BET 3 TO START"
+		if landed == "MISS":
+			status_label.text = "MISS / %s LINE / SLIP %d-%d-%d" % [_active_payline_name(), stop_slips[0], stop_slips[1], stop_slips[2]]
 		else:
-			status_label.text = "%s +%d - BET 3 TO START" % [result_type, payout]
-
+			status_label.text = "%s +%d / %s LINE / SLIP %d-%d-%d" % [landed, payout, _active_payline_name(), stop_slips[0], stop_slips[1], stop_slips[2]]
 	_refresh_counters()
 	_refresh_controls()
 
@@ -326,17 +350,15 @@ func _resolve_bonus_spin() -> void:
 	var remaining_gross: int = total_gross - bonus_gross_paid
 	var gross_this_game: int = int(ceil(float(remaining_gross) / float(remaining_games)))
 	var net_this_game: int = gross_this_game - MAX_BET
-
 	payout = gross_this_game
 	credit += net_this_game
 	bonus_gross_paid += gross_this_game
 	bonus_games_played += 1
 	total_games += 1
-
 	if bonus_games_played >= bonus_games_total:
 		_finish_bonus()
 	else:
-		status_label.text = "%s %d/%d  PAY %d  NET +%d - PRESS START" % [bonus_type, bonus_games_played, bonus_games_total, gross_this_game, net_this_game]
+		status_label.text = "%s %d/%d PAY %d NET +%d - PRESS START" % [bonus_type, bonus_games_played, bonus_games_total, gross_this_game, net_this_game]
 		_refresh_counters()
 		_refresh_controls()
 
@@ -348,7 +370,7 @@ func _finish_bonus() -> void:
 	bonus_games_played = 0
 	bonus_gross_paid = 0
 	bet = 0
-	status_label.text = "%s END  NET +%d - BET 3 TO START" % [finished_type, net_total]
+	status_label.text = "%s END NET +%d - BET 3 TO START" % [finished_type, net_total]
 	_refresh_counters()
 	_refresh_controls()
 

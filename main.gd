@@ -34,9 +34,9 @@ const REEL_STRIPS := [
 ]
 @onready var status_label: Label = $Center/VBox/Status
 
-var spinning := [false, false, false]
-var reel_index := [0, 1, 3]
-var reel_accum := [0.0, 0.0, 0.0]
+var spinning: Array[bool] = [false, false, false]
+var reel_index: Array[int] = [0, 1, 3]
+var reel_accum: Array[float] = [0.0, 0.0, 0.0]
 
 func _ready() -> void:
 	start_button.pressed.connect(_on_start_pressed)
@@ -105,11 +105,11 @@ func _update_all_reels() -> void:
 		_update_reel(i)
 
 func _update_reel(reel: int) -> void:
-	var strip = REEL_STRIPS[reel]
-	var middle := reel_index[reel]
-	var top := posmod(middle - 1, strip.size())
-	var bottom := posmod(middle + 1, strip.size())
+	var strip: Array = REEL_STRIPS[reel]
+	var middle: int = reel_index[reel]
+	var top: int = posmod(middle - 1, strip.size())
+	var bottom: int = posmod(middle + 1, strip.size())
 
-	reel_rows[reel][0].text = strip[top]
-	reel_rows[reel][1].text = strip[middle]
-	reel_rows[reel][2].text = strip[bottom]
+	reel_rows[reel][0].text = str(strip[top])
+	reel_rows[reel][1].text = str(strip[middle])
+	reel_rows[reel][2].text = str(strip[bottom])

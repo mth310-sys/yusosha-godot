@@ -1,13 +1,31 @@
 extends Control
 
-const SYMBOLS := ["7", "BAR", "CHERRY", "BELL", "REPLAY"]
-const SPIN_INTERVAL := 0.07
+const SPIN_INTERVAL := 0.065
 
-@onready var reel_labels: Array[Label] = [
-	$Center/VBox/Reels/Reel1,
-	$Center/VBox/Reels/Reel2,
-	$Center/VBox/Reels/Reel3,
+const REEL_STRIPS := [
+	["7R", "BELL", "GRAPE", "CHERRY", "BELL", "BAR", "GRAPE", "BELL", "REPLAY", "GRAPE", "CHERRY", "BELL", "7W", "GRAPE", "BELL", "CHERRY", "BAR", "GRAPE", "BELL", "REPLAY", "GRAPE"],
+	["GRAPE", "BELL", "BAR", "CHERRY", "GRAPE", "BELL", "REPLAY", "GRAPE", "BELL", "7R", "CHERRY", "GRAPE", "BELL", "BAR", "GRAPE", "7W", "BELL", "CHERRY", "GRAPE", "BELL", "REPLAY"],
+	["BELL", "GRAPE", "CHERRY", "BAR", "BELL", "GRAPE", "REPLAY", "CHERRY", "BELL", "GRAPE", "7R", "BELL", "GRAPE", "BAR", "CHERRY", "BELL", "7W", "GRAPE", "REPLAY", "BELL", "GRAPE"],
 ]
+
+@onready var reel_rows := [
+	[
+		$Center/VBox/Reels/Reel1/Top,
+		$Center/VBox/Reels/Reel1/Middle,
+		$Center/VBox/Reels/Reel1/Bottom,
+	],
+	[
+		$Center/VBox/Reels/Reel2/Top,
+		$Center/VBox/Reels/Reel2/Middle,
+		$Center/VBox/Reels/Reel2/Bottom,
+	],
+	[
+		$Center/VBox/Reels/Reel3/Top,
+		$Center/VBox/Reels/Reel3/Middle,
+		$Center/VBox/Reels/Reel3/Bottom,
+	],
+]
+
 @onready var start_button: Button = $Center/VBox/StartButton
 @onready var stop_buttons: Array[Button] = [
 	$Center/VBox/Stops/Stop1,
@@ -17,30 +35,26 @@ const SPIN_INTERVAL := 0.07
 @onready var status_label: Label = $Center/VBox/Status
 
 var spinning := [false, false, false]
-var symbol_index := [0, 2, 4]
-var accum := 0.0
+var reel_index := [0, 1, 3]
+var reel_accum := [0.0, 0.0, 0.0]
 
 func _ready() -> void:
 	start_button.pressed.connect(_on_start_pressed)
 	for i in stop_buttons.size():
 		stop_buttons[i].pressed.connect(_on_stop_pressed.bind(i))
 		stop_buttons[i].disabled = true
-	_update_reels()
+	_update_all_reels()
 	status_label.text = "PRESS START"
 
 func _process(delta: float) -> void:
-	if not spinning.has(true):
-		return
-
-	accum += delta
-	if accum < SPIN_INTERVAL:
-		return
-
-	accum = 0.0
-	for i in reel_labels.size():
-		if spinning[i]:
-			symbol_index[i] = (symbol_index[i] + 1) % SYMBOLS.size()
-	_update_reels()
+	for i in spinning.size():
+		if not spinning[i]:
+			continue
+		reel_accum[i] += delta
+		while reel_accum[i] >= SPIN_INTERVAL:
+			reel_accum[i] -= SPIN_INTERVAL
+			reel_index[i] = (reel_index[i] + 1) % REEL_STRIPS[i].size()
+			_update_reel(i)
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event is InputEventKey:
@@ -64,6 +78,7 @@ func _on_start_pressed() -> void:
 
 	for i in spinning.size():
 		spinning[i] = true
+		reel_accum[i] = 0.0
 		stop_buttons[i].disabled = false
 
 	start_button.disabled = true
@@ -77,6 +92,7 @@ func _on_stop_pressed(index: int) -> void:
 
 	spinning[index] = false
 	stop_buttons[index].disabled = true
+	_update_reel(index)
 
 	if spinning.has(true):
 		status_label.text = "SPINNING - STOP REMAINING REELS"
@@ -84,6 +100,16 @@ func _on_stop_pressed(index: int) -> void:
 		start_button.disabled = false
 		status_label.text = "ALL REELS STOPPED - PRESS START"
 
-func _update_reels() -> void:
-	for i in reel_labels.size():
-		reel_labels[i].text = SYMBOLS[symbol_index[i]]
+func _update_all_reels() -> void:
+	for i in reel_rows.size():
+		_update_reel(i)
+
+func _update_reel(reel: int) -> void:
+	var strip = REEL_STRIPS[reel]
+	var middle := reel_index[reel]
+	var top := posmod(middle - 1, strip.size())
+	var bottom := posmod(middle + 1, strip.size())
+
+	reel_rows[reel][0].text = strip[top]
+	reel_rows[reel][1].text = strip[middle]
+	reel_rows[reel][2].text = strip[bottom]

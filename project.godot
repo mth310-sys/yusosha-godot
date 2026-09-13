@@ -16,6 +16,7 @@ run/main_scene="res://main.tscn"
 [autoload]
 
 TopDisplayFx="*res://top_display_fx.gd"
+TopPanelLogo="*res://top_panel_logo.gd"
 
 [display]
 

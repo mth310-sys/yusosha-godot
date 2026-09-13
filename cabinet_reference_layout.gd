@@ -14,9 +14,9 @@ func _apply_reference_layout() -> void:
 	if scene == null:
 		return
 
-	# Tuned against the supplied ZELVOLT reference image. The reel window is kept
-	# compact, the information strip sits directly below it, and the lower panel
-	# receives more visual weight like the reference cabinet.
+	# Tuned against the supplied ZELVOLT reference image. Preserve the verified
+	# reel/game logic while matching the cabinet's top panel, control deck, and
+	# deep lower-panel proportions more closely.
 	var cabinet := scene.get_node_or_null("CabinetBody") as Control
 	var left_rail := scene.get_node_or_null("LeftRailOuter") as Control
 	var right_rail := scene.get_node_or_null("RightRailOuter") as Control
@@ -45,22 +45,23 @@ func _apply_reference_layout() -> void:
 	if top_led != null:
 		_set_offsets(top_led, -250.0, -500.0, 250.0, -489.0)
 	if top_panel != null:
-		_set_offsets(top_panel, -292.0, -455.0, 292.0, -325.0)
+		_set_offsets(top_panel, -292.0, -460.0, 292.0, -315.0)
 	if reel_frame != null:
-		_set_offsets(reel_frame, -292.0, -300.0, 292.0, -45.0)
+		_set_offsets(reel_frame, -292.0, -298.0, 292.0, -38.0)
 	if info_back != null:
-		_set_offsets(info_back, -266.0, -35.0, 266.0, 35.0)
+		_set_offsets(info_back, -266.0, -28.0, 266.0, 48.0)
 	if play_panel != null:
-		_set_offsets(play_panel, -292.0, 50.0, 292.0, 250.0)
+		_set_offsets(play_panel, -292.0, 58.0, 292.0, 260.0)
 	if lower_panel != null:
-		_set_offsets(lower_panel, -292.0, 270.0, 292.0, 500.0)
+		_set_offsets(lower_panel, -292.0, 275.0, 292.0, 505.0)
 	if lower_glow != null:
-		_set_offsets(lower_glow, -266.0, 290.0, 266.0, 475.0)
+		_set_offsets(lower_glow, -266.0, 295.0, 266.0, 480.0)
 	if lower_logo != null:
-		_set_offsets(lower_logo, -250.0, 330.0, 250.0, 390.0)
-		lower_logo.add_theme_font_size_override("font_size", 38)
+		_set_offsets(lower_logo, -250.0, 335.0, 250.0, 398.0)
+		lower_logo.add_theme_font_size_override("font_size", 40)
 	if lower_tagline != null:
-		_set_offsets(lower_tagline, -250.0, 394.0, 250.0, 424.0)
+		_set_offsets(lower_tagline, -250.0, 402.0, 250.0, 432.0)
+		lower_tagline.add_theme_font_size_override("font_size", 12)
 
 	var vbox := scene.get_node_or_null("Center/VBox") as Control
 	if vbox != null:
@@ -74,21 +75,23 @@ func _apply_reference_layout() -> void:
 		if reels != null:
 			_set_offsets(reels, 26.0, 185.0, 558.0, 377.0)
 		if payline != null:
-			_set_offsets(payline, 28.0, 383.0, 556.0, 405.0)
+			_set_offsets(payline, 28.0, 381.0, 556.0, 402.0)
 		if info != null:
-			_set_offsets(info, 48.0, 414.0, 536.0, 472.0)
+			_set_offsets(info, 48.0, 408.0, 536.0, 470.0)
 		if start != null:
-			_set_offsets(start, 6.0, 490.0, 187.0, 553.0)
+			_set_offsets(start, 6.0, 484.0, 187.0, 550.0)
+			start.add_theme_font_size_override("font_size", 16)
 		if bets != null:
-			_set_offsets(bets, 197.0, 490.0, 578.0, 553.0)
+			_set_offsets(bets, 197.0, 484.0, 578.0, 550.0)
 		if stops != null:
-			_set_offsets(stops, 108.0, 575.0, 476.0, 660.0)
+			_set_offsets(stops, 108.0, 566.0, 476.0, 666.0)
 
 	_install_lower_pattern(scene)
 	_install_side_bevels(scene)
 	_install_inner_chrome_rails(scene)
 	_install_control_trim(scene)
 	_install_lower_panel_facets(scene)
+	_install_lower_side_grilles(scene)
 	_install_lower_vent(scene)
 	_install_top_speaker_accents(scene)
 
@@ -160,8 +163,8 @@ func _install_control_trim(scene: Node) -> void:
 	shadow.width = 10.0
 	shadow.default_color = Color(0.02, 0.025, 0.035, 0.95)
 	shadow.points = PackedVector2Array([
-		Vector2(350, 585), Vector2(930, 585), Vector2(930, 800),
-		Vector2(350, 800), Vector2(350, 585)
+		Vector2(350, 582), Vector2(930, 582), Vector2(930, 805),
+		Vector2(350, 805), Vector2(350, 582)
 	])
 	shadow.z_index = 1
 	scene.add_child(shadow)
@@ -170,8 +173,8 @@ func _install_control_trim(scene: Node) -> void:
 	trim.width = 4.0
 	trim.default_color = Color(0.78, 0.81, 0.86, 0.95)
 	trim.points = PackedVector2Array([
-		Vector2(354, 590), Vector2(926, 590), Vector2(926, 795),
-		Vector2(354, 795), Vector2(354, 590)
+		Vector2(354, 587), Vector2(926, 587), Vector2(926, 800),
+		Vector2(354, 800), Vector2(354, 587)
 	])
 	trim.z_index = 2
 	scene.add_child(trim)
@@ -182,7 +185,7 @@ func _install_lower_panel_facets(scene: Node) -> void:
 	var top_facet := Polygon2D.new()
 	top_facet.name = "ReferenceLowerFacetTop"
 	top_facet.polygon = PackedVector2Array([
-		Vector2(357, 805), Vector2(923, 805), Vector2(902, 825), Vector2(378, 825)
+		Vector2(357, 810), Vector2(923, 810), Vector2(902, 830), Vector2(378, 830)
 	])
 	top_facet.color = Color(0.58, 0.61, 0.66, 0.92)
 	top_facet.z_index = 2
@@ -191,7 +194,7 @@ func _install_lower_panel_facets(scene: Node) -> void:
 	top_shadow.name = "ReferenceLowerFacetTopShadow"
 	top_shadow.width = 3.0
 	top_shadow.default_color = Color(0.04, 0.045, 0.055, 1.0)
-	top_shadow.points = PackedVector2Array([Vector2(378, 826), Vector2(902, 826)])
+	top_shadow.points = PackedVector2Array([Vector2(378, 831), Vector2(902, 831)])
 	top_shadow.z_index = 3
 	scene.add_child(top_shadow)
 	var bottom_facet := Polygon2D.new()
@@ -202,6 +205,28 @@ func _install_lower_panel_facets(scene: Node) -> void:
 	bottom_facet.color = Color(0.48, 0.51, 0.56, 0.90)
 	bottom_facet.z_index = 2
 	scene.add_child(bottom_facet)
+
+func _install_lower_side_grilles(scene: Node) -> void:
+	if scene.has_node("ReferenceLowerSideGrilleLeft"):
+		return
+	for side in [-1, 1]:
+		var grille := Control.new()
+		grille.name = "ReferenceLowerSideGrilleLeft" if side < 0 else "ReferenceLowerSideGrilleRight"
+		grille.position = Vector2(386.0 if side < 0 else 824.0, 950.0)
+		grille.size = Vector2(70.0, 52.0)
+		grille.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		grille.z_index = 4
+		scene.add_child(grille)
+		for i in range(7):
+			var slit := Line2D.new()
+			slit.width = 4.0
+			slit.default_color = Color(0.08, 0.085, 0.095, 0.98)
+			var x := 8.0 + float(i) * 9.0
+			slit.points = PackedVector2Array([
+				Vector2(x + (8.0 if side < 0 else 0.0), 5.0),
+				Vector2(x + (0.0 if side < 0 else 8.0), 47.0)
+			])
+			grille.add_child(slit)
 
 func _install_lower_vent(scene: Node) -> void:
 	if scene.has_node("ReferenceLowerVent"):

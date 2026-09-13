@@ -14,8 +14,9 @@ func _apply_reference_layout() -> void:
 	if scene == null:
 		return
 
-	# Match the supplied ZELVOLT reference more closely: tall cabinet, larger control deck,
-	# and a deeper lower panel while preserving the verified reel/game logic.
+	# Tuned against the supplied ZELVOLT reference image. The reel window is kept
+	# compact, the information strip sits directly below it, and the lower panel
+	# receives more visual weight like the reference cabinet.
 	var cabinet := scene.get_node_or_null("CabinetBody") as Control
 	var left_rail := scene.get_node_or_null("LeftRailOuter") as Control
 	var right_rail := scene.get_node_or_null("RightRailOuter") as Control
@@ -46,20 +47,20 @@ func _apply_reference_layout() -> void:
 	if top_panel != null:
 		_set_offsets(top_panel, -292.0, -455.0, 292.0, -325.0)
 	if reel_frame != null:
-		_set_offsets(reel_frame, -292.0, -300.0, 292.0, 20.0)
+		_set_offsets(reel_frame, -292.0, -300.0, 292.0, -45.0)
 	if info_back != null:
-		_set_offsets(info_back, -266.0, 30.0, 266.0, 105.0)
+		_set_offsets(info_back, -266.0, -35.0, 266.0, 35.0)
 	if play_panel != null:
-		_set_offsets(play_panel, -292.0, 120.0, 292.0, 325.0)
+		_set_offsets(play_panel, -292.0, 50.0, 292.0, 250.0)
 	if lower_panel != null:
-		_set_offsets(lower_panel, -292.0, 340.0, 292.0, 500.0)
+		_set_offsets(lower_panel, -292.0, 270.0, 292.0, 500.0)
 	if lower_glow != null:
-		_set_offsets(lower_glow, -266.0, 360.0, 266.0, 475.0)
+		_set_offsets(lower_glow, -266.0, 290.0, 266.0, 475.0)
 	if lower_logo != null:
-		_set_offsets(lower_logo, -250.0, 382.0, 250.0, 436.0)
-		lower_logo.add_theme_font_size_override("font_size", 36)
+		_set_offsets(lower_logo, -250.0, 330.0, 250.0, 390.0)
+		lower_logo.add_theme_font_size_override("font_size", 38)
 	if lower_tagline != null:
-		_set_offsets(lower_tagline, -250.0, 438.0, 250.0, 464.0)
+		_set_offsets(lower_tagline, -250.0, 394.0, 250.0, 424.0)
 
 	var vbox := scene.get_node_or_null("Center/VBox") as Control
 	if vbox != null:
@@ -71,17 +72,17 @@ func _apply_reference_layout() -> void:
 		var bets := vbox.get_node_or_null("BetControls") as Control
 		var stops := vbox.get_node_or_null("Stops") as Control
 		if reels != null:
-			_set_offsets(reels, 26.0, 185.0, 558.0, 445.0)
+			_set_offsets(reels, 26.0, 185.0, 558.0, 377.0)
 		if payline != null:
-			_set_offsets(payline, 28.0, 452.0, 556.0, 474.0)
+			_set_offsets(payline, 28.0, 383.0, 556.0, 405.0)
 		if info != null:
-			_set_offsets(info, 48.0, 485.0, 536.0, 550.0)
+			_set_offsets(info, 48.0, 414.0, 536.0, 472.0)
 		if start != null:
-			_set_offsets(start, 6.0, 570.0, 187.0, 633.0)
+			_set_offsets(start, 6.0, 490.0, 187.0, 553.0)
 		if bets != null:
-			_set_offsets(bets, 197.0, 570.0, 578.0, 633.0)
+			_set_offsets(bets, 197.0, 490.0, 578.0, 553.0)
 		if stops != null:
-			_set_offsets(stops, 108.0, 655.0, 476.0, 755.0)
+			_set_offsets(stops, 108.0, 575.0, 476.0, 660.0)
 
 	_install_lower_pattern(scene)
 	_install_side_bevels(scene)
@@ -107,12 +108,12 @@ func _install_lower_pattern(scene: Node) -> void:
 		var down := Line2D.new()
 		down.width = 2.0
 		down.default_color = Color(1.0, 0.76, 0.04, 0.24)
-		down.points = PackedVector2Array([Vector2(x, 8.0), Vector2(x + 42.0, 108.0)])
+		down.points = PackedVector2Array([Vector2(x, 8.0), Vector2(x + 42.0, 178.0)])
 		pattern.add_child(down)
 		var up := Line2D.new()
 		up.width = 2.0
 		up.default_color = Color(1.0, 0.76, 0.04, 0.18)
-		up.points = PackedVector2Array([Vector2(x + 42.0, 8.0), Vector2(x, 108.0)])
+		up.points = PackedVector2Array([Vector2(x + 42.0, 8.0), Vector2(x, 178.0)])
 		pattern.add_child(up)
 
 func _install_side_bevels(scene: Node) -> void:
@@ -159,8 +160,8 @@ func _install_control_trim(scene: Node) -> void:
 	shadow.width = 10.0
 	shadow.default_color = Color(0.02, 0.025, 0.035, 0.95)
 	shadow.points = PackedVector2Array([
-		Vector2(350, 650), Vector2(930, 650), Vector2(930, 870),
-		Vector2(350, 870), Vector2(350, 650)
+		Vector2(350, 585), Vector2(930, 585), Vector2(930, 800),
+		Vector2(350, 800), Vector2(350, 585)
 	])
 	shadow.z_index = 1
 	scene.add_child(shadow)
@@ -169,8 +170,8 @@ func _install_control_trim(scene: Node) -> void:
 	trim.width = 4.0
 	trim.default_color = Color(0.78, 0.81, 0.86, 0.95)
 	trim.points = PackedVector2Array([
-		Vector2(354, 655), Vector2(926, 655), Vector2(926, 865),
-		Vector2(354, 865), Vector2(354, 655)
+		Vector2(354, 590), Vector2(926, 590), Vector2(926, 795),
+		Vector2(354, 795), Vector2(354, 590)
 	])
 	trim.z_index = 2
 	scene.add_child(trim)
@@ -181,7 +182,7 @@ func _install_lower_panel_facets(scene: Node) -> void:
 	var top_facet := Polygon2D.new()
 	top_facet.name = "ReferenceLowerFacetTop"
 	top_facet.polygon = PackedVector2Array([
-		Vector2(357, 875), Vector2(923, 875), Vector2(902, 895), Vector2(378, 895)
+		Vector2(357, 805), Vector2(923, 805), Vector2(902, 825), Vector2(378, 825)
 	])
 	top_facet.color = Color(0.58, 0.61, 0.66, 0.92)
 	top_facet.z_index = 2
@@ -190,7 +191,7 @@ func _install_lower_panel_facets(scene: Node) -> void:
 	top_shadow.name = "ReferenceLowerFacetTopShadow"
 	top_shadow.width = 3.0
 	top_shadow.default_color = Color(0.04, 0.045, 0.055, 1.0)
-	top_shadow.points = PackedVector2Array([Vector2(378, 896), Vector2(902, 896)])
+	top_shadow.points = PackedVector2Array([Vector2(378, 826), Vector2(902, 826)])
 	top_shadow.z_index = 3
 	scene.add_child(top_shadow)
 	var bottom_facet := Polygon2D.new()

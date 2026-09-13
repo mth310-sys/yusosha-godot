@@ -1,82 +1,94 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1_script"]
 
 [sub_resource type="StyleBoxFlat" id="CabinetBody"]
-bg_color = Color(0.045, 0.05, 0.058, 1)
-border_width_left = 5
-border_width_top = 5
-border_width_right = 5
-border_width_bottom = 5
-border_color = Color(0.62, 0.64, 0.67, 1)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-shadow_color = Color(0, 0, 0, 0.72)
-shadow_size = 18
-
-[sub_resource type="StyleBoxFlat" id="CabinetPanel"]
-bg_color = Color(0.018, 0.02, 0.024, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.31, 0.33, 0.36, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="InfoPanel"]
-bg_color = Color(0.012, 0.013, 0.015, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.37, 0.39, 0.42, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="DarkButton"]
-bg_color = Color(0.09, 0.1, 0.115, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.42, 0.44, 0.47, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
-[sub_resource type="StyleBoxFlat" id="DarkButtonPressed"]
-bg_color = Color(0.16, 0.17, 0.19, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.82, 0.7, 0.18, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
-[sub_resource type="StyleBoxFlat" id="StopButton"]
-bg_color = Color(0.48, 0.015, 0.025, 1)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(0.86, 0.12, 0.15, 1)
+bg_color = Color(0.025, 0.028, 0.034, 1)
+border_width_left = 8
+border_width_top = 8
+border_width_right = 8
+border_width_bottom = 8
+border_color = Color(0.72, 0.74, 0.77, 1)
 corner_radius_top_left = 24
 corner_radius_top_right = 24
 corner_radius_bottom_right = 24
 corner_radius_bottom_left = 24
-shadow_color = Color(0, 0, 0, 0.7)
-shadow_size = 5
+shadow_color = Color(0,0,0,0.85)
+shadow_size = 20
+
+[sub_resource type="StyleBoxFlat" id="PanelMetal"]
+bg_color = Color(0.018,0.02,0.025,1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.48,0.5,0.54,1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="ReelFrame"]
+bg_color = Color(0.01,0.011,0.014,1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.34,0.36,0.39,1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="InfoPanel"]
+bg_color = Color(0.005,0.006,0.008,1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.34,0.35,0.38,1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="DarkButton"]
+bg_color = Color(0.12,0.13,0.15,1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.48,0.5,0.54,1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="DarkButtonPressed"]
+bg_color = Color(0.22,0.23,0.26,1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.9,0.75,0.18,1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="StopButton"]
+bg_color = Color(0.82,0.025,0.04,1)
+border_width_left = 7
+border_width_top = 7
+border_width_right = 7
+border_width_bottom = 7
+border_color = Color(0.96,0.96,0.96,1)
+corner_radius_top_left = 38
+corner_radius_top_right = 38
+corner_radius_bottom_right = 38
+corner_radius_bottom_left = 38
+shadow_color = Color(0,0,0,0.85)
+shadow_size = 6
 
 [node name="ZelvoltT1" type="Control"]
 layout_mode = 3
@@ -94,7 +106,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.012, 0.013, 0.016, 1)
+color = Color(0.008,0.009,0.012,1)
 mouse_filter = 2
 
 [node name="CabinetBody" type="Panel" parent="."]
@@ -104,45 +116,45 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -430.0
-offset_top = -420.0
-offset_right = 430.0
-offset_bottom = 420.0
+offset_left = -350.0
+offset_top = -435.0
+offset_right = 350.0
+offset_bottom = 435.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("CabinetBody")
 mouse_filter = 2
 
-[node name="LeftLED" type="ColorRect" parent="."]
+[node name="LeftRail" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -411.0
-offset_top = -330.0
-offset_right = -399.0
-offset_bottom = 330.0
+offset_left = -333.0
+offset_top = -405.0
+offset_right = -317.0
+offset_bottom = 405.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.78, 0.62, 0.04, 0.82)
+color = Color(0.58,0.61,0.65,1)
 mouse_filter = 2
 
-[node name="RightLED" type="ColorRect" parent="."]
+[node name="RightRail" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 399.0
-offset_top = -330.0
-offset_right = 411.0
-offset_bottom = 330.0
+offset_left = 317.0
+offset_top = -405.0
+offset_right = 333.0
+offset_bottom = 405.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.78, 0.62, 0.04, 0.82)
+color = Color(0.58,0.61,0.65,1)
 mouse_filter = 2
 
 [node name="TopLED" type="ColorRect" parent="."]
@@ -152,13 +164,13 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -245.0
-offset_top = -395.0
-offset_right = 245.0
-offset_bottom = -384.0
+offset_left = -250.0
+offset_top = -409.0
+offset_right = 250.0
+offset_bottom = -398.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.92, 0.74, 0.06, 0.9)
+color = Color(1,0.78,0.03,1)
 mouse_filter = 2
 
 [node name="TopPanel" type="Panel" parent="."]
@@ -168,29 +180,29 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -380.0
-offset_top = -360.0
-offset_right = 380.0
-offset_bottom = -245.0
+offset_left = -292.0
+offset_top = -378.0
+offset_right = 292.0
+offset_bottom = -270.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("CabinetPanel")
+theme_override_styles/panel = SubResource("PanelMetal")
 mouse_filter = 2
 
-[node name="CenterPanel" type="Panel" parent="."]
+[node name="ReelFrame" type="Panel" parent="."]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -382.0
-offset_top = -215.0
-offset_right = 382.0
-offset_bottom = 105.0
+offset_left = -292.0
+offset_top = -247.0
+offset_right = 292.0
+offset_bottom = 37.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("CabinetPanel")
+theme_override_styles/panel = SubResource("ReelFrame")
 mouse_filter = 2
 
 [node name="InfoBack" type="Panel" parent="."]
@@ -200,10 +212,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = -170.0
-offset_right = 300.0
-offset_bottom = -105.0
+offset_left = -265.0
+offset_top = 48.0
+offset_right = 265.0
+offset_bottom = 105.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("InfoPanel")
@@ -216,29 +228,67 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -382.0
-offset_top = 125.0
-offset_right = 382.0
-offset_bottom = 355.0
+offset_left = -292.0
+offset_top = 118.0
+offset_right = 292.0
+offset_bottom = 265.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("CabinetPanel")
+theme_override_styles/panel = SubResource("PanelMetal")
 mouse_filter = 2
 
-[node name="LowerVent" type="ColorRect" parent="."]
+[node name="LowerPanel" type="Panel" parent="."]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -275.0
-offset_top = 377.0
-offset_right = 275.0
-offset_bottom = 391.0
+offset_left = -292.0
+offset_top = 282.0
+offset_right = 292.0
+offset_bottom = 398.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.08, 0.085, 0.095, 1)
+theme_override_styles/panel = SubResource("PanelMetal")
+mouse_filter = 2
+
+[node name="LowerGlow" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -265.0
+offset_top = 300.0
+offset_right = 265.0
+offset_bottom = 380.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.09,0.075,0.005,1)
+mouse_filter = 2
+
+[node name="LowerLogo" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = 318.0
+offset_right = 250.0
+offset_bottom = 365.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1,0.86,0.08,1)
+theme_override_colors/font_outline_color = Color(0.2,0.15,0,1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 30
+text = "≡ ZELVOLT ≡"
+horizontal_alignment = 1
+vertical_alignment = 1
 mouse_filter = 2
 
 [node name="Center" type="CenterContainer" parent="."]
@@ -251,264 +301,216 @@ grow_vertical = 2
 
 [node name="VBox" type="VBoxContainer" parent="Center"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 5
 
 [node name="Title" type="Label" parent="Center/VBox"]
+custom_minimum_size = Vector2(560,70)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 34
-text = "ZELVOLT"
+theme_override_colors/font_color = Color(1,0.86,0.08,1)
+theme_override_colors/font_outline_color = Color(0.15,0.12,0,1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 45
+text = "≡ ZELVOLT ≡"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Subtitle" type="Label" parent="Center/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.72, 0.75, 0.82, 1)
-theme_override_font_sizes/font_size = 14
-text = "GODOT MIGRATION / CABINET FOUNDATION"
+theme_override_colors/font_color = Color(0.7,0.72,0.76,1)
+theme_override_font_sizes/font_size = 11
+text = "LET THE SPARK BEGIN."
 horizontal_alignment = 1
 
 [node name="Status" type="Label" parent="Center/VBox"]
+custom_minimum_size = Vector2(0,28)
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 16
 text = "BET 3 TO START"
-horizontal_alignment = 1
-
-[node name="Info" type="HBoxContainer" parent="Center/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 60
-alignment = 1
-
-[node name="CreditBox" type="VBoxContainer" parent="Center/VBox/Info"]
-custom_minimum_size = Vector2(130, 52)
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Center/VBox/Info/CreditBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.72, 0.78, 1)
-theme_override_font_sizes/font_size = 13
-text = "CREDIT"
-horizontal_alignment = 1
-
-[node name="Value" type="Label" parent="Center/VBox/Info/CreditBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.22, 0.24, 1)
-theme_override_font_sizes/font_size = 27
-text = "50"
-horizontal_alignment = 1
-
-[node name="BetBox" type="VBoxContainer" parent="Center/VBox/Info"]
-custom_minimum_size = Vector2(130, 52)
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Center/VBox/Info/BetBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.72, 0.78, 1)
-theme_override_font_sizes/font_size = 13
-text = "BET"
-horizontal_alignment = 1
-
-[node name="Value" type="Label" parent="Center/VBox/Info/BetBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.22, 0.24, 1)
-theme_override_font_sizes/font_size = 27
-text = "0"
-horizontal_alignment = 1
-
-[node name="PayoutBox" type="VBoxContainer" parent="Center/VBox/Info"]
-custom_minimum_size = Vector2(130, 52)
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Center/VBox/Info/PayoutBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.72, 0.78, 1)
-theme_override_font_sizes/font_size = 13
-text = "PAYOUT"
-horizontal_alignment = 1
-
-[node name="Value" type="Label" parent="Center/VBox/Info/PayoutBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.22, 0.24, 1)
-theme_override_font_sizes/font_size = 27
-text = "0"
 horizontal_alignment = 1
 
 [node name="Reels" type="HBoxContainer" parent="Center/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 6
 alignment = 1
 
 [node name="Reel1" type="VBoxContainer" parent="Center/VBox/Reels"]
-custom_minimum_size = Vector2(240, 180)
+custom_minimum_size = Vector2(175,192)
 layout_mode = 2
 theme_override_constants/separation = 0
 [node name="Top" type="Label" parent="Center/VBox/Reels/Reel1"]
-custom_minimum_size = Vector2(240, 58)
+custom_minimum_size = Vector2(175,64)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 29
+theme_override_colors/font_color = Color(0.1,0.1,0.1,1)
+theme_override_font_sizes/font_size = 24
 text = "BELL"
 horizontal_alignment = 1
 vertical_alignment = 1
 [node name="Middle" type="Label" parent="Center/VBox/Reels/Reel1"]
-custom_minimum_size = Vector2(240, 64)
+custom_minimum_size = Vector2(175,64)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 34
+theme_override_colors/font_color = Color(0.1,0.1,0.1,1)
+theme_override_font_sizes/font_size = 24
 text = "7R"
 horizontal_alignment = 1
 vertical_alignment = 1
 [node name="Bottom" type="Label" parent="Center/VBox/Reels/Reel1"]
-custom_minimum_size = Vector2(240, 58)
+custom_minimum_size = Vector2(175,64)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 29
+theme_override_colors/font_color = Color(0.1,0.1,0.1,1)
+theme_override_font_sizes/font_size = 24
 text = "GRAPE"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Reel2" type="VBoxContainer" parent="Center/VBox/Reels"]
-custom_minimum_size = Vector2(240, 180)
+custom_minimum_size = Vector2(175,192)
 layout_mode = 2
 theme_override_constants/separation = 0
 [node name="Top" type="Label" parent="Center/VBox/Reels/Reel2"]
-custom_minimum_size = Vector2(240, 58)
+custom_minimum_size = Vector2(175,64)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 29
 text = "GRAPE"
 horizontal_alignment = 1
 vertical_alignment = 1
 [node name="Middle" type="Label" parent="Center/VBox/Reels/Reel2"]
-custom_minimum_size = Vector2(240, 64)
+custom_minimum_size = Vector2(175,64)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 34
 text = "BELL"
 horizontal_alignment = 1
 vertical_alignment = 1
 [node name="Bottom" type="Label" parent="Center/VBox/Reels/Reel2"]
-custom_minimum_size = Vector2(240, 58)
+custom_minimum_size = Vector2(175,64)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 29
 text = "BAR"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Reel3" type="VBoxContainer" parent="Center/VBox/Reels"]
-custom_minimum_size = Vector2(240, 180)
+custom_minimum_size = Vector2(175,192)
 layout_mode = 2
 theme_override_constants/separation = 0
 [node name="Top" type="Label" parent="Center/VBox/Reels/Reel3"]
-custom_minimum_size = Vector2(240, 58)
+custom_minimum_size = Vector2(175,64)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 29
 text = "CHERRY"
 horizontal_alignment = 1
 vertical_alignment = 1
 [node name="Middle" type="Label" parent="Center/VBox/Reels/Reel3"]
-custom_minimum_size = Vector2(240, 64)
+custom_minimum_size = Vector2(175,64)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 34
 text = "BAR"
 horizontal_alignment = 1
 vertical_alignment = 1
 [node name="Bottom" type="Label" parent="Center/VBox/Reels/Reel3"]
-custom_minimum_size = Vector2(240, 58)
+custom_minimum_size = Vector2(175,64)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 29
 text = "BELL"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Payline" type="Label" parent="Center/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.65, 0.12, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1,0.68,0.05,1)
+theme_override_font_sizes/font_size = 11
 text = "5 LINES / ACTIVE: MIDDLE / MAX SLIP: 4"
+horizontal_alignment = 1
+
+[node name="Info" type="HBoxContainer" parent="Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 55
+alignment = 1
+[node name="CreditBox" type="VBoxContainer" parent="Center/VBox/Info"]
+custom_minimum_size = Vector2(110,48)
+layout_mode = 2
+[node name="Label" type="Label" parent="Center/VBox/Info/CreditBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "CREDIT"
+horizontal_alignment = 1
+[node name="Value" type="Label" parent="Center/VBox/Info/CreditBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1,0.12,0.15,1)
+theme_override_font_sizes/font_size = 26
+text = "50"
+horizontal_alignment = 1
+[node name="BetBox" type="VBoxContainer" parent="Center/VBox/Info"]
+custom_minimum_size = Vector2(110,48)
+layout_mode = 2
+[node name="Label" type="Label" parent="Center/VBox/Info/BetBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "BET"
+horizontal_alignment = 1
+[node name="Value" type="Label" parent="Center/VBox/Info/BetBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1,0.12,0.15,1)
+theme_override_font_sizes/font_size = 26
+text = "0"
+horizontal_alignment = 1
+[node name="PayoutBox" type="VBoxContainer" parent="Center/VBox/Info"]
+custom_minimum_size = Vector2(110,48)
+layout_mode = 2
+[node name="Label" type="Label" parent="Center/VBox/Info/PayoutBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "PAYOUT"
+horizontal_alignment = 1
+[node name="Value" type="Label" parent="Center/VBox/Info/PayoutBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1,0.12,0.15,1)
+theme_override_font_sizes/font_size = 26
+text = "0"
 horizontal_alignment = 1
 
 [node name="BetControls" type="HBoxContainer" parent="Center/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 alignment = 1
 [node name="BetButton" type="Button" parent="Center/VBox/BetControls"]
-custom_minimum_size = Vector2(240, 50)
+custom_minimum_size = Vector2(255,52)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.92, 0.92, 0.94, 1)
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("DarkButton")
-theme_override_styles/hover = SubResource("DarkButtonPressed")
 theme_override_styles/pressed = SubResource("DarkButtonPressed")
-text = "BET +1"
+text = "BET"
 [node name="MaxBetButton" type="Button" parent="Center/VBox/BetControls"]
-custom_minimum_size = Vector2(240, 50)
+custom_minimum_size = Vector2(255,52)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.92, 0.92, 0.94, 1)
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("DarkButton")
-theme_override_styles/hover = SubResource("DarkButtonPressed")
 theme_override_styles/pressed = SubResource("DarkButtonPressed")
 text = "MAX BET"
 
 [node name="Stops" type="HBoxContainer" parent="Center/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 65
 alignment = 1
 [node name="Stop1" type="Button" parent="Center/VBox/Stops"]
-custom_minimum_size = Vector2(240, 54)
+custom_minimum_size = Vector2(76,76)
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("StopButton")
-theme_override_styles/hover = SubResource("StopButton")
 theme_override_styles/pressed = SubResource("StopButton")
-text = "STOP 1"
+text = "STOP"
 [node name="Stop2" type="Button" parent="Center/VBox/Stops"]
-custom_minimum_size = Vector2(240, 54)
+custom_minimum_size = Vector2(76,76)
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("StopButton")
-theme_override_styles/hover = SubResource("StopButton")
 theme_override_styles/pressed = SubResource("StopButton")
-text = "STOP 2"
+text = "STOP"
 [node name="Stop3" type="Button" parent="Center/VBox/Stops"]
-custom_minimum_size = Vector2(240, 54)
+custom_minimum_size = Vector2(76,76)
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = SubResource("StopButton")
-theme_override_styles/hover = SubResource("StopButton")
 theme_override_styles/pressed = SubResource("StopButton")
-text = "STOP 3"
+text = "STOP"
 
 [node name="StartButton" type="Button" parent="Center/VBox"]
-custom_minimum_size = Vector2(0, 62)
+custom_minimum_size = Vector2(0,52)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.3, 0.3, 1)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("DarkButton")
-theme_override_styles/hover = SubResource("DarkButtonPressed")
 theme_override_styles/pressed = SubResource("DarkButtonPressed")
-text = "START"
+text = "START / LEVER"

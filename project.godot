@@ -17,6 +17,7 @@ run/main_scene="res://main.tscn"
 
 TopDisplayFx="*res://top_display_fx.gd"
 TopPanelLogo="*res://top_panel_logo.gd"
+CabinetReferenceLayout="*res://cabinet_reference_layout.gd"
 
 [display]
 

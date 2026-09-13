@@ -45,6 +45,39 @@ jobs:
           mkdir -p build/web
           ./godot/Godot_v4.7.2-stable_linux.x86_64 --headless --path . --export-release Web build/web/index.html
 
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Capture Godot Web screenshot
+        run: |
+          mkdir -p artifacts
+          python3 -m http.server 8080 --directory build/web > /tmp/godot-web.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          node - <<'NODE'
+          const { chromium } = require('playwright');
+          (async() => {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+            page.on('console', msg => console.log('[browser]', msg.type(), msg.text()));
+            page.on('pageerror', err => console.error('[pageerror]', err.message));
+            await page.goto('http://127.0.0.1:8080/', { waitUntil: 'networkidle', timeout: 120000 });
+            await page.waitForTimeout(8000);
+            await page.screenshot({ path: 'artifacts/zelvolt-web.png', fullPage: true });
+            await browser.close();
+          })();
+          NODE
+
+      - name: Upload visual check artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-web-screenshot
+          path: artifacts/zelvolt-web.png
+          if-no-files-found: error
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 

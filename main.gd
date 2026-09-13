@@ -7,6 +7,7 @@ const BIG_GAMES := 55
 const REG_GAMES := 14
 const BIG_GROSS_PAYOUT := 765
 const REG_GROSS_PAYOUT := 162
+const SYMBOL_ASSET_BASE := "https://mth310-sys.github.io/Chappy5/src/game/slot-pachiro/machines/zelvolt/symbols/"
 
 const BIG_ODDS := {1: 330.0, 2: 310.0, 3: 290.0, 4: 270.0, 5: 250.0, 6: 210.0}
 const REG_ODDS := {1: 470.0, 2: 430.0, 3: 390.0, 4: 350.0, 5: 310.0, 6: 270.0}
@@ -24,6 +25,15 @@ const ROLE_PAYOUT := {
 	"MISS": 0,
 	"BIG": 0,
 	"REG": 0,
+}
+const SYMBOL_FILES := {
+	"7R": "7R.webp",
+	"7W": "7W.webp",
+	"BAR": "BAR.webp",
+	"BELL": "BELL.webp",
+	"CHERRY": "CHERRY.webp",
+	"GRAPE": "GRAPE.webp",
+	"REPLAY": "REPLAY.webp",
 }
 
 const REEL_STRIPS := [
@@ -76,9 +86,13 @@ var bonus_type: String = ""
 var bonus_games_total: int = 0
 var bonus_games_played: int = 0
 var bonus_gross_paid: int = 0
+var symbol_textures: Dictionary = {}
+var reel_images: Array = []
 
 func _ready() -> void:
 	randomize()
+	_build_reel_image_layers()
+	_load_symbol_art()
 	start_button.pressed.connect(_on_start_pressed)
 	bet_button.pressed.connect(_on_bet_pressed)
 	max_bet_button.pressed.connect(_on_max_bet_pressed)
@@ -87,6 +101,40 @@ func _ready() -> void:
 		stop_buttons[i].disabled = true
 	_update_all_reels()
 	_refresh_ui()
+
+func _build_reel_image_layers() -> void:
+	reel_images.clear()
+	for reel in reel_rows:
+		var image_row: Array[TextureRect] = []
+		for label in reel:
+			var image_rect := TextureRect.new()
+			image_rect.name = "SymbolArt"
+			image_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			image_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			image_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			label.add_child(image_rect)
+			image_row.append(image_rect)
+		reel_images.append(image_row)
+
+func _load_symbol_art() -> void:
+	for symbol in SYMBOL_FILES.keys():
+		var request := HTTPRequest.new()
+		request.name = "SymbolRequest_%s" % symbol
+		add_child(request)
+		request.request_completed.connect(_on_symbol_request_completed.bind(str(symbol), request))
+		var error := request.request(SYMBOL_ASSET_BASE + str(SYMBOL_FILES[symbol]))
+		if error != OK:
+			request.queue_free()
+
+func _on_symbol_request_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray, symbol: String, request: HTTPRequest) -> void:
+	if result == HTTPRequest.RESULT_SUCCESS and response_code >= 200 and response_code < 300:
+		var image := Image.new()
+		var image_error := image.load_webp_from_buffer(body)
+		if image_error == OK:
+			symbol_textures[symbol] = ImageTexture.create_from_image(image)
+			_update_all_reels()
+	request.queue_free()
 
 func _process(delta: float) -> void:
 	for i in spinning.size():
@@ -343,7 +391,18 @@ func _update_reel(reel: int) -> void:
 	var middle: int = reel_index[reel]
 	var top: int = posmod(middle - 1, strip.size())
 	var bottom: int = posmod(middle + 1, strip.size())
+	_set_reel_cell(reel, 0, str(strip[top]))
+	_set_reel_cell(reel, 1, str(strip[middle]))
+	_set_reel_cell(reel, 2, str(strip[bottom]))
 
-	reel_rows[reel][0].text = str(strip[top])
-	reel_rows[reel][1].text = str(strip[middle])
-	reel_rows[reel][2].text = str(strip[bottom])
+func _set_reel_cell(reel: int, row: int, symbol: String) -> void:
+	var label: Label = reel_rows[reel][row]
+	var image_rect: TextureRect = reel_images[reel][row]
+	if symbol_textures.has(symbol):
+		label.text = ""
+		image_rect.texture = symbol_textures[symbol]
+		image_rect.visible = true
+	else:
+		image_rect.texture = null
+		image_rect.visible = false
+		label.text = symbol

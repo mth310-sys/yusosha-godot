@@ -1,0 +1,13 @@
+# Godot 4+
+.godot/
+/android/
+
+# Exported builds
+build/
+exports/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

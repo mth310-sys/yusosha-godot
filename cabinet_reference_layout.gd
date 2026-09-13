@@ -65,7 +65,9 @@ func _apply_reference_layout() -> void:
 
 	_install_lower_pattern(scene)
 	_install_side_bevels(scene)
+	_install_inner_chrome_rails(scene)
 	_install_control_trim(scene)
+	_install_lower_panel_facets(scene)
 	_install_lower_vent(scene)
 	_install_top_speaker_accents(scene)
 
@@ -109,13 +111,43 @@ func _install_side_bevels(scene: Node) -> void:
 	right.z_index = 1
 	scene.add_child(right)
 
+func _install_inner_chrome_rails(scene: Node) -> void:
+	if scene.has_node("ReferenceInnerRailLeft"):
+		return
+	for side in [-1, 1]:
+		var x: float = 337.0 if side < 0 else 943.0
+		var shadow := Line2D.new()
+		shadow.name = "ReferenceInnerRailLeftShadow" if side < 0 else "ReferenceInnerRailRightShadow"
+		shadow.width = 9.0
+		shadow.default_color = Color(0.02, 0.025, 0.035, 0.95)
+		shadow.points = PackedVector2Array([Vector2(x, 175.0), Vector2(x, 802.0)])
+		shadow.z_index = 1
+		scene.add_child(shadow)
+		var highlight := Line2D.new()
+		highlight.name = "ReferenceInnerRailLeft" if side < 0 else "ReferenceInnerRailRight"
+		highlight.width = 3.0
+		highlight.default_color = Color(0.86, 0.88, 0.92, 0.92)
+		highlight.points = PackedVector2Array([Vector2(x + float(side) * 3.0, 178.0), Vector2(x + float(side) * 3.0, 800.0)])
+		highlight.z_index = 2
+		scene.add_child(highlight)
+
 func _install_control_trim(scene: Node) -> void:
 	if scene.has_node("ReferenceControlTrim"):
 		return
+	var shadow := Line2D.new()
+	shadow.name = "ReferenceControlTrimShadow"
+	shadow.width = 10.0
+	shadow.default_color = Color(0.02, 0.025, 0.035, 0.95)
+	shadow.points = PackedVector2Array([
+		Vector2(350, 518), Vector2(930, 518), Vector2(930, 712),
+		Vector2(350, 712), Vector2(350, 518)
+	])
+	shadow.z_index = 1
+	scene.add_child(shadow)
 	var trim := Line2D.new()
 	trim.name = "ReferenceControlTrim"
 	trim.width = 4.0
-	trim.default_color = Color(0.72, 0.75, 0.80, 0.88)
+	trim.default_color = Color(0.78, 0.81, 0.86, 0.95)
 	trim.points = PackedVector2Array([
 		Vector2(354, 523), Vector2(926, 523), Vector2(926, 706),
 		Vector2(354, 706), Vector2(354, 523)
@@ -123,24 +155,63 @@ func _install_control_trim(scene: Node) -> void:
 	trim.z_index = 2
 	scene.add_child(trim)
 
+func _install_lower_panel_facets(scene: Node) -> void:
+	if scene.has_node("ReferenceLowerFacetTop"):
+		return
+	var top_facet := Polygon2D.new()
+	top_facet.name = "ReferenceLowerFacetTop"
+	top_facet.polygon = PackedVector2Array([
+		Vector2(357, 716), Vector2(923, 716), Vector2(902, 735), Vector2(378, 735)
+	])
+	top_facet.color = Color(0.58, 0.61, 0.66, 0.92)
+	top_facet.z_index = 2
+	scene.add_child(top_facet)
+	var top_shadow := Line2D.new()
+	top_shadow.name = "ReferenceLowerFacetTopShadow"
+	top_shadow.width = 3.0
+	top_shadow.default_color = Color(0.04, 0.045, 0.055, 1.0)
+	top_shadow.points = PackedVector2Array([Vector2(378, 736), Vector2(902, 736)])
+	top_shadow.z_index = 3
+	scene.add_child(top_shadow)
+	var bottom_facet := Polygon2D.new()
+	bottom_facet.name = "ReferenceLowerFacetBottom"
+	bottom_facet.polygon = PackedVector2Array([
+		Vector2(378, 846), Vector2(902, 846), Vector2(922, 861), Vector2(358, 861)
+	])
+	bottom_facet.color = Color(0.48, 0.51, 0.56, 0.90)
+	bottom_facet.z_index = 2
+	scene.add_child(bottom_facet)
+
 func _install_lower_vent(scene: Node) -> void:
 	if scene.has_node("ReferenceLowerVent"):
 		return
 	var vent := Control.new()
 	vent.name = "ReferenceLowerVent"
-	vent.position = Vector2(374, 820)
-	vent.size = Vector2(532, 26)
+	vent.position = Vector2(374, 826)
+	vent.size = Vector2(532, 25)
 	vent.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vent.z_index = 3
+	vent.z_index = 4
 	scene.add_child(vent)
-	for i in range(20):
-		var bar := ColorRect.new()
-		bar.position = Vector2(float(i) * 26.0, 5.0)
-		bar.size = Vector2(16.0, 15.0)
-		bar.color = Color(0.15, 0.16, 0.18, 0.96)
-		bar.rotation = -0.45
-		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		vent.add_child(bar)
+
+	var backing := ColorRect.new()
+	backing.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	backing.color = Color(0.015, 0.018, 0.023, 0.98)
+	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vent.add_child(backing)
+
+	for i in range(33):
+		var groove := ColorRect.new()
+		groove.position = Vector2(5.0 + float(i) * 16.0, 4.0)
+		groove.size = Vector2(5.0, 17.0)
+		groove.color = Color(0.18, 0.19, 0.21, 0.98)
+		groove.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vent.add_child(groove)
+		var shine := ColorRect.new()
+		shine.position = Vector2(7.0 + float(i) * 16.0, 4.0)
+		shine.size = Vector2(1.0, 17.0)
+		shine.color = Color(0.45, 0.47, 0.50, 0.42)
+		shine.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vent.add_child(shine)
 
 func _install_top_speaker_accents(scene: Node) -> void:
 	if scene.has_node("ReferenceTopSpeakerLeft"):
@@ -148,21 +219,21 @@ func _install_top_speaker_accents(scene: Node) -> void:
 	for side in [-1, 1]:
 		var speaker := Polygon2D.new()
 		speaker.name = "ReferenceTopSpeakerLeft" if side < 0 else "ReferenceTopSpeakerRight"
-		var cx := 394.0 if side < 0 else 886.0
+		var cx := 382.0 if side < 0 else 898.0
 		speaker.polygon = PackedVector2Array([
-			Vector2(cx - 43.0, 87.0), Vector2(cx + 43.0, 87.0),
-			Vector2(cx + 30.0, 145.0), Vector2(cx - 30.0, 145.0)
+			Vector2(cx - 37.0, 90.0), Vector2(cx + 37.0, 90.0),
+			Vector2(cx + 27.0, 143.0), Vector2(cx - 27.0, 143.0)
 		])
-		speaker.color = Color(0.18, 0.19, 0.22, 0.95)
+		speaker.color = Color(0.16, 0.17, 0.20, 0.96)
 		speaker.z_index = 3
 		scene.add_child(speaker)
 		for j in range(5):
 			var slit := Line2D.new()
 			slit.width = 3.0
-			slit.default_color = Color(0.03, 0.03, 0.04, 1.0)
+			slit.default_color = Color(0.025, 0.025, 0.035, 1.0)
 			slit.points = PackedVector2Array([
-				Vector2(cx - 28.0 + float(j) * 12.0, 101.0),
-				Vector2(cx - 38.0 + float(j) * 12.0, 132.0)
+				Vector2(cx - 25.0 + float(j) * 11.0, 103.0),
+				Vector2(cx - 34.0 + float(j) * 11.0, 132.0)
 			])
 			slit.z_index = 4
 			scene.add_child(slit)

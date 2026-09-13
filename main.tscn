@@ -1,6 +1,82 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="CabinetBody"]
+bg_color = Color(0.045, 0.05, 0.058, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.62, 0.64, 0.67, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0, 0, 0.72)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="CabinetPanel"]
+bg_color = Color(0.018, 0.02, 0.024, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.31, 0.33, 0.36, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="InfoPanel"]
+bg_color = Color(0.012, 0.013, 0.015, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.37, 0.39, 0.42, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="DarkButton"]
+bg_color = Color(0.09, 0.1, 0.115, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.44, 0.47, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="DarkButtonPressed"]
+bg_color = Color(0.16, 0.17, 0.19, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.82, 0.7, 0.18, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StopButton"]
+bg_color = Color(0.48, 0.015, 0.025, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.86, 0.12, 0.15, 1)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0, 0, 0, 0.7)
+shadow_size = 5
 
 [node name="ZelvoltT1" type="Control"]
 layout_mode = 3
@@ -18,7 +94,151 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.025, 0.027, 0.032, 1)
+color = Color(0.012, 0.013, 0.016, 1)
+mouse_filter = 2
+
+[node name="CabinetBody" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -430.0
+offset_top = -420.0
+offset_right = 430.0
+offset_bottom = 420.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("CabinetBody")
+mouse_filter = 2
+
+[node name="LeftLED" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -411.0
+offset_top = -330.0
+offset_right = -399.0
+offset_bottom = 330.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.78, 0.62, 0.04, 0.82)
+mouse_filter = 2
+
+[node name="RightLED" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 399.0
+offset_top = -330.0
+offset_right = 411.0
+offset_bottom = 330.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.78, 0.62, 0.04, 0.82)
+mouse_filter = 2
+
+[node name="TopLED" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -245.0
+offset_top = -395.0
+offset_right = 245.0
+offset_bottom = -384.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.92, 0.74, 0.06, 0.9)
+mouse_filter = 2
+
+[node name="TopPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -360.0
+offset_right = 380.0
+offset_bottom = -245.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("CabinetPanel")
+mouse_filter = 2
+
+[node name="CenterPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -382.0
+offset_top = -215.0
+offset_right = 382.0
+offset_bottom = 105.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("CabinetPanel")
+mouse_filter = 2
+
+[node name="InfoBack" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -170.0
+offset_right = 300.0
+offset_bottom = -105.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("InfoPanel")
+mouse_filter = 2
+
+[node name="PlayPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -382.0
+offset_top = 125.0
+offset_right = 382.0
+offset_bottom = 355.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("CabinetPanel")
+mouse_filter = 2
+
+[node name="LowerVent" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -275.0
+offset_top = 377.0
+offset_right = 275.0
+offset_bottom = 391.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.085, 0.095, 1)
 mouse_filter = 2
 
 [node name="Center" type="CenterContainer" parent="."]
@@ -46,7 +266,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.75, 0.82, 1)
 theme_override_font_sizes/font_size = 14
-text = "GODOT MIGRATION / 5-LINE + 4-SYMBOL SLIP CONTROL"
+text = "GODOT MIGRATION / CABINET FOUNDATION"
 horizontal_alignment = 1
 
 [node name="Status" type="Label" parent="Center/VBox"]
@@ -73,7 +293,7 @@ horizontal_alignment = 1
 
 [node name="Value" type="Label" parent="Center/VBox/Info/CreditBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
+theme_override_colors/font_color = Color(1, 0.22, 0.24, 1)
 theme_override_font_sizes/font_size = 27
 text = "50"
 horizontal_alignment = 1
@@ -91,7 +311,7 @@ horizontal_alignment = 1
 
 [node name="Value" type="Label" parent="Center/VBox/Info/BetBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
+theme_override_colors/font_color = Color(1, 0.22, 0.24, 1)
 theme_override_font_sizes/font_size = 27
 text = "0"
 horizontal_alignment = 1
@@ -109,7 +329,7 @@ horizontal_alignment = 1
 
 [node name="Value" type="Label" parent="Center/VBox/Info/PayoutBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
+theme_override_colors/font_color = Color(1, 0.22, 0.24, 1)
 theme_override_font_sizes/font_size = 27
 text = "0"
 horizontal_alignment = 1
@@ -238,12 +458,20 @@ alignment = 1
 [node name="BetButton" type="Button" parent="Center/VBox/BetControls"]
 custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.92, 0.94, 1)
 theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("DarkButton")
+theme_override_styles/hover = SubResource("DarkButtonPressed")
+theme_override_styles/pressed = SubResource("DarkButtonPressed")
 text = "BET +1"
 [node name="MaxBetButton" type="Button" parent="Center/VBox/BetControls"]
 custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.92, 0.94, 1)
 theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("DarkButton")
+theme_override_styles/hover = SubResource("DarkButtonPressed")
+theme_override_styles/pressed = SubResource("DarkButtonPressed")
 text = "MAX BET"
 
 [node name="Stops" type="HBoxContainer" parent="Center/VBox"]
@@ -254,20 +482,33 @@ alignment = 1
 custom_minimum_size = Vector2(240, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StopButton")
+theme_override_styles/hover = SubResource("StopButton")
+theme_override_styles/pressed = SubResource("StopButton")
 text = "STOP 1"
 [node name="Stop2" type="Button" parent="Center/VBox/Stops"]
 custom_minimum_size = Vector2(240, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StopButton")
+theme_override_styles/hover = SubResource("StopButton")
+theme_override_styles/pressed = SubResource("StopButton")
 text = "STOP 2"
 [node name="Stop3" type="Button" parent="Center/VBox/Stops"]
 custom_minimum_size = Vector2(240, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StopButton")
+theme_override_styles/hover = SubResource("StopButton")
+theme_override_styles/pressed = SubResource("StopButton")
 text = "STOP 3"
 
 [node name="StartButton" type="Button" parent="Center/VBox"]
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.3, 0.3, 1)
 theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("DarkButton")
+theme_override_styles/hover = SubResource("DarkButtonPressed")
+theme_override_styles/pressed = SubResource("DarkButtonPressed")
 text = "START"

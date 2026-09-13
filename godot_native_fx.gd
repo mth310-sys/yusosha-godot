@@ -31,7 +31,6 @@ func _apply_led_shader(item: CanvasItem, phase: float) -> void:
 shader_type canvas_item;
 render_mode unshaded;
 uniform float phase = 0.0;
-
 void fragment() {
 	vec4 base = COLOR;
 	float slow = 0.82 + 0.18 * sin(TIME * 2.6 + phase);
@@ -54,7 +53,6 @@ func _apply_lower_glow_shader(item: CanvasItem) -> void:
 	shader.code = """
 shader_type canvas_item;
 render_mode unshaded;
-
 void fragment() {
 	vec4 base = COLOR;
 	float wave = 0.88 + 0.12 * sin(TIME * 1.7);
@@ -69,28 +67,28 @@ void fragment() {
 func _install_metal_sheen(scene: Node) -> void:
 	if scene.has_node("GodotMetalSheenLeft"):
 		return
+	# Keep sheen entirely inside the slim chrome faces so it cannot overlap the cabinet body.
 	for side in [-1, 1]:
 		var strip := ColorRect.new()
 		strip.name = "GodotMetalSheenLeft" if side < 0 else "GodotMetalSheenRight"
-		strip.position = Vector2(348.0 if side < 0 else 898.0, 42.0)
-		strip.size = Vector2(34.0, 970.0)
+		strip.position = Vector2(354.0 if side < 0 else 910.0, 66.0)
+		strip.size = Vector2(12.0, 928.0)
 		strip.color = Color(1, 1, 1, 1)
 		strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		strip.z_index = 29
+		strip.z_index = 31
 		var shader := Shader.new()
 		shader.code = """
 shader_type canvas_item;
 render_mode unshaded, blend_add;
 uniform float phase = 0.0;
-
 void fragment() {
 	float sweep = fract(TIME * 0.075 + phase);
 	float d = abs(UV.y - sweep);
 	d = min(d, 1.0 - d);
-	float beam = smoothstep(0.10, 0.0, d);
-	float ridge = smoothstep(0.50, 0.18, abs(UV.x - 0.50));
-	float alpha = beam * ridge * 0.17;
-	COLOR = vec4(vec3(0.80, 0.88, 1.0) * alpha, alpha);
+	float beam = smoothstep(0.075, 0.0, d);
+	float ridge = smoothstep(0.50, 0.10, abs(UV.x - 0.50));
+	float alpha = beam * ridge * 0.12;
+	COLOR = vec4(vec3(0.82, 0.89, 1.0) * alpha, alpha);
 }
 """
 		var mat := ShaderMaterial.new()
@@ -113,7 +111,6 @@ func _install_top_panel_light(scene: Node) -> void:
 	shader.code = """
 shader_type canvas_item;
 render_mode unshaded, blend_add;
-
 void fragment() {
 	vec2 p = UV;
 	float edge_x = smoothstep(0.18, 0.0, min(p.x, 1.0 - p.x));

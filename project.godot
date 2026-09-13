@@ -20,7 +20,6 @@ TopPanelLogo="*res://top_panel_logo.gd"
 CabinetReferenceLayout="*res://cabinet_reference_layout.gd"
 CabinetPositionFix="*res://cabinet_position_fix.gd"
 CabinetFrameDetail="*res://cabinet_frame_detail.gd"
-GodotNativeFx="*res://godot_native_fx.gd"
 
 [display]
 

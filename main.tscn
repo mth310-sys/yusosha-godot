@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://main.gd" id="1_script"]
 
-[node name="SlotT1" type="Control"]
+[node name="ZelvoltT1" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -18,7 +18,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.055, 0.06, 0.075, 1)
+color = Color(0.025, 0.027, 0.032, 1)
 mouse_filter = 2
 
 [node name="Center" type="CenterContainer" parent="."]
@@ -31,77 +31,175 @@ grow_vertical = 2
 
 [node name="VBox" type="VBoxContainer" parent="Center"]
 layout_mode = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 18
 
 [node name="Title" type="Label" parent="Center/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 36
-text = "YUSOSHA SLOT T1"
+theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 40
+text = "ZELVOLT"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.75, 0.82, 1)
+theme_override_font_sizes/font_size = 16
+text = "GODOT MIGRATION / 3-ROW PHYSICAL REEL FOUNDATION"
 horizontal_alignment = 1
 
 [node name="Status" type="Label" parent="Center/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "READY"
+text = "PRESS START"
 horizontal_alignment = 1
 
 [node name="Reels" type="HBoxContainer" parent="Center/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 alignment = 1
 
-[node name="Reel1" type="Label" parent="Center/VBox/Reels"]
-custom_minimum_size = Vector2(240, 180)
+[node name="Reel1" type="VBoxContainer" parent="Center/VBox/Reels"]
+custom_minimum_size = Vector2(250, 240)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.2, 1)
+theme_override_constants/separation = 2
+
+[node name="Top" type="Label" parent="Center/VBox/Reels/Reel1"]
+custom_minimum_size = Vector2(250, 78)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 48
-text = "7"
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 32
+text = "BELL"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Reel2" type="Label" parent="Center/VBox/Reels"]
-custom_minimum_size = Vector2(240, 180)
+[node name="Middle" type="Label" parent="Center/VBox/Reels/Reel1"]
+custom_minimum_size = Vector2(250, 82)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.2, 1)
+theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 48
+theme_override_constants/outline_size = 7
+theme_override_font_sizes/font_size = 36
+text = "7R"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bottom" type="Label" parent="Center/VBox/Reels/Reel1"]
+custom_minimum_size = Vector2(250, 78)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 32
+text = "GRAPE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Reel2" type="VBoxContainer" parent="Center/VBox/Reels"]
+custom_minimum_size = Vector2(250, 240)
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Top" type="Label" parent="Center/VBox/Reels/Reel2"]
+custom_minimum_size = Vector2(250, 78)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 32
+text = "GRAPE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Middle" type="Label" parent="Center/VBox/Reels/Reel2"]
+custom_minimum_size = Vector2(250, 82)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 7
+theme_override_font_sizes/font_size = 36
+text = "BELL"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bottom" type="Label" parent="Center/VBox/Reels/Reel2"]
+custom_minimum_size = Vector2(250, 78)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 32
+text = "BAR"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Reel3" type="VBoxContainer" parent="Center/VBox/Reels"]
+custom_minimum_size = Vector2(250, 240)
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Top" type="Label" parent="Center/VBox/Reels/Reel3"]
+custom_minimum_size = Vector2(250, 78)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 32
 text = "CHERRY"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Reel3" type="Label" parent="Center/VBox/Reels"]
-custom_minimum_size = Vector2(240, 180)
+[node name="Middle" type="Label" parent="Center/VBox/Reels/Reel3"]
+custom_minimum_size = Vector2(250, 82)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.2, 1)
+theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 48
-text = "REPLAY"
+theme_override_constants/outline_size = 7
+theme_override_font_sizes/font_size = 36
+text = "BAR"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="Bottom" type="Label" parent="Center/VBox/Reels/Reel3"]
+custom_minimum_size = Vector2(250, 78)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 32
+text = "BELL"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Payline" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.65, 0.12, 1)
+theme_override_font_sizes/font_size = 16
+text = "────────────  MIDDLE PAYLINE  ────────────"
+horizontal_alignment = 1
+
 [node name="Stops" type="HBoxContainer" parent="Center/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="Stop1" type="Button" parent="Center/VBox/Stops"]
-custom_minimum_size = Vector2(240, 64)
+custom_minimum_size = Vector2(250, 64)
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "STOP 1"
 
 [node name="Stop2" type="Button" parent="Center/VBox/Stops"]
-custom_minimum_size = Vector2(240, 64)
+custom_minimum_size = Vector2(250, 64)
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "STOP 2"
 
 [node name="Stop3" type="Button" parent="Center/VBox/Stops"]
-custom_minimum_size = Vector2(240, 64)
+custom_minimum_size = Vector2(250, 64)
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "STOP 3"

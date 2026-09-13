@@ -64,6 +64,10 @@ const REEL_STRIPS := [
 @onready var bet_label: Label = $Center/VBox/Info/BetBox/Value
 @onready var payout_label: Label = $Center/VBox/Info/PayoutBox/Value
 @onready var payline_label: Label = $Center/VBox/Payline
+@onready var left_led: ColorRect = $LeftLED
+@onready var right_led: ColorRect = $RightLED
+@onready var top_led: ColorRect = $TopLED
+@onready var lower_glow: ColorRect = $LowerGlow
 
 var spinning: Array[bool] = [false, false, false]
 var reel_index: Array[int] = [0, 1, 3]
@@ -82,6 +86,8 @@ var bonus_gross_paid: int = 0
 var active_payline_index: int = 1
 var symbol_textures: Dictionary = {}
 var reel_images: Array = []
+var cabinet_time: float = 0.0
+var result_flash: float = 0.0
 
 func _ready() -> void:
 	randomize()
@@ -96,6 +102,7 @@ func _ready() -> void:
 	_update_all_reels()
 	_refresh_payline_label()
 	_refresh_ui()
+	_update_cabinet_lighting()
 
 func _build_reel_image_layers() -> void:
 	reel_images.clear()
@@ -132,6 +139,9 @@ func _on_symbol_request_completed(result: int, response_code: int, _headers: Pac
 	request.queue_free()
 
 func _process(delta: float) -> void:
+	cabinet_time += delta
+	result_flash = maxf(0.0, result_flash - delta)
+	_update_cabinet_lighting()
 	for i in spinning.size():
 		if not spinning[i]:
 			continue
@@ -140,6 +150,33 @@ func _process(delta: float) -> void:
 			reel_accum[i] -= SPIN_INTERVAL
 			reel_index[i] = (reel_index[i] + 1) % REEL_STRIPS[i].size()
 			_update_reel(i)
+
+func _update_cabinet_lighting() -> void:
+	var pulse: float = 0.5 + 0.5 * sin(cabinet_time * 6.0)
+	if bonus_type == "BIG":
+		var alpha_big: float = 0.62 + pulse * 0.38
+		left_led.color = Color(1.0, 0.72, 0.03, alpha_big)
+		right_led.color = Color(1.0, 0.72, 0.03, alpha_big)
+		top_led.color = Color(1.0, 0.88, 0.18, 0.78 + pulse * 0.22)
+		lower_glow.color = Color(1.0, 0.34, 0.02, 0.30 + pulse * 0.28)
+	elif bonus_type == "REG":
+		var alpha_reg: float = 0.48 + pulse * 0.34
+		left_led.color = Color(1.0, 0.10, 0.04, alpha_reg)
+		right_led.color = Color(1.0, 0.10, 0.04, alpha_reg)
+		top_led.color = Color(1.0, 0.22, 0.05, 0.62 + pulse * 0.28)
+		lower_glow.color = Color(0.82, 0.03, 0.03, 0.24 + pulse * 0.24)
+	elif result_flash > 0.0:
+		var flash_alpha: float = 0.45 + minf(1.0, result_flash * 2.0) * 0.55
+		left_led.color = Color(1.0, 0.92, 0.36, flash_alpha)
+		right_led.color = Color(1.0, 0.92, 0.36, flash_alpha)
+		top_led.color = Color(1.0, 1.0, 0.76, flash_alpha)
+		lower_glow.color = Color(1.0, 0.55, 0.04, flash_alpha * 0.42)
+	else:
+		var idle_alpha: float = 0.36 + pulse * 0.10
+		left_led.color = Color(1.0, 0.62, 0.02, idle_alpha)
+		right_led.color = Color(1.0, 0.62, 0.02, idle_alpha)
+		top_led.color = Color(1.0, 0.72, 0.03, 0.72)
+		lower_glow.color = Color(1.0, 0.38, 0.02, 0.16)
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
@@ -316,6 +353,7 @@ func _resolve_result() -> void:
 	result_type = landed
 	if landed == "REPLAY":
 		bet = MAX_BET
+		result_flash = 0.45
 		status_label.text = "REPLAY / %s LINE / SLIP %d-%d-%d" % [_active_payline_name(), stop_slips[0], stop_slips[1], stop_slips[2]]
 	elif landed == "BIG":
 		bet = 0
@@ -330,6 +368,7 @@ func _resolve_result() -> void:
 		if landed == "MISS":
 			status_label.text = "MISS / %s LINE / SLIP %d-%d-%d" % [_active_payline_name(), stop_slips[0], stop_slips[1], stop_slips[2]]
 		else:
+			result_flash = 0.65
 			status_label.text = "%s +%d / %s LINE / SLIP %d-%d-%d" % [landed, payout, _active_payline_name(), stop_slips[0], stop_slips[1], stop_slips[2]]
 	_refresh_counters()
 	_refresh_controls()
@@ -340,6 +379,7 @@ func _begin_bonus(kind: String) -> void:
 	bonus_gross_paid = 0
 	bonus_games_total = BIG_GAMES if kind == "BIG" else REG_GAMES
 	payout = 0
+	result_flash = 1.0
 	status_label.text = "%s BONUS START - PRESS START" % bonus_type
 	_refresh_counters()
 	_refresh_controls()
@@ -370,6 +410,7 @@ func _finish_bonus() -> void:
 	bonus_games_played = 0
 	bonus_gross_paid = 0
 	bet = 0
+	result_flash = 1.0
 	status_label.text = "%s END NET +%d - BET 3 TO START" % [finished_type, net_total]
 	_refresh_counters()
 	_refresh_controls()

@@ -97,7 +97,6 @@ func _install_side_bevels(scene: Node) -> void:
 	left.polygon = PackedVector2Array([Vector2(308, 240), Vector2(326, 222), Vector2(326, 695), Vector2(308, 672)])
 	left.color = Color(0.76, 0.79, 0.84, 0.72)
 	left.z_index = 1
-	left.mouse_filter = Control.MOUSE_FILTER_IGNORE if left is Control else 0
 	scene.add_child(left)
 	var right := Polygon2D.new()
 	right.name = "ReferenceRightBevel"

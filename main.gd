@@ -3,6 +3,10 @@ extends Control
 const SPIN_INTERVAL := 0.065
 const MAX_BET := 3
 const SETTING := 1
+const BIG_GAMES := 55
+const REG_GAMES := 14
+const BIG_GROSS_PAYOUT := 765
+const REG_GROSS_PAYOUT := 162
 
 const BIG_ODDS := {1: 330.0, 2: 310.0, 3: 290.0, 4: 270.0, 5: 250.0, 6: 210.0}
 const REG_ODDS := {1: 470.0, 2: 430.0, 3: 390.0, 4: 350.0, 5: 310.0, 6: 270.0}
@@ -67,8 +71,11 @@ var bet: int = 0
 var payout: int = 0
 var result_type: String = "MISS"
 var target_symbol: String = ""
-var replay_pending: bool = false
 var total_games: int = 0
+var bonus_type: String = ""
+var bonus_games_total: int = 0
+var bonus_games_played: int = 0
+var bonus_gross_paid: int = 0
 
 func _ready() -> void:
 	randomize()
@@ -112,7 +119,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			_on_stop_pressed(2)
 
 func _on_bet_pressed() -> void:
-	if spinning.has(true):
+	if spinning.has(true) or _in_bonus():
 		return
 	if bet >= MAX_BET or credit <= 0:
 		return
@@ -122,7 +129,7 @@ func _on_bet_pressed() -> void:
 	_refresh_ui()
 
 func _on_max_bet_pressed() -> void:
-	if spinning.has(true):
+	if spinning.has(true) or _in_bonus():
 		return
 	while bet < MAX_BET and credit > 0:
 		credit -= 1
@@ -133,20 +140,39 @@ func _on_max_bet_pressed() -> void:
 func _on_start_pressed() -> void:
 	if spinning.has(true):
 		return
+
+	if _in_bonus():
+		_start_bonus_spin()
+		return
+
 	if bet != MAX_BET:
 		status_label.text = "BET 3 TO START"
 		return
 
 	_choose_result()
-	for i in spinning.size():
-		spinning[i] = true
-		reel_accum[i] = 0.0
-		stop_buttons[i].disabled = false
-
+	_start_reels()
 	payout = 0
 	status_label.text = "SPINNING - STOP 1 / 2 / 3"
 	_refresh_controls()
 	_refresh_counters()
+
+func _start_bonus_spin() -> void:
+	if bonus_games_played >= bonus_games_total:
+		_finish_bonus()
+		return
+	result_type = "BONUS"
+	target_symbol = "BELL"
+	_start_reels()
+	payout = 0
+	status_label.text = "%s %d/%d - STOP 1 / 2 / 3" % [bonus_type, bonus_games_played + 1, bonus_games_total]
+	_refresh_controls()
+	_refresh_counters()
+
+func _start_reels() -> void:
+	for i in spinning.size():
+		spinning[i] = true
+		reel_accum[i] = 0.0
+		stop_buttons[i].disabled = false
 
 func _on_stop_pressed(index: int) -> void:
 	if index < 0 or index >= spinning.size():
@@ -156,13 +182,20 @@ func _on_stop_pressed(index: int) -> void:
 
 	spinning[index] = false
 	stop_buttons[index].disabled = true
-	_apply_result_stop(index)
+
+	if _in_bonus():
+		_set_reel_middle_to_symbol(index, "BELL")
+	else:
+		_apply_result_stop(index)
 	_update_reel(index)
 
 	if spinning.has(true):
 		status_label.text = "SPINNING - STOP REMAINING REELS"
 	else:
-		_resolve_result()
+		if _in_bonus():
+			_resolve_bonus_spin()
+		else:
+			_resolve_result()
 
 func _choose_result() -> void:
 	var roll: float = randf()
@@ -209,33 +242,78 @@ func _resolve_result() -> void:
 	credit += payout
 
 	if result_type == "REPLAY":
-		replay_pending = true
 		bet = MAX_BET
+		status_label.text = "REPLAY - PRESS START"
 	elif result_type == "BIG":
 		bet = 0
-		status_label.text = "BIG HIT - BONUS PORT NEXT"
+		_begin_bonus("BIG")
+		return
 	elif result_type == "REG":
 		bet = 0
-		status_label.text = "REG HIT - BONUS PORT NEXT"
+		_begin_bonus("REG")
+		return
 	else:
 		bet = 0
-
-	if result_type not in ["BIG", "REG"]:
 		if result_type == "MISS":
 			status_label.text = "MISS - BET 3 TO START"
-		elif result_type == "REPLAY":
-			status_label.text = "REPLAY - PRESS START"
 		else:
 			status_label.text = "%s +%d - BET 3 TO START" % [result_type, payout]
 
 	_refresh_counters()
 	_refresh_controls()
 
+func _begin_bonus(kind: String) -> void:
+	bonus_type = kind
+	bonus_games_played = 0
+	bonus_gross_paid = 0
+	bonus_games_total = BIG_GAMES if kind == "BIG" else REG_GAMES
+	payout = 0
+	status_label.text = "%s BONUS START - PRESS START" % bonus_type
+	_refresh_counters()
+	_refresh_controls()
+
+func _resolve_bonus_spin() -> void:
+	var total_gross: int = BIG_GROSS_PAYOUT if bonus_type == "BIG" else REG_GROSS_PAYOUT
+	var remaining_games: int = bonus_games_total - bonus_games_played
+	var remaining_gross: int = total_gross - bonus_gross_paid
+	var gross_this_game: int = int(ceil(float(remaining_gross) / float(remaining_games)))
+	var net_this_game: int = gross_this_game - MAX_BET
+
+	payout = gross_this_game
+	credit += net_this_game
+	bonus_gross_paid += gross_this_game
+	bonus_games_played += 1
+	total_games += 1
+
+	if bonus_games_played >= bonus_games_total:
+		_finish_bonus()
+	else:
+		status_label.text = "%s %d/%d  PAY %d  NET +%d - PRESS START" % [bonus_type, bonus_games_played, bonus_games_total, gross_this_game, net_this_game]
+		_refresh_counters()
+		_refresh_controls()
+
+func _finish_bonus() -> void:
+	var finished_type: String = bonus_type
+	var net_total: int = 600 if finished_type == "BIG" else 120
+	bonus_type = ""
+	bonus_games_total = 0
+	bonus_games_played = 0
+	bonus_gross_paid = 0
+	bet = 0
+	status_label.text = "%s END  NET +%d - BET 3 TO START" % [finished_type, net_total]
+	_refresh_counters()
+	_refresh_controls()
+
+func _in_bonus() -> bool:
+	return bonus_type != ""
+
 func _refresh_ui() -> void:
 	_refresh_counters()
 	_refresh_controls()
 	if not spinning.has(true):
-		if bet == MAX_BET:
+		if _in_bonus():
+			status_label.text = "%s BONUS - PRESS START" % bonus_type
+		elif bet == MAX_BET:
 			status_label.text = "READY - PRESS START"
 		elif credit <= 0 and bet < MAX_BET:
 			status_label.text = "NO CREDIT"
@@ -249,9 +327,9 @@ func _refresh_counters() -> void:
 
 func _refresh_controls() -> void:
 	var active_spin: bool = spinning.has(true)
-	start_button.disabled = active_spin or bet != MAX_BET
-	bet_button.disabled = active_spin or bet >= MAX_BET or credit <= 0
-	max_bet_button.disabled = active_spin or bet >= MAX_BET or credit <= 0
+	start_button.disabled = active_spin or (not _in_bonus() and bet != MAX_BET)
+	bet_button.disabled = active_spin or _in_bonus() or bet >= MAX_BET or credit <= 0
+	max_bet_button.disabled = active_spin or _in_bonus() or bet >= MAX_BET or credit <= 0
 	if not active_spin:
 		for button in stop_buttons:
 			button.disabled = true

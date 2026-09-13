@@ -2,6 +2,25 @@ extends Control
 
 const SPIN_INTERVAL := 0.065
 const MAX_BET := 3
+const SETTING := 1
+
+const BIG_ODDS := {1: 330.0, 2: 310.0, 3: 290.0, 4: 270.0, 5: 250.0, 6: 210.0}
+const REG_ODDS := {1: 470.0, 2: 430.0, 3: 390.0, 4: 350.0, 5: 310.0, 6: 270.0}
+const ROLE_ODDS := {
+	"REPLAY": 7.3,
+	"BELL": 60.0,
+	"GRAPE": 50.0,
+	"CHERRY": 80.0,
+}
+const ROLE_PAYOUT := {
+	"REPLAY": 0,
+	"BELL": 10,
+	"GRAPE": 8,
+	"CHERRY": 2,
+	"MISS": 0,
+	"BIG": 0,
+	"REG": 0,
+}
 
 const REEL_STRIPS := [
 	["7R", "BELL", "GRAPE", "CHERRY", "BELL", "BAR", "GRAPE", "BELL", "REPLAY", "GRAPE", "CHERRY", "BELL", "7W", "GRAPE", "BELL", "CHERRY", "BAR", "GRAPE", "BELL", "REPLAY", "GRAPE"],
@@ -46,8 +65,13 @@ var reel_accum: Array[float] = [0.0, 0.0, 0.0]
 var credit: int = 50
 var bet: int = 0
 var payout: int = 0
+var result_type: String = "MISS"
+var target_symbol: String = ""
+var replay_pending: bool = false
+var total_games: int = 0
 
 func _ready() -> void:
+	randomize()
 	start_button.pressed.connect(_on_start_pressed)
 	bet_button.pressed.connect(_on_bet_pressed)
 	max_bet_button.pressed.connect(_on_max_bet_pressed)
@@ -113,6 +137,7 @@ func _on_start_pressed() -> void:
 		status_label.text = "BET 3 TO START"
 		return
 
+	_choose_result()
 	for i in spinning.size():
 		spinning[i] = true
 		reel_accum[i] = 0.0
@@ -131,14 +156,80 @@ func _on_stop_pressed(index: int) -> void:
 
 	spinning[index] = false
 	stop_buttons[index].disabled = true
+	_apply_result_stop(index)
 	_update_reel(index)
 
 	if spinning.has(true):
 		status_label.text = "SPINNING - STOP REMAINING REELS"
 	else:
+		_resolve_result()
+
+func _choose_result() -> void:
+	var roll: float = randf()
+	var edge: float = 0.0
+
+	edge += 1.0 / BIG_ODDS[SETTING]
+	if roll < edge:
+		result_type = "BIG"
+		target_symbol = "7R" if randf() < 0.8 else "7W"
+		return
+
+	edge += 1.0 / REG_ODDS[SETTING]
+	if roll < edge:
+		result_type = "REG"
+		target_symbol = "BAR"
+		return
+
+	for role in ["REPLAY", "BELL", "GRAPE", "CHERRY"]:
+		edge += 1.0 / float(ROLE_ODDS[role])
+		if roll < edge:
+			result_type = role
+			target_symbol = role
+			return
+
+	result_type = "MISS"
+	target_symbol = ""
+
+func _apply_result_stop(reel: int) -> void:
+	if result_type in ["BIG", "REG", "REPLAY", "BELL", "GRAPE"]:
+		_set_reel_middle_to_symbol(reel, target_symbol)
+	elif result_type == "CHERRY" and reel == 0:
+		_set_reel_middle_to_symbol(reel, "CHERRY")
+
+func _set_reel_middle_to_symbol(reel: int, symbol: String) -> void:
+	var strip: Array = REEL_STRIPS[reel]
+	for i in strip.size():
+		if str(strip[i]) == symbol:
+			reel_index[reel] = i
+			return
+
+func _resolve_result() -> void:
+	total_games += 1
+	payout = int(ROLE_PAYOUT[result_type])
+	credit += payout
+
+	if result_type == "REPLAY":
+		replay_pending = true
+		bet = MAX_BET
+	elif result_type == "BIG":
 		bet = 0
-		status_label.text = "BET 3 TO START"
-		_refresh_ui()
+		status_label.text = "BIG HIT - BONUS PORT NEXT"
+	elif result_type == "REG":
+		bet = 0
+		status_label.text = "REG HIT - BONUS PORT NEXT"
+	else:
+		bet = 0
+
+	if result_type not in ["BIG", "REG"]:
+		if result_type == "MISS":
+			status_label.text = "MISS - BET 3 TO START"
+		elif result_type == "REPLAY":
+			status_label.text = "REPLAY - PRESS START"
+		else:
+			status_label.text = "%s +%d - BET 3 TO START" % [result_type, payout]
+
+	_refresh_counters()
+	_refresh_controls()
 
 func _refresh_ui() -> void:
 	_refresh_counters()
@@ -157,7 +248,7 @@ func _refresh_counters() -> void:
 	payout_label.text = str(payout)
 
 func _refresh_controls() -> void:
-	var active_spin := spinning.has(true)
+	var active_spin: bool = spinning.has(true)
 	start_button.disabled = active_spin or bet != MAX_BET
 	bet_button.disabled = active_spin or bet >= MAX_BET or credit <= 0
 	max_bet_button.disabled = active_spin or bet >= MAX_BET or credit <= 0

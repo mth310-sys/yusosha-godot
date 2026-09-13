@@ -13,6 +13,10 @@ config_version=5
 config/name="Yusosha Godot"
 run/main_scene="res://main.tscn"
 
+[autoload]
+
+TopDisplayFx="*res://top_display_fx.gd"
+
 [display]
 
 [display/window]

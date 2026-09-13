@@ -1,8 +1,0 @@
-/* F5 ダーク・アルカナ アーマーフレーム */
-.f5-frame{box-shadow:inset 0 0 38px rgba(0,0,0,.98),0 0 28px rgba(174,44,255,.28)}
-.f5-shell{filter:drop-shadow(0 4px 6px rgba(0,0,0,.95))}
-.f5-mana{animation:f5-mana 1.9s ease-in-out infinite alternate}
-.f5-crystal{animation:f5-crystal 2.5s ease-in-out infinite alternate}
-@keyframes f5-mana{from{opacity:.48}to{opacity:1}}
-@keyframes f5-crystal{from{opacity:.72}to{opacity:1}}
-@media(prefers-reduced-motion:reduce){.f5-mana,.f5-crystal{animation:none;opacity:.92}}

@@ -31,204 +31,204 @@ grow_vertical = 2
 
 [node name="VBox" type="VBoxContainer" parent="Center"]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 8
 
 [node name="Title" type="Label" parent="Center/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 40
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 34
 text = "ZELVOLT"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="Center/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.75, 0.82, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "GODOT MIGRATION / SETTING LOTTERY FOUNDATION"
 horizontal_alignment = 1
 
 [node name="Status" type="Label" parent="Center/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 20
 text = "BET 3 TO START"
 horizontal_alignment = 1
 
 [node name="Info" type="HBoxContainer" parent="Center/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 70
+theme_override_constants/separation = 60
 alignment = 1
 
 [node name="CreditBox" type="VBoxContainer" parent="Center/VBox/Info"]
-custom_minimum_size = Vector2(130, 62)
+custom_minimum_size = Vector2(130, 52)
 layout_mode = 2
 
 [node name="Label" type="Label" parent="Center/VBox/Info/CreditBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.72, 0.78, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = "CREDIT"
 horizontal_alignment = 1
 
 [node name="Value" type="Label" parent="Center/VBox/Info/CreditBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 27
 text = "50"
 horizontal_alignment = 1
 
 [node name="BetBox" type="VBoxContainer" parent="Center/VBox/Info"]
-custom_minimum_size = Vector2(130, 62)
+custom_minimum_size = Vector2(130, 52)
 layout_mode = 2
 
 [node name="Label" type="Label" parent="Center/VBox/Info/BetBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.72, 0.78, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = "BET"
 horizontal_alignment = 1
 
 [node name="Value" type="Label" parent="Center/VBox/Info/BetBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 27
 text = "0"
 horizontal_alignment = 1
 
 [node name="PayoutBox" type="VBoxContainer" parent="Center/VBox/Info"]
-custom_minimum_size = Vector2(130, 62)
+custom_minimum_size = Vector2(130, 52)
 layout_mode = 2
 
 [node name="Label" type="Label" parent="Center/VBox/Info/PayoutBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.72, 0.78, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = "PAYOUT"
 horizontal_alignment = 1
 
 [node name="Value" type="Label" parent="Center/VBox/Info/PayoutBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 27
 text = "0"
 horizontal_alignment = 1
 
 [node name="Reels" type="HBoxContainer" parent="Center/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="Reel1" type="VBoxContainer" parent="Center/VBox/Reels"]
-custom_minimum_size = Vector2(250, 240)
+custom_minimum_size = Vector2(240, 180)
 layout_mode = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 0
 
 [node name="Top" type="Label" parent="Center/VBox/Reels/Reel1"]
-custom_minimum_size = Vector2(250, 78)
+custom_minimum_size = Vector2(240, 58)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 32
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 29
 text = "BELL"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Middle" type="Label" parent="Center/VBox/Reels/Reel1"]
-custom_minimum_size = Vector2(250, 82)
+custom_minimum_size = Vector2(240, 64)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 7
-theme_override_font_sizes/font_size = 36
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 34
 text = "7R"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Bottom" type="Label" parent="Center/VBox/Reels/Reel1"]
-custom_minimum_size = Vector2(250, 78)
+custom_minimum_size = Vector2(240, 58)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 32
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 29
 text = "GRAPE"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Reel2" type="VBoxContainer" parent="Center/VBox/Reels"]
-custom_minimum_size = Vector2(250, 240)
+custom_minimum_size = Vector2(240, 180)
 layout_mode = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 0
 
 [node name="Top" type="Label" parent="Center/VBox/Reels/Reel2"]
-custom_minimum_size = Vector2(250, 78)
+custom_minimum_size = Vector2(240, 58)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 32
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 29
 text = "GRAPE"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Middle" type="Label" parent="Center/VBox/Reels/Reel2"]
-custom_minimum_size = Vector2(250, 82)
+custom_minimum_size = Vector2(240, 64)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 7
-theme_override_font_sizes/font_size = 36
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 34
 text = "BELL"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Bottom" type="Label" parent="Center/VBox/Reels/Reel2"]
-custom_minimum_size = Vector2(250, 78)
+custom_minimum_size = Vector2(240, 58)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 32
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 29
 text = "BAR"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Reel3" type="VBoxContainer" parent="Center/VBox/Reels"]
-custom_minimum_size = Vector2(250, 240)
+custom_minimum_size = Vector2(240, 180)
 layout_mode = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 0
 
 [node name="Top" type="Label" parent="Center/VBox/Reels/Reel3"]
-custom_minimum_size = Vector2(250, 78)
+custom_minimum_size = Vector2(240, 58)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 32
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 29
 text = "CHERRY"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Middle" type="Label" parent="Center/VBox/Reels/Reel3"]
-custom_minimum_size = Vector2(250, 82)
+custom_minimum_size = Vector2(240, 64)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.12, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 7
-theme_override_font_sizes/font_size = 36
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 34
 text = "BAR"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Bottom" type="Label" parent="Center/VBox/Reels/Reel3"]
-custom_minimum_size = Vector2(250, 78)
+custom_minimum_size = Vector2(240, 58)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.8, 0.84, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 32
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 29
 text = "BELL"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -236,52 +236,52 @@ vertical_alignment = 1
 [node name="Payline" type="Label" parent="Center/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.65, 0.12, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "────────────  MIDDLE PAYLINE  ────────────"
 horizontal_alignment = 1
 
 [node name="BetControls" type="HBoxContainer" parent="Center/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="BetButton" type="Button" parent="Center/VBox/BetControls"]
-custom_minimum_size = Vector2(250, 58)
+custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 20
 text = "BET +1"
 
 [node name="MaxBetButton" type="Button" parent="Center/VBox/BetControls"]
-custom_minimum_size = Vector2(250, 58)
+custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 20
 text = "MAX BET"
 
 [node name="Stops" type="HBoxContainer" parent="Center/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="Stop1" type="Button" parent="Center/VBox/Stops"]
-custom_minimum_size = Vector2(250, 64)
+custom_minimum_size = Vector2(240, 54)
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 text = "STOP 1"
 
 [node name="Stop2" type="Button" parent="Center/VBox/Stops"]
-custom_minimum_size = Vector2(250, 64)
+custom_minimum_size = Vector2(240, 54)
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 text = "STOP 2"
 
 [node name="Stop3" type="Button" parent="Center/VBox/Stops"]
-custom_minimum_size = Vector2(250, 64)
+custom_minimum_size = Vector2(240, 54)
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 text = "STOP 3"
 
 [node name="StartButton" type="Button" parent="Center/VBox"]
-custom_minimum_size = Vector2(0, 76)
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 26
 text = "START"

@@ -24,6 +24,8 @@ func _apply_reference_layout() -> void:
 	var right_led := scene.get_node_or_null("RightLED") as Control
 	var top_led := scene.get_node_or_null("TopLED") as Control
 	var top_panel := scene.get_node_or_null("TopPanel") as Control
+	var top_accent_left := scene.get_node_or_null("TopAccentLeft") as Control
+	var top_accent_right := scene.get_node_or_null("TopAccentRight") as Control
 	var reel_frame := scene.get_node_or_null("ReelFrame") as Control
 	var info_back := scene.get_node_or_null("InfoBack") as Control
 	var play_panel := scene.get_node_or_null("PlayPanel") as Control
@@ -46,6 +48,10 @@ func _apply_reference_layout() -> void:
 		_set_offsets(top_led, -250.0, -500.0, 250.0, -489.0)
 	if top_panel != null:
 		_set_offsets(top_panel, -292.0, -460.0, 292.0, -315.0)
+	if top_accent_left != null:
+		_set_offsets(top_accent_left, -258.0, -472.0, -190.0, -452.0)
+	if top_accent_right != null:
+		_set_offsets(top_accent_right, 190.0, -472.0, 258.0, -452.0)
 	if reel_frame != null:
 		_set_offsets(reel_frame, -292.0, -298.0, 292.0, -38.0)
 	if info_back != null:
@@ -78,13 +84,16 @@ func _apply_reference_layout() -> void:
 			_set_offsets(payline, 28.0, 381.0, 556.0, 402.0)
 		if info != null:
 			_set_offsets(info, 48.0, 408.0, 536.0, 470.0)
+			_polish_info_typography(info)
 		if start != null:
 			_set_offsets(start, 6.0, 484.0, 187.0, 550.0)
 			start.add_theme_font_size_override("font_size", 16)
 		if bets != null:
 			_set_offsets(bets, 197.0, 484.0, 578.0, 550.0)
+			_polish_control_buttons(bets, false)
 		if stops != null:
 			_set_offsets(stops, 108.0, 566.0, 476.0, 666.0)
+			_polish_control_buttons(stops, true)
 
 	_install_lower_pattern(scene)
 	_install_side_bevels(scene)
@@ -94,6 +103,25 @@ func _apply_reference_layout() -> void:
 	_install_lower_side_grilles(scene)
 	_install_lower_vent(scene)
 	_install_top_speaker_accents(scene)
+
+func _polish_info_typography(info: Control) -> void:
+	for box in info.get_children():
+		if box is Control:
+			for child in box.get_children():
+				if child is Label:
+					var label := child as Label
+					if label.text in ["CREDIT", "BET", "PAYOUT"]:
+						label.add_theme_font_size_override("font_size", 13)
+					else:
+						label.add_theme_font_size_override("font_size", 24)
+
+func _polish_control_buttons(container: Control, is_stop_row: bool) -> void:
+	for child in container.get_children():
+		if child is Button:
+			var button := child as Button
+			button.add_theme_font_size_override("font_size", 15 if not is_stop_row else 13)
+			if is_stop_row:
+				button.custom_minimum_size = Vector2(76.0, 76.0)
 
 func _install_lower_pattern(scene: Node) -> void:
 	var lower_glow := scene.get_node_or_null("LowerGlow") as Control
@@ -265,10 +293,10 @@ func _install_top_speaker_accents(scene: Node) -> void:
 	for side in [-1, 1]:
 		var speaker := Polygon2D.new()
 		speaker.name = "ReferenceTopSpeakerLeft" if side < 0 else "ReferenceTopSpeakerRight"
-		var cx := 382.0 if side < 0 else 898.0
+		var cx := 378.0 if side < 0 else 902.0
 		speaker.polygon = PackedVector2Array([
-			Vector2(cx - 37.0, 108.0), Vector2(cx + 37.0, 108.0),
-			Vector2(cx + 27.0, 168.0), Vector2(cx - 27.0, 168.0)
+			Vector2(cx - 35.0, 105.0), Vector2(cx + 35.0, 105.0),
+			Vector2(cx + 26.0, 164.0), Vector2(cx - 26.0, 164.0)
 		])
 		speaker.color = Color(0.16, 0.17, 0.20, 0.96)
 		speaker.z_index = 3
@@ -278,8 +306,8 @@ func _install_top_speaker_accents(scene: Node) -> void:
 			slit.width = 3.0
 			slit.default_color = Color(0.025, 0.025, 0.035, 1.0)
 			slit.points = PackedVector2Array([
-				Vector2(cx - 25.0 + float(j) * 11.0, 121.0),
-				Vector2(cx - 34.0 + float(j) * 11.0, 154.0)
+				Vector2(cx - 24.0 + float(j) * 11.0, 118.0),
+				Vector2(cx - 33.0 + float(j) * 11.0, 151.0)
 			])
 			slit.z_index = 4
 			scene.add_child(slit)

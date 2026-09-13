@@ -23,7 +23,7 @@ CabinetReferenceLayout="*res://cabinet_reference_layout.gd"
 
 [display/window]
 size/viewport_width=1280
-size/viewport_height=1080
+size/viewport_height=1200
 size/window_width_override=1280
 size/window_height_override=1080
 stretch/mode="canvas_items"

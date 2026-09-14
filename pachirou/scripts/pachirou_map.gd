@@ -1,7 +1,7 @@
 extends Node2D
 
-# Pachirou Step 3: pachislot stool quality prototype.
-# Dimensions stay fixed while material/readability are refined for final game scale.
+# Pachirou Step 4: stool + island-base scale prototype.
+# The confirmed stool stays as the human-scale reference; the island base is matched to its seat height.
 
 @export var map_width: int = 10
 @export var map_height: int = 10
@@ -27,15 +27,30 @@ const BASE_INNER := Color("9299a2")
 const BASE_FRONT := Color("4a5159")
 const BASE_EDGE := Color("343a41")
 const SHADOW := Color(0.04, 0.04, 0.05, 0.25)
+
+const ISLAND_TOP := Color("8a8f95")
+const ISLAND_FRONT := Color("555b62")
+const ISLAND_SIDE := Color("41474e")
+const ISLAND_TRIM := Color("a7adb4")
+const ISLAND_KICK := Color("30353a")
+const ISLAND_SHADOW := Color(0.04, 0.04, 0.05, 0.20)
+
 const GUIDE := Color("e8e8e8")
 const GUIDE_DIM := Color("bcc2ca")
 
-# Real-hall reference dimensions used as the common Pachirou scale.
+# Common Pachirou scale references.
 const STOOL_SEAT_HEIGHT_MM := 480.0
 const STOOL_SEAT_DIAMETER_MM := 400.0
 const STOOL_BASE_DIAMETER_MM := 380.0
 const STOOL_SEAT_THICKNESS_MM := 70.0
 const STOOL_COLUMN_DIAMETER_MM := 90.0
+
+# First island-base reference.
+# Height is fixed to the stool seat height. Width/depth are provisional until machine + sand are fitted.
+const ISLAND_BASE_HEIGHT_MM := 480.0
+const ISLAND_BASE_WIDTH_MM := 620.0
+const ISLAND_BASE_DEPTH_MM := 520.0
+
 const MM_TO_PX := 0.08
 
 var world: Node2D
@@ -48,7 +63,8 @@ func _ready() -> void:
 	add_child(world)
 
 	_create_floor()
-	_create_stool_reference(Vector2i(5, 5))
+	_create_stool_reference(Vector2i(4, 6))
+	_create_island_base_reference(Vector2i(6, 4))
 	_create_title()
 
 
@@ -94,39 +110,35 @@ func _create_stool_reference(cell: Vector2i) -> void:
 	stool.z_index = int(stool.position.y)
 	world.add_child(stool)
 
-	var seat_height_px := STOOL_SEAT_HEIGHT_MM * MM_TO_PX
-	var seat_thickness_px := STOOL_SEAT_THICKNESS_MM * MM_TO_PX
-	var seat_width_px := STOOL_SEAT_DIAMETER_MM * MM_TO_PX
-	var base_width_px := STOOL_BASE_DIAMETER_MM * MM_TO_PX
-	var column_width_px := STOOL_COLUMN_DIAMETER_MM * MM_TO_PX
+	var seat_height_px: float = STOOL_SEAT_HEIGHT_MM * MM_TO_PX
+	var seat_thickness_px: float = STOOL_SEAT_THICKNESS_MM * MM_TO_PX
+	var seat_width_px: float = STOOL_SEAT_DIAMETER_MM * MM_TO_PX
+	var base_width_px: float = STOOL_BASE_DIAMETER_MM * MM_TO_PX
+	var column_width_px: float = STOOL_COLUMN_DIAMETER_MM * MM_TO_PX
 
-	var seat_top_y := -seat_height_px
-	var seat_rx := seat_width_px * 0.5
-	var seat_ry := seat_rx * 0.42
-	var base_rx := base_width_px * 0.5
-	var base_ry := base_rx * 0.42
-	var column_half := column_width_px * 0.5
-	var seat_bottom_y := seat_top_y + seat_thickness_px
+	var seat_top_y: float = -seat_height_px
+	var seat_rx: float = seat_width_px * 0.5
+	var seat_ry: float = seat_rx * 0.42
+	var base_rx: float = base_width_px * 0.5
+	var base_ry: float = base_rx * 0.42
+	var column_half: float = column_width_px * 0.5
+	var seat_bottom_y: float = seat_top_y + seat_thickness_px
 
-	# Contact shadow follows the floor projection and keeps the pedestal grounded.
 	_add_polygon(stool, _ellipse_points(Vector2(2.0, 2.2), base_rx * 1.10, base_ry * 1.08, 40), SHADOW)
 
-	# Low-profile floor disc: dark lower lip, metal top and a smaller brushed-metal centre.
 	_add_polygon(stool, _ellipse_front_band(Vector2(0, -1), base_rx, base_ry, 3.2, 28), BASE_FRONT)
 	_add_polygon(stool, _ellipse_points(Vector2(0, -1), base_rx, base_ry, 40), BASE_EDGE)
 	_add_polygon(stool, _ellipse_points(Vector2(0, -1.5), base_rx - 1.2, base_ry - 0.7, 40), BASE_TOP)
 	_add_polygon(stool, _ellipse_points(Vector2(-1.0, -2.0), base_rx * 0.68, base_ry * 0.58, 32), BASE_INNER)
 
-	# Lower pedestal boss and trim ring hide the mechanical fixing point.
-	var lower_rx := column_half + 3.3
-	var lower_ry := lower_rx * 0.40
+	var lower_rx: float = column_half + 3.3
+	var lower_ry: float = lower_rx * 0.40
 	_add_polygon(stool, _ellipse_front_band(Vector2(0, -5.2), lower_rx, lower_ry, 2.4, 20), METAL_DEEP)
 	_add_polygon(stool, _ellipse_points(Vector2(0, -5.3), lower_rx, lower_ry, 28), METAL_DARK)
 	_add_polygon(stool, _ellipse_points(Vector2(-0.6, -5.8), lower_rx * 0.68, lower_ry * 0.58, 24), METAL_MID)
 
-	# Chrome pedestal. Four bands simulate cylindrical reflections at this small game scale.
-	var column_top_y := seat_bottom_y + 2.0
-	var column_bottom_y := -5.0
+	var column_top_y: float = seat_bottom_y + 2.0
+	var column_bottom_y: float = -5.0
 	_add_polygon(stool, PackedVector2Array([
 		Vector2(-column_half, column_top_y), Vector2(-column_half * 0.48, column_top_y),
 		Vector2(-column_half * 0.48, column_bottom_y), Vector2(-column_half, column_bottom_y)
@@ -144,16 +156,14 @@ func _create_stool_reference(cell: Vector2i) -> void:
 		Vector2(column_half, column_bottom_y), Vector2(column_half * 0.45, column_bottom_y)
 	]), METAL_DARK)
 
-	# Under-seat mounting plate gives the cushion a believable mechanical connection.
-	var mount_rx := seat_rx * 0.48
-	var mount_ry := mount_rx * 0.30
+	var mount_rx: float = seat_rx * 0.48
+	var mount_ry: float = mount_rx * 0.30
 	_add_polygon(stool, _ellipse_front_band(Vector2(0, seat_bottom_y + 1.4), mount_rx, mount_ry, 2.0, 22), METAL_DEEP)
 	_add_polygon(stool, _ellipse_points(Vector2(0, seat_bottom_y + 1.0), mount_rx, mount_ry, 28), METAL_DARK)
-	var upper_rx := column_half + 2.2
-	var upper_ry := upper_rx * 0.40
+	var upper_rx: float = column_half + 2.2
+	var upper_ry: float = upper_rx * 0.40
 	_add_polygon(stool, _ellipse_points(Vector2(0, seat_bottom_y + 1.7), upper_rx, upper_ry, 24), METAL_MID)
 
-	# Upholstered cushion. A dark lower shell, curved side wall, piping and inset pad separate the materials.
 	_add_polygon(stool, _ellipse_front_band(Vector2(0, seat_top_y + 1.2), seat_rx * 0.94, seat_ry * 0.92, seat_thickness_px + 1.0, 30), SEAT_SHELL)
 	_add_polygon(stool, _ellipse_front_band(Vector2(0, seat_top_y), seat_rx, seat_ry, seat_thickness_px, 30), SEAT_FRONT)
 	_add_polygon(stool, _ellipse_front_band(Vector2(0, seat_top_y + 0.5), seat_rx * 0.97, seat_ry * 0.96, seat_thickness_px * 0.48, 28), SEAT_FRONT_LIGHT)
@@ -161,29 +171,89 @@ func _create_stool_reference(cell: Vector2i) -> void:
 	_add_polygon(stool, _ellipse_points(Vector2(0, seat_top_y - 0.6), seat_rx - 1.25, seat_ry - 0.75, 44), SEAT_TOP)
 	_add_polygon(stool, _ellipse_points(Vector2(0.4, seat_top_y - 0.9), seat_rx * 0.76, seat_ry * 0.67, 36), SEAT_INNER)
 
-	# Controlled highlights suggest a padded/vinyl surface without noisy pixel detail.
 	_add_arc_line(stool, Vector2(-1.0, seat_top_y - 1.1), seat_rx * 0.67, seat_ry * 0.57, PI * 1.10, PI * 1.72, SEAT_HIGHLIGHT, 1.0, 10)
 	_add_arc_line(stool, Vector2(0, -1.5), base_rx * 0.82, base_ry * 0.75, PI * 1.10, PI * 1.62, METAL_LIGHT, 0.8, 9)
 
-	# Dimension guide remains for scale verification only.
-	var guide_x := seat_rx + 18.0
+	var guide_x: float = seat_rx + 18.0
 	_add_line(stool, Vector2(guide_x, 0), Vector2(guide_x, seat_top_y), GUIDE_DIM, 1.0)
 	_add_line(stool, Vector2(guide_x - 4, 0), Vector2(guide_x + 4, 0), GUIDE_DIM, 1.0)
 	_add_line(stool, Vector2(guide_x - 4, seat_top_y), Vector2(guide_x + 4, seat_top_y), GUIDE_DIM, 1.0)
 
 	var height_label := Label.new()
-	height_label.text = "seat height 480 mm"
+	height_label.text = "chair 480 mm"
 	height_label.position = Vector2(guide_x + 7, seat_top_y * 0.58)
 	height_label.add_theme_font_size_override("font_size", 12)
 	height_label.add_theme_color_override("font_color", GUIDE)
 	stool.add_child(height_label)
 
-	var size_label := Label.new()
-	size_label.text = "seat 400 mm / base 380 mm"
-	size_label.position = Vector2(-86, 20)
-	size_label.add_theme_font_size_override("font_size", 12)
-	size_label.add_theme_color_override("font_color", GUIDE)
-	stool.add_child(size_label)
+
+func _create_island_base_reference(cell: Vector2i) -> void:
+	var island := Node2D.new()
+	island.name = "IslandBaseReference"
+	island.position = grid_to_world(cell) + Vector2(0, 8)
+	island.z_index = int(island.position.y)
+	world.add_child(island)
+
+	var height_px: float = ISLAND_BASE_HEIGHT_MM * MM_TO_PX
+	var width_px: float = ISLAND_BASE_WIDTH_MM * MM_TO_PX
+	var depth_px: float = ISLAND_BASE_DEPTH_MM * MM_TO_PX
+
+	# Ground-plane half axes use the same 2:1 isometric projection as the floor.
+	var half_x := Vector2(width_px * 0.25, width_px * 0.125)
+	var half_y := Vector2(-depth_px * 0.25, depth_px * 0.125)
+
+	var back := -half_x - half_y
+	var right := half_x - half_y
+	var front := half_x + half_y
+	var left := -half_x + half_y
+	var up := Vector2(0, -height_px)
+
+	# Floor shadow.
+	_add_polygon(island, PackedVector2Array([
+		back + Vector2(2, 3), right + Vector2(2, 3), front + Vector2(2, 3), left + Vector2(2, 3)
+	]), ISLAND_SHADOW)
+
+	# Main cabinet faces.
+	_add_polygon(island, PackedVector2Array([left, front, front + up, left + up]), ISLAND_FRONT)
+	_add_polygon(island, PackedVector2Array([front, right, right + up, front + up]), ISLAND_SIDE)
+	_add_polygon(island, PackedVector2Array([back + up, right + up, front + up, left + up]), ISLAND_TOP)
+
+	# Thin top trim marks the actual machine mounting surface.
+	var trim_drop := Vector2(0, 2.2)
+	_add_polygon(island, PackedVector2Array([
+		left + up, front + up, front + up + trim_drop, left + up + trim_drop
+	]), ISLAND_TRIM)
+	_add_polygon(island, PackedVector2Array([
+		front + up, right + up, right + up + trim_drop, front + up + trim_drop
+	]), Color("858c94"))
+
+	# Recessed kick panel near the floor gives the base a real furniture/equipment profile.
+	var kick_h: float = 6.0
+	var kick_inset: float = 3.0
+	_add_polygon(island, PackedVector2Array([
+		left + Vector2(kick_inset, -1), front + Vector2(-kick_inset, -1),
+		front + Vector2(-kick_inset, -kick_h), left + Vector2(kick_inset, -kick_h)
+	]), ISLAND_KICK)
+
+	# Height guide: island mounting surface must align with the 480 mm stool seat reference.
+	var guide_x: float = 34.0
+	_add_line(island, Vector2(guide_x, 0), Vector2(guide_x, -height_px), GUIDE_DIM, 1.0)
+	_add_line(island, Vector2(guide_x - 4, 0), Vector2(guide_x + 4, 0), GUIDE_DIM, 1.0)
+	_add_line(island, Vector2(guide_x - 4, -height_px), Vector2(guide_x + 4, -height_px), GUIDE_DIM, 1.0)
+
+	var height_label := Label.new()
+	height_label.text = "island top 480 mm"
+	height_label.position = Vector2(guide_x + 7, -height_px * 0.58)
+	height_label.add_theme_font_size_override("font_size", 12)
+	height_label.add_theme_color_override("font_color", GUIDE)
+	island.add_child(height_label)
+
+	var footprint_label := Label.new()
+	footprint_label.text = "1-seat base 620 x 520 mm (provisional)"
+	footprint_label.position = Vector2(-72, 24)
+	footprint_label.add_theme_font_size_override("font_size", 11)
+	footprint_label.add_theme_color_override("font_color", GUIDE)
+	island.add_child(footprint_label)
 
 
 func _create_title() -> void:
@@ -192,14 +262,14 @@ func _create_title() -> void:
 	add_child(layer)
 
 	var label := Label.new()
-	label.text = "PACHIROU  |  PACHISLOT STOOL PRODUCTION TEST  |  10 x 10"
+	label.text = "PACHIROU  |  STOOL + ISLAND BASE SCALE TEST  |  10 x 10"
 	label.position = Vector2(24, 20)
 	label.add_theme_font_size_override("font_size", 20)
 	label.add_theme_color_override("font_color", Color("e8e8e8"))
 	layer.add_child(label)
 
 	var note := Label.new()
-	note.text = "480 mm seat height / padded seat / chrome pedestal / low-profile floor disc"
+	note.text = "chair seat top = island mounting surface = 480 mm"
 	note.position = Vector2(24, 50)
 	note.add_theme_font_size_override("font_size", 14)
 	note.add_theme_color_override("font_color", Color("bfc4cc"))
@@ -209,7 +279,7 @@ func _create_title() -> void:
 func _ellipse_points(center: Vector2, radius_x: float, radius_y: float, segments: int) -> PackedVector2Array:
 	var points := PackedVector2Array()
 	for i in range(segments):
-		var angle := TAU * float(i) / float(segments)
+		var angle: float = TAU * float(i) / float(segments)
 		points.append(center + Vector2(cos(angle) * radius_x, sin(angle) * radius_y))
 	return points
 
@@ -217,12 +287,12 @@ func _ellipse_points(center: Vector2, radius_x: float, radius_y: float, segments
 func _ellipse_front_band(center: Vector2, radius_x: float, radius_y: float, thickness: float, segments: int) -> PackedVector2Array:
 	var points := PackedVector2Array()
 	for i in range(segments + 1):
-		var t := float(i) / float(segments)
-		var angle := PI * t
+		var t: float = float(i) / float(segments)
+		var angle: float = PI * t
 		points.append(center + Vector2(cos(angle) * radius_x, sin(angle) * radius_y))
 	for i in range(segments, -1, -1):
-		var t := float(i) / float(segments)
-		var angle := PI * t
+		var t: float = float(i) / float(segments)
+		var angle: float = PI * t
 		points.append(center + Vector2(cos(angle) * radius_x, sin(angle) * radius_y) + Vector2(0, thickness))
 	return points
 

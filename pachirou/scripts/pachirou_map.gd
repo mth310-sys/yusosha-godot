@@ -1,7 +1,7 @@
 extends Node2D
 
-# Pachirou Step 2: single-seat island scale prototype.
-# Logical coordinates stay square; rendering is converted to diamonds.
+# Pachirou Step 3: pachislot stool scale prototype.
+# The stool is isolated first so its proportions can become the reference for island height.
 
 @export var map_width: int = 10
 @export var map_height: int = 10
@@ -10,20 +10,26 @@ extends Node2D
 
 const FLOOR_A := Color("c9c9c9")
 const FLOOR_B := Color("a8a8a8")
-const SLOT_FRONT := Color("344fd0")
-const SLOT_SIDE := Color("24378f")
-const SLOT_TOP := Color("5872f0")
-const SLOT_DARK := Color("151b48")
-const SLOT_REEL := Color("ecece6")
-const BASE_FRONT := Color("535963")
-const BASE_SIDE := Color("3d424a")
-const BASE_TOP := Color("747b86")
-const SAND_FRONT := Color("c9ccd2")
-const COUNTER_BODY := Color("20252c")
-const COUNTER_SCREEN := Color("55b9e8")
-const CHAIR_MAIN := Color("3d4148")
-const CHARACTER_BODY := Color("f4f4f4")
-const CHARACTER_HEAD := Color("e5b58f")
+
+const STOOL_SEAT := Color("454b54")
+const STOOL_SEAT_SIDE := Color("30353c")
+const STOOL_COLUMN := Color("aeb4bc")
+const STOOL_COLUMN_DARK := Color("747b84")
+const STOOL_BASE := Color("697079")
+const STOOL_BASE_SIDE := Color("4d535b")
+const GUIDE := Color("e8e8e8")
+const GUIDE_DIM := Color("bcc2ca")
+
+# Real-hall reference dimensions used only as a proportion guide.
+# Seat height is intentionally close to the future island-base top height.
+const STOOL_SEAT_HEIGHT_MM := 480.0
+const STOOL_SEAT_DIAMETER_MM := 400.0
+const STOOL_BASE_DIAMETER_MM := 380.0
+const STOOL_SEAT_THICKNESS_MM := 70.0
+const STOOL_COLUMN_DIAMETER_MM := 90.0
+
+# Screen scale for vertical dimensions. Horizontal round surfaces are projected as isometric ellipses.
+const MM_TO_PX := 0.08
 
 var world: Node2D
 
@@ -35,8 +41,7 @@ func _ready() -> void:
 	add_child(world)
 
 	_create_floor()
-	_create_island_seat(Vector2i(5, 4))
-	_create_seated_reference(Vector2i(4, 6))
+	_create_stool_reference(Vector2i(5, 5))
 	_create_title()
 
 
@@ -75,104 +80,85 @@ func _create_floor() -> void:
 			floor_root.add_child(tile)
 
 
-func _create_island_seat(cell: Vector2i) -> void:
-	var seat := Node2D.new()
-	seat.name = "IslandSeatPrototype"
-	seat.position = grid_to_world(cell)
-	seat.z_index = int(seat.position.y)
-	world.add_child(seat)
+func _create_stool_reference(cell: Vector2i) -> void:
+	var stool := Node2D.new()
+	stool.name = "PachislotStoolReference"
+	stool.position = grid_to_world(cell) + Vector2(0, 8)
+	stool.z_index = int(stool.position.y)
+	world.add_child(stool)
 
-	# Standard height reference for Pachirou: base top ~= round-chair seat height.
-	var base_height := 18.0
-	var cabinet_height := 44.0
+	var seat_height_px := STOOL_SEAT_HEIGHT_MM * MM_TO_PX
+	var seat_thickness_px := STOOL_SEAT_THICKNESS_MM * MM_TO_PX
+	var seat_width_px := STOOL_SEAT_DIAMETER_MM * MM_TO_PX
+	var base_width_px := STOOL_BASE_DIAMETER_MM * MM_TO_PX
+	var column_width_px := STOOL_COLUMN_DIAMETER_MM * MM_TO_PX
 
-	# One-seat island base. It is wider than the cabinet because the right side holds the sand.
-	var b_back := Vector2(0, -11)
-	var b_right := Vector2(31, 4)
-	var b_front := Vector2(0, 19)
-	var b_left := Vector2(-31, 4)
-	var up_base := Vector2(0, -base_height)
+	# Round objects are drawn as flattened ellipses to match the 2:1 isometric floor projection.
+	var seat_top_y := -seat_height_px
+	var seat_rx := seat_width_px * 0.5
+	var seat_ry := seat_rx * 0.42
+	var base_rx := base_width_px * 0.5
+	var base_ry := base_rx * 0.42
 
-	_add_polygon(seat, PackedVector2Array([b_left, b_front, b_front + up_base, b_left + up_base]), BASE_FRONT)
-	_add_polygon(seat, PackedVector2Array([b_front, b_right, b_right + up_base, b_front + up_base]), BASE_SIDE)
-	_add_polygon(seat, PackedVector2Array([b_back + up_base, b_right + up_base, b_front + up_base, b_left + up_base]), BASE_TOP)
+	# Floor-mounted circular base.
+	_add_polygon(stool, _ellipse_points(Vector2(0, -1), base_rx, base_ry, 24), STOOL_BASE)
+	_add_polygon(stool, PackedVector2Array([
+		Vector2(-base_rx, -1),
+		Vector2(0, base_ry - 1),
+		Vector2(0, base_ry + 3),
+		Vector2(-base_rx, 3)
+	]), STOOL_BASE_SIDE)
 
-	# Cabinet starts on the base top, never directly on the floor.
-	var cab_floor := Vector2(0, -base_height - 1)
-	var cab_left := cab_floor + Vector2(-22, -1)
-	var cab_front := cab_floor + Vector2(-2, 9)
-	var cab_right := cab_floor + Vector2(15, 0)
-	var cab_back := cab_floor + Vector2(-5, -10)
-	var up_cab := Vector2(0, -cabinet_height)
+	# Central pedestal column.
+	var column_half := column_width_px * 0.5
+	var column_top_y := seat_top_y + seat_thickness_px
+	_add_polygon(stool, PackedVector2Array([
+		Vector2(-column_half, column_top_y),
+		Vector2(column_half, column_top_y),
+		Vector2(column_half, -2),
+		Vector2(-column_half, -2)
+	]), STOOL_COLUMN)
+	_add_polygon(stool, PackedVector2Array([
+		Vector2(column_half, column_top_y),
+		Vector2(column_half + 2, column_top_y + 1),
+		Vector2(column_half + 2, -1),
+		Vector2(column_half, -2)
+	]), STOOL_COLUMN_DARK)
 
-	_add_polygon(seat, PackedVector2Array([cab_left, cab_front, cab_front + up_cab, cab_left + up_cab]), SLOT_FRONT)
-	_add_polygon(seat, PackedVector2Array([cab_front, cab_right, cab_right + up_cab, cab_front + up_cab]), SLOT_SIDE)
-	_add_polygon(seat, PackedVector2Array([cab_back + up_cab, cab_right + up_cab, cab_front + up_cab, cab_left + up_cab]), SLOT_TOP)
+	# Seat cushion side thickness first, then the top surface.
+	_add_polygon(stool, PackedVector2Array([
+		Vector2(-seat_rx, seat_top_y),
+		Vector2(0, seat_top_y + seat_ry),
+		Vector2(0, seat_top_y + seat_ry + seat_thickness_px),
+		Vector2(-seat_rx, seat_top_y + seat_thickness_px)
+	]), STOOL_SEAT_SIDE)
+	_add_polygon(stool, PackedVector2Array([
+		Vector2(0, seat_top_y + seat_ry),
+		Vector2(seat_rx, seat_top_y),
+		Vector2(seat_rx, seat_top_y + seat_thickness_px),
+		Vector2(0, seat_top_y + seat_ry + seat_thickness_px)
+	]), Color("383e46"))
+	_add_polygon(stool, _ellipse_points(Vector2(0, seat_top_y), seat_rx, seat_ry, 24), STOOL_SEAT)
 
-	# Reel/display surfaces follow the cabinet front plane.
-	_add_polygon(seat, PackedVector2Array([
-		Vector2(-18, -54), Vector2(-6, -48), Vector2(-6, -39), Vector2(-18, -45)
-	]), SLOT_DARK)
-	_add_polygon(seat, PackedVector2Array([
-		Vector2(-18, -37), Vector2(-6, -31), Vector2(-6, -23), Vector2(-18, -29)
-	]), SLOT_REEL)
-	_add_polygon(seat, PackedVector2Array([
-		Vector2(-17, -22), Vector2(-4, -15.5), Vector2(-8, -12), Vector2(-21, -18.5)
-	]), Color("2b3fb0"))
+	# Dimension guide: floor to seat top. This will later be aligned to the island base top.
+	var guide_x := seat_rx + 18.0
+	_add_line(stool, Vector2(guide_x, 0), Vector2(guide_x, seat_top_y), GUIDE_DIM, 1.0)
+	_add_line(stool, Vector2(guide_x - 4, 0), Vector2(guide_x + 4, 0), GUIDE_DIM, 1.0)
+	_add_line(stool, Vector2(guide_x - 4, seat_top_y), Vector2(guide_x + 4, seat_top_y), GUIDE_DIM, 1.0)
 
-	# Sand occupies the narrow space beside the machine as part of each seat unit.
-	var sand_bottom_left := Vector2(16, -base_height + 1)
-	var sand_bottom_right := Vector2(27, -base_height + 6)
-	var sand_top_right := sand_bottom_right + Vector2(0, -35)
-	var sand_top_left := sand_bottom_left + Vector2(0, -35)
-	_add_polygon(seat, PackedVector2Array([sand_bottom_left, sand_bottom_right, sand_top_right, sand_top_left]), SAND_FRONT)
-	_add_polygon(seat, PackedVector2Array([
-		Vector2(18, -45), Vector2(25, -41.5), Vector2(25, -36), Vector2(18, -39.5)
-	]), Color("353a42"))
+	var height_label := Label.new()
+	height_label.text = "seat height 480 mm"
+	height_label.position = Vector2(guide_x + 7, seat_top_y * 0.58)
+	height_label.add_theme_font_size_override("font_size", 12)
+	height_label.add_theme_color_override("font_color", GUIDE)
+	stool.add_child(height_label)
 
-	# Data counter sits above the reel line and is reachable from the seated position.
-	_add_polygon(seat, PackedVector2Array([
-		Vector2(-19, -72), Vector2(-3, -64), Vector2(-3, -56), Vector2(-19, -64)
-	]), COUNTER_BODY)
-	_add_polygon(seat, PackedVector2Array([
-		Vector2(-16, -68), Vector2(-6, -63), Vector2(-6, -59), Vector2(-16, -64)
-	]), COUNTER_SCREEN)
-
-
-func _create_seated_reference(cell: Vector2i) -> void:
-	var reference := Node2D.new()
-	reference.name = "SeatedScaleReference"
-	reference.position = grid_to_world(cell) + Vector2(0, 7)
-	reference.z_index = int(reference.position.y)
-	world.add_child(reference)
-
-	# Round stool: seat top is intentionally the same 18 px height as the island base.
-	var stool_top := Vector2(0, -18)
-	_add_polygon(reference, PackedVector2Array([
-		Vector2(-11, -20), Vector2(0, -25), Vector2(11, -20), Vector2(0, -15)
-	]), CHAIR_MAIN)
-	_add_polygon(reference, PackedVector2Array([
-		Vector2(-5, -17), Vector2(-1, -17), Vector2(-2, 1), Vector2(-6, 1),
-		Vector2(1, -17), Vector2(5, -17), Vector2(6, 1), Vector2(2, 1)
-	]), Color("292d33"))
-
-	# Seated person: hips sit on the stool; head/eye line is used to judge reel height.
-	_add_polygon(reference, PackedVector2Array([
-		stool_top + Vector2(-8, -23), stool_top + Vector2(7, -23),
-		stool_top + Vector2(8, -3), stool_top + Vector2(-6, -3)
-	]), CHARACTER_BODY)
-
-	var head_points := PackedVector2Array()
-	for i in range(10):
-		var angle := TAU * float(i) / 10.0
-		head_points.append(Vector2(cos(angle), sin(angle)) * 7.0 + stool_top + Vector2(0, -31))
-	_add_polygon(reference, head_points, CHARACTER_HEAD)
-
-	# Bent legs make it read as a seated scale reference instead of a standing character.
-	_add_polygon(reference, PackedVector2Array([
-		Vector2(-6, -21), Vector2(0, -21), Vector2(-4, -10), Vector2(-10, -5), Vector2(-13, -8), Vector2(-8, -14),
-		Vector2(1, -21), Vector2(7, -21), Vector2(12, -10), Vector2(10, -4), Vector2(6, -5), Vector2(7, -12)
-	]), Color("374151"))
+	var size_label := Label.new()
+	size_label.text = "seat 400 mm / base 380 mm"
+	size_label.position = Vector2(-86, 20)
+	size_label.add_theme_font_size_override("font_size", 12)
+	size_label.add_theme_color_override("font_color", GUIDE)
+	stool.add_child(size_label)
 
 
 func _create_title() -> void:
@@ -181,18 +167,35 @@ func _create_title() -> void:
 	add_child(layer)
 
 	var label := Label.new()
-	label.text = "PACHIROU  |  ISLAND SEAT SCALE TEST  |  10 x 10"
+	label.text = "PACHIROU  |  PACHISLOT STOOL SCALE TEST  |  10 x 10"
 	label.position = Vector2(24, 20)
 	label.add_theme_font_size_override("font_size", 20)
 	label.add_theme_color_override("font_color", Color("e8e8e8"))
 	layer.add_child(label)
 
 	var note := Label.new()
-	note.text = "base + machine + sand + data counter / stool seat height = base top"
+	note.text = "chair first: 480 mm seat height / 400 mm seat / 380 mm floor base"
 	note.position = Vector2(24, 50)
 	note.add_theme_font_size_override("font_size", 14)
 	note.add_theme_color_override("font_color", Color("bfc4cc"))
 	layer.add_child(note)
+
+
+func _ellipse_points(center: Vector2, radius_x: float, radius_y: float, segments: int) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in range(segments):
+		var angle := TAU * float(i) / float(segments)
+		points.append(center + Vector2(cos(angle) * radius_x, sin(angle) * radius_y))
+	return points
+
+
+func _add_line(parent: Node2D, from: Vector2, to: Vector2, color: Color, width: float) -> Line2D:
+	var line := Line2D.new()
+	line.width = width
+	line.default_color = color
+	line.points = PackedVector2Array([from, to])
+	parent.add_child(line)
+	return line
 
 
 func _add_polygon(parent: Node2D, points: PackedVector2Array, color: Color) -> Polygon2D:

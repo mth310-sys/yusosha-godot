@@ -236,20 +236,16 @@ func _create_sand(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> v
 	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), SAND_FRONT, 10)
 	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), SAND_SIDE, 10)
 	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), SAND_TOP, 10)
-	# Upper display area with a recessed bezel and small status strip.
 	_add_poly(parent, _face_quad(lb, fb, up, 0.14, 0.86, 0.68, 0.88), Color("3b434c"), 11)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.22, 0.78, 0.73, 0.84), SAND_SCREEN, 12)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.29, 0.49, 0.765, 0.805), Color("77c7df"), 13)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.56, 0.71, 0.765, 0.805), Color("78d7a2"), 13)
-	# Bill/card inlet band and a thin metallic guide below it.
 	_add_poly(parent, _face_quad(lb, fb, up, 0.14, 0.86, 0.48, 0.60), Color("2b3138"), 11)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.25, 0.75, 0.515, 0.555), Color("0a0d11"), 12)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.30, 0.70, 0.455, 0.485), Color("c3c8ce"), 12)
-	# Central operation / payout area.
 	_add_poly(parent, _face_quad(lb, fb, up, 0.16, 0.84, 0.30, 0.42), Color("59616a"), 11)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.23, 0.50, 0.335, 0.385), Color("d5a84b"), 12)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.59, 0.75, 0.325, 0.395), Color("2b3037"), 12)
-	# Lower medal outlet / access panel keeps the cabinet readable as a sand unit at this scale.
 	_add_poly(parent, _face_quad(lb, fb, up, 0.16, 0.84, 0.12, 0.24), Color("343b43"), 11)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.28, 0.72, 0.145, 0.185), Color("11151b"), 12)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.34, 0.66, 0.205, 0.225), Color("aeb4bb"), 12)
@@ -265,16 +261,13 @@ func _create_data_counter(parent: Node2D) -> void:
 	_create_front_box(parent, counter_left, counter_right, counter_up, counter_push, COUNTER_FRONT, COUNTER_SIDE, SHELF_EDGE, 30)
 	var face_left: Vector2 = counter_left + counter_push
 	var face_right: Vector2 = counter_right + counter_push
-	# Layered bezel and glass give the small display a readable real-hall equipment silhouette.
 	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.035, 0.965, 0.055, 0.945), Color("0a0e13"), 31)
 	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.075, 0.925, 0.12, 0.86), Color("4d5964"), 32)
 	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.105, 0.895, 0.18, 0.78), COUNTER_SCREEN, 33)
-	# Screen hierarchy: header, central data field and side status blocks.
 	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.14, 0.86, 0.22, 0.32), Color("bcecff"), 34)
 	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.37, 0.63, 0.39, 0.66), Color("d9f4ff"), 34)
 	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.15, 0.27, 0.42, 0.68), Color("78d7a2"), 34)
 	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.73, 0.85, 0.42, 0.68), Color("e6b35c"), 34)
-	# Tiny lower indicators remain visible at this scale without changing the approved proportions.
 	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.18, 0.28, 0.80, 0.88), Color("d65a4a"), 34)
 	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.45, 0.55, 0.80, 0.88), Color("78d7a2"), 34)
 	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.72, 0.82, 0.80, 0.88), Color("d5a84b"), 34)
@@ -286,13 +279,23 @@ func _create_stool(cell: Vector2i) -> void:
 	stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 	stool.z_index = int(stool.position.y)
 	world.add_child(stool)
-	var seat_y := -38.4
-	_add_poly(stool, _ellipse(Vector2(0, -1), 15.2, 6.4, 28), METAL_DARK)
-	_add_poly(stool, _ellipse(Vector2(0, -2), 11.0, 4.2, 24), METAL)
-	_add_poly(stool, PackedVector2Array([Vector2(-2, seat_y + 5), Vector2(2, seat_y + 5), Vector2(2, -5), Vector2(-2, -5)]), METAL)
-	_add_poly(stool, _ellipse_band(Vector2(0, seat_y), 16.0, 6.7, 5.0, 28), SEAT_SIDE)
-	_add_poly(stool, _ellipse(Vector2(0, seat_y), 16.0, 6.7, 32), SEAT_TOP)
-	_add_poly(stool, _ellipse(Vector2(0, seat_y - 0.7), 12.0, 4.4, 28), SEAT_INNER)
+	var seat_y: float = -38.4
+	# Layered floor base and collar give the pedestal real thickness without changing its footprint.
+	_add_poly(stool, _ellipse(Vector2(0, 0.5), 15.2, 6.4, 32), Color("4b525a"), 0)
+	_add_poly(stool, _ellipse(Vector2(0, -0.8), 12.0, 4.8, 30), METAL_DARK, 1)
+	_add_poly(stool, _ellipse(Vector2(0, -1.8), 9.5, 3.4, 28), METAL, 2)
+	_add_poly(stool, _ellipse(Vector2(0, -2.2), 5.0, 1.9, 24), Color("d1d5d9"), 3)
+	# Two-stage chrome pedestal with a darker lower sleeve and a small seat-side collar.
+	_add_poly(stool, PackedVector2Array([Vector2(-2.6, seat_y + 7.0), Vector2(2.6, seat_y + 7.0), Vector2(2.2, -4.0), Vector2(-2.2, -4.0)]), METAL_DARK, 1)
+	_add_poly(stool, PackedVector2Array([Vector2(-1.5, seat_y + 6.0), Vector2(1.5, seat_y + 6.0), Vector2(1.5, -3.0), Vector2(-1.5, -3.0)]), METAL, 2)
+	_add_poly(stool, _ellipse(Vector2(0, seat_y + 6.0), 5.0, 2.0, 24), METAL_DARK, 3)
+	_add_poly(stool, _ellipse(Vector2(0, seat_y + 5.3), 3.7, 1.4, 22), METAL, 4)
+	# Upholstered seat: thick side wall, outer piping, cushion and a subtle center highlight.
+	_add_poly(stool, _ellipse_band(Vector2(0, seat_y + 0.6), 16.0, 6.7, 5.2, 32), Color("20262d"), 4)
+	_add_poly(stool, _ellipse(Vector2(0, seat_y), 16.0, 6.7, 34), SEAT_SIDE, 5)
+	_add_poly(stool, _ellipse(Vector2(0, seat_y - 0.8), 14.6, 5.8, 34), SEAT_TOP, 6)
+	_add_poly(stool, _ellipse(Vector2(0, seat_y - 1.2), 11.8, 4.3, 30), SEAT_INNER, 7)
+	_add_poly(stool, _ellipse(Vector2(-1.2, seat_y - 2.0), 7.8, 2.2, 26), Color("59616b"), 8)
 
 func _face_point(lb: Vector2, fb: Vector2, up: Vector2, u: float, v: float) -> Vector2:
 	return lb.lerp(fb, u) + up * v

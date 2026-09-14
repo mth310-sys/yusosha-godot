@@ -230,8 +230,8 @@ func _ellipse_front_band(center: Vector2, radius_x: float, radius_y: float, thic
 func _add_arc_line(parent: Node2D, center: Vector2, radius_x: float, radius_y: float, start_angle: float, end_angle: float, color: Color, width: float, segments: int) -> Line2D:
 	var points := PackedVector2Array()
 	for i in range(segments + 1):
-		var t := float(i) / float(segments)
-		var angle := lerp(start_angle, end_angle, t)
+		var t: float = float(i) / float(segments)
+		var angle: float = lerpf(start_angle, end_angle, t)
 		points.append(center + Vector2(cos(angle) * radius_x, sin(angle) * radius_y))
 	var line := Line2D.new()
 	line.width = width

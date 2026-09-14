@@ -242,12 +242,12 @@ func _create_sand(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> v
 	_add_poly(parent, _face_quad(lb, fb, up, 0.22, 0.78, 0.18, 0.28), Color("343b43"), 11)
 
 func _create_data_counter(parent: Node2D) -> void:
-	# Mount the counter on the front face of the continuous upper box, with restrained proportions.
+	# Mount the counter high on the front face of the continuous upper box.
 	var box_fl: Vector2 = _upper_box_back_left() + _upper_box_front_vector()
 	var box_fr: Vector2 = _upper_box_back_right() + _upper_box_front_vector()
 	var box_front_vector: Vector2 = box_fr - box_fl
-	var counter_left: Vector2 = box_fl + box_front_vector * 0.12 + Vector2(0, 2.0)
-	var counter_right: Vector2 = box_fl + box_front_vector * 0.88 + Vector2(0, 2.0)
+	var counter_left: Vector2 = box_fl + box_front_vector * 0.12 + Vector2(0, -2.0)
+	var counter_right: Vector2 = box_fl + box_front_vector * 0.88 + Vector2(0, -2.0)
 	var counter_up: Vector2 = Vector2(0, -8.0)
 	# Keep a visible forward mount without letting the counter overpower the cabinet.
 	var counter_push: Vector2 = -DEPTH_AXIS * 0.055

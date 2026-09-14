@@ -44,6 +44,7 @@ const MACHINE_FRONT_VECTOR := Vector2(21.0, 10.5)
 const SAND_FRONT_VECTOR := Vector2(6.0, 3.0)
 const MACHINE_DEPTH := Vector2(16.0, -8.0)
 const SAND_DEPTH := Vector2(12.0, -6.0)
+const BACKBOARD_THICKNESS_RATIO := 0.12
 
 var world: Node2D
 
@@ -115,7 +116,7 @@ func _create_island_frame(parent: Node2D) -> void:
 	var board_bottom_left := top_back
 	var board_bottom_right := top_right
 	var board_up := Vector2(0, -BACKBOARD_HEIGHT)
-	var board_thickness := DEPTH_AXIS * 0.06
+	var board_thickness := DEPTH_AXIS * BACKBOARD_THICKNESS_RATIO
 	_add_poly(parent, PackedVector2Array([board_bottom_left, board_bottom_right, board_bottom_right + board_up, board_bottom_left + board_up]), BACKBOARD, 1)
 	_add_poly(parent, PackedVector2Array([board_bottom_right, board_bottom_right + board_thickness, board_bottom_right + board_thickness + board_up, board_bottom_right + board_up]), BACKBOARD_SIDE, 1)
 	var shelf_back_left := board_bottom_left + Vector2(0, -MACHINE_HEIGHT)

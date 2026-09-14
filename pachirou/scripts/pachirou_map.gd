@@ -36,7 +36,7 @@ const BASE_HEIGHT := 36.0
 const MACHINE_HEIGHT := 54.0
 const SAND_HEIGHT := 48.0
 const BACKBOARD_HEIGHT := 64.0
-const STOOL_SCALE := 0.76
+const STOOL_SCALE := 0.90
 
 const WIDTH_AXIS := Vector2(32.0, 16.0)
 const DEPTH_AXIS := Vector2(32.0, -16.0)
@@ -190,7 +190,6 @@ func _create_data_counter(parent: Node2D) -> void:
 func _create_stool(cell: Vector2i) -> void:
 	var stool := Node2D.new()
 	stool.name = "Stool"
-	# Place the stool directly in front of the island base in the same logical bay.
 	stool.position = grid_to_world(cell) + UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
 	stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 	stool.z_index = int(stool.position.y)

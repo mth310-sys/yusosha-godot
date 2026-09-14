@@ -141,13 +141,24 @@ func _create_island_frame(parent: Node2D) -> void:
 	var top_front := _base_top_front()
 	var top_back_left := _base_back_left()
 	var top_back_right := _base_back_right()
+	var base_up := Vector2(0, -BASE_HEIGHT)
 	_add_poly(parent, PackedVector2Array([floor_left, floor_front, top_front, top_left]), BASE_FRONT, 0)
 	_add_poly(parent, PackedVector2Array([floor_front, floor_back_right, top_back_right, top_front]), BASE_SIDE, 0)
 	_add_poly(parent, PackedVector2Array([top_back_left, top_back_right, top_front, top_left]), BASE_TOP, 0)
+	# Base cabinet detailing: subtle panel breaks and a darker kick plate, without changing the footprint.
+	_add_poly(parent, _face_quad(floor_left, floor_front, base_up, 0.04, 0.96, 0.05, 0.14), Color("3d4349"), 1)
+	_add_poly(parent, _face_quad(floor_left, floor_front, base_up, 0.49, 0.51, 0.16, 0.94), Color("464c53"), 1)
+	_add_poly(parent, _face_quad(floor_left, floor_front, base_up, 0.05, 0.95, 0.91, 0.955), Color("70767d"), 1)
+	_add_poly(parent, _face_quad(floor_front, floor_back_right, base_up, 0.04, 0.96, 0.05, 0.13), Color("30363c"), 1)
 	var board_up := Vector2(0, -BACKBOARD_HEIGHT)
 	var board_thickness := _board_thickness()
 	_add_poly(parent, PackedVector2Array([top_back_left, top_back_right, top_back_right + board_up, top_back_left + board_up]), BACKBOARD, 1)
 	_add_poly(parent, PackedVector2Array([top_back_right, top_back_right + board_thickness, top_back_right + board_thickness + board_up, top_back_right + board_up]), BACKBOARD_SIDE, 2)
+	# Backboard frame lines make the island read as assembled hall equipment rather than a flat slab.
+	_add_poly(parent, _face_quad(top_back_left, top_back_right, board_up, 0.035, 0.075, 0.04, 0.96), Color("565d65"), 2)
+	_add_poly(parent, _face_quad(top_back_left, top_back_right, board_up, 0.925, 0.965, 0.04, 0.96), Color("565d65"), 2)
+	_add_poly(parent, _face_quad(top_back_left, top_back_right, board_up, 0.495, 0.505, 0.04, 0.96), Color("515860"), 2)
+	_add_poly(parent, _face_quad(top_back_left, top_back_right, board_up, 0.08, 0.92, 0.915, 0.95), Color("7b8289"), 2)
 	var box_bl := _upper_box_back_left()
 	var box_br := _upper_box_back_right()
 	var box_push := _upper_box_front_vector()
@@ -280,17 +291,14 @@ func _create_stool(cell: Vector2i) -> void:
 	stool.z_index = int(stool.position.y)
 	world.add_child(stool)
 	var seat_y: float = -38.4
-	# Layered floor base and collar give the pedestal real thickness without changing its footprint.
 	_add_poly(stool, _ellipse(Vector2(0, 0.5), 15.2, 6.4, 32), Color("4b525a"), 0)
 	_add_poly(stool, _ellipse(Vector2(0, -0.8), 12.0, 4.8, 30), METAL_DARK, 1)
 	_add_poly(stool, _ellipse(Vector2(0, -1.8), 9.5, 3.4, 28), METAL, 2)
 	_add_poly(stool, _ellipse(Vector2(0, -2.2), 5.0, 1.9, 24), Color("d1d5d9"), 3)
-	# Two-stage chrome pedestal with a darker lower sleeve and a small seat-side collar.
 	_add_poly(stool, PackedVector2Array([Vector2(-2.6, seat_y + 7.0), Vector2(2.6, seat_y + 7.0), Vector2(2.2, -4.0), Vector2(-2.2, -4.0)]), METAL_DARK, 1)
 	_add_poly(stool, PackedVector2Array([Vector2(-1.5, seat_y + 6.0), Vector2(1.5, seat_y + 6.0), Vector2(1.5, -3.0), Vector2(-1.5, -3.0)]), METAL, 2)
 	_add_poly(stool, _ellipse(Vector2(0, seat_y + 6.0), 5.0, 2.0, 24), METAL_DARK, 3)
 	_add_poly(stool, _ellipse(Vector2(0, seat_y + 5.3), 3.7, 1.4, 22), METAL, 4)
-	# Upholstered seat: thick side wall, outer piping, cushion and a subtle center highlight.
 	_add_poly(stool, _ellipse_band(Vector2(0, seat_y + 0.6), 16.0, 6.7, 5.2, 32), Color("20262d"), 4)
 	_add_poly(stool, _ellipse(Vector2(0, seat_y), 16.0, 6.7, 34), SEAT_SIDE, 5)
 	_add_poly(stool, _ellipse(Vector2(0, seat_y - 0.8), 14.6, 5.8, 34), SEAT_TOP, 6)

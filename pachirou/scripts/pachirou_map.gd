@@ -1,8 +1,7 @@
 extends Node2D
 
-# Pachirou Step 9: one-cell display-scale test.
-# Logical cells and real-world reference dimensions stay unchanged.
-# Only the rendered equipment scale is reduced to fit the 64x32 grid cleanly.
+# Pachirou Step 10: keep the hall equipment at full one-cell scale,
+# while reducing only the pachislot cabinet for a better bay proportion.
 
 @export var map_width: int = 10
 @export var map_height: int = 10
@@ -51,7 +50,7 @@ const STOOL_SEAT_HEIGHT_MM := 480.0
 const STOOL_SEAT_DIAMETER_MM := 400.0
 const STOOL_BASE_DIAMETER_MM := 380.0
 const MM_TO_PX := 0.08
-const ISLAND_DISPLAY_SCALE := 0.85
+const MACHINE_DISPLAY_SCALE := 0.80
 const STOOL_DISPLAY_SCALE := 0.80
 
 var world: Node2D
@@ -105,9 +104,10 @@ func _create_island_frame_unit(cell: Vector2i) -> void:
 	var unit := Node2D.new()
 	unit.name = "OneCellHallIslandBay"
 	unit.position = grid_to_world(cell)
-	unit.scale = Vector2(ISLAND_DISPLAY_SCALE,ISLAND_DISPLAY_SCALE)
 	unit.z_index = int(unit.position.y)
 	world.add_child(unit)
+
+	# Island equipment returns to the full one-cell reference size.
 	var back := Vector2(0,-14)
 	var right := Vector2(28,0)
 	var front := Vector2(0,14)
@@ -118,23 +118,30 @@ func _create_island_frame_unit(cell: Vector2i) -> void:
 	_add_polygon(unit,PackedVector2Array([front,right,right+base_up,front+base_up]),FRAME_SIDE)
 	_add_polygon(unit,PackedVector2Array([back+base_up,right+base_up,front+base_up,left+base_up]),FRAME_TOP)
 	var mount_y: float = -38.4
-	var cabinet_top_y: float = mount_y-64.8
+	var cabinet_top_y: float = mount_y-(64.8*MACHINE_DISPLAY_SCALE)
+
 	var board_left_bottom := Vector2(-23,mount_y-8)
 	var board_right_bottom := Vector2(27,mount_y+16)
 	var board_depth := Vector2(5,-2.5)
 	var board_up := Vector2(0,-84)
 	_add_polygon(unit,PackedVector2Array([board_left_bottom,board_right_bottom,board_right_bottom+board_up,board_left_bottom+board_up]),BACKBOARD_FRONT)
 	_add_polygon(unit,PackedVector2Array([board_right_bottom,board_right_bottom+board_depth,board_right_bottom+board_depth+board_up,board_right_bottom+board_up]),BACKBOARD_SIDE)
+
+	# Only the pachislot cabinet is reduced. Pivot compensation keeps its mounting point on the 480 mm base.
 	var machine := Node2D.new()
 	machine.name = "PachislotMachine"
-	machine.position = Vector2(-8,-2)
+	machine.position = Vector2(-8,-2)+Vector2(0,mount_y*(1.0-MACHINE_DISPLAY_SCALE))
+	machine.scale = Vector2(MACHINE_DISPLAY_SCALE,MACHINE_DISPLAY_SCALE)
 	unit.add_child(machine)
 	_create_machine_insert(machine,mount_y)
+
+	# Sand, backboard, shelf and data counter remain at the original full equipment scale.
 	var sand := Node2D.new()
 	sand.name = "SandUnit"
 	sand.position = Vector2(18,11)
 	unit.add_child(sand)
 	_create_sand_insert(sand,mount_y)
+
 	var shelf_y: float = cabinet_top_y-2.0
 	var shelf_left := Vector2(-24,shelf_y-5)
 	var shelf_front := Vector2(0,shelf_y+7)
@@ -144,15 +151,17 @@ func _create_island_frame_unit(cell: Vector2i) -> void:
 	_add_polygon(unit,PackedVector2Array([shelf_left,shelf_front,shelf_right,shelf_back]),SHELF_TOP)
 	_add_polygon(unit,PackedVector2Array([shelf_left,shelf_front,shelf_front+shelf_thickness,shelf_left+shelf_thickness]),SHELF_FRONT)
 	_add_polygon(unit,PackedVector2Array([shelf_front,shelf_right,shelf_right+shelf_thickness,shelf_front+shelf_thickness]),SHELF_SIDE)
+
 	var counter := Node2D.new()
 	counter.name = "DataCounter"
 	counter.position = Vector2(-7,shelf_y+1)
 	unit.add_child(counter)
 	_create_data_counter(counter)
 	_add_polygon(unit,PackedVector2Array([Vector2(-28,mount_y),Vector2(28,mount_y),Vector2(28,mount_y+2),Vector2(-28,mount_y+2)]),FRAME_TRIM)
+
 	var tag := Label.new()
-	tag.text = "ISLAND: 1 CELL / 85%"
-	tag.position = Vector2(-48,20)
+	tag.text = "ISLAND: 1 CELL / EQUIPMENT 100%"
+	tag.position = Vector2(-58,20)
 	tag.add_theme_font_size_override("font_size",10)
 	tag.add_theme_color_override("font_color",GUIDE)
 	unit.add_child(tag)
@@ -243,13 +252,13 @@ func _create_title() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	var label := Label.new()
-	label.text = "PACHIROU  |  ONE-CELL SCALE TEST  |  10 x 10"
+	label.text = "PACHIROU  |  MACHINE SCALE TEST  |  10 x 10"
 	label.position = Vector2(24,20)
 	label.add_theme_font_size_override("font_size",20)
 	label.add_theme_color_override("font_color",GUIDE)
 	layer.add_child(label)
 	var note := Label.new()
-	note.text = "logical cell unchanged / island display 85% / stool display 80% / real dimensions retained"
+	note.text = "island/sand/backboard/shelf/counter 100% / machine 80% / stool 80% / logical cells unchanged"
 	note.position = Vector2(24,50)
 	note.add_theme_font_size_override("font_size",13)
 	note.add_theme_color_override("font_color",Color("d4d7db"))

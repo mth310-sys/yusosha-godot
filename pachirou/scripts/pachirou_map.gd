@@ -7,31 +7,42 @@ extends Node2D
 
 const FLOOR_A := Color("c9c9c9")
 const FLOOR_B := Color("a8a8a8")
+
 const BASE_FRONT := Color("555b62")
 const BASE_SIDE := Color("3f454c")
 const BASE_TOP := Color("8d9399")
 const BACKBOARD := Color("666d75")
 const BACKBOARD_SIDE := Color("444b53")
-const SHELF := Color("a7adb4")
+const SHELF_TOP := Color("a7adb4")
+const SHELF_EDGE := Color("656c74")
+
 const MACHINE_FRONT := Color("2949c7")
 const MACHINE_SIDE := Color("19318e")
 const MACHINE_TOP := Color("5873e6")
 const MACHINE_DARK := Color("172139")
 const REEL_BG := Color("f4f6fa")
+
 const SAND_FRONT := Color("727982")
 const SAND_SIDE := Color("4c535b")
 const SAND_TOP := Color("a1a7ae")
-const COUNTER := Color("242a31")
+const SAND_SCREEN := Color("202a31")
+
+const COUNTER_FRONT := Color("242a31")
+const COUNTER_SIDE := Color("151a1f")
 const COUNTER_SCREEN := Color("79b6d8")
+
 const SEAT_TOP := Color("4c535d")
 const SEAT_INNER := Color("343a42")
 const SEAT_SIDE := Color("292f36")
 const METAL := Color("aeb4bb")
 const METAL_DARK := Color("666d75")
 
-# Fixed design rules.
-# One island bay always owns one complete 64x32 grid cell.
-const EQUIPMENT_SCALE := 0.72
+# Fixed layout rule: one island bay always occupies one complete 64x32 cell.
+# Equipment is built directly in final display coordinates; no nested scale transforms.
+const BASE_HEIGHT := 36.0
+const MACHINE_HEIGHT := 54.0
+const SAND_HEIGHT := 48.0
+const BACKBOARD_HEIGHT := 62.0
 const STOOL_SCALE := 0.76
 
 var world: Node2D
@@ -52,12 +63,12 @@ func grid_to_world(cell: Vector2i) -> Vector2:
 	var gy: float = float(cell.y) - cy
 	return Vector2((gx - gy) * tile_width * 0.5, (gx + gy) * tile_height * 0.5)
 
-func _tile_points(scale: float = 1.0) -> PackedVector2Array:
+func _tile_points() -> PackedVector2Array:
 	return PackedVector2Array([
-		Vector2(0, -tile_height * 0.5 * scale),
-		Vector2(tile_width * 0.5 * scale, 0),
-		Vector2(0, tile_height * 0.5 * scale),
-		Vector2(-tile_width * 0.5 * scale, 0)
+		Vector2(0, -tile_height * 0.5),
+		Vector2(tile_width * 0.5, 0),
+		Vector2(0, tile_height * 0.5),
+		Vector2(-tile_width * 0.5, 0)
 	])
 
 func _create_floor() -> void:
@@ -80,91 +91,107 @@ func _create_island_bay(cell: Vector2i) -> void:
 	bay.z_index = int(bay.position.y)
 	world.add_child(bay)
 
-	# Full-cell base: this footprint is never scaled with the equipment.
+	var mount_y: float = -BASE_HEIGHT
+	_create_full_cell_base(bay, mount_y)
+	_create_backboard(bay, mount_y)
+	_create_machine_and_sand(bay, mount_y)
+	_create_shelf_and_counter(bay, mount_y)
+
+func _create_full_cell_base(parent: Node2D, mount_y: float) -> void:
 	var back := Vector2(0, -16)
 	var right := Vector2(32, 0)
 	var front := Vector2(0, 16)
 	var left := Vector2(-32, 0)
-	var base_up := Vector2(0, -36)
-	_add_poly(bay, PackedVector2Array([left, front, front + base_up, left + base_up]), BASE_FRONT, 0)
-	_add_poly(bay, PackedVector2Array([front, right, right + base_up, front + base_up]), BASE_SIDE, 0)
-	_add_poly(bay, PackedVector2Array([back + base_up, right + base_up, front + base_up, left + base_up]), BASE_TOP, 0)
-	var mount_y := -36.0
+	var up := Vector2(0, mount_y)
 
-	# Backboard is one clean frame behind the machine+sand pair.
-	var board_l := Vector2(-25, mount_y - 5)
-	var board_r := Vector2(26, mount_y + 19)
-	var board_up := Vector2(0, -57)
-	var board_depth := Vector2(3.5, -1.75)
-	_add_poly(bay, PackedVector2Array([board_l, board_r, board_r + board_up, board_l + board_up]), BACKBOARD, 1)
-	_add_poly(bay, PackedVector2Array([board_r, board_r + board_depth, board_r + board_depth + board_up, board_r + board_up]), BACKBOARD_SIDE, 1)
+	_add_poly(parent, PackedVector2Array([left, front, front + up, left + up]), BASE_FRONT, 0)
+	_add_poly(parent, PackedVector2Array([front, right, right + up, front + up]), BASE_SIDE, 0)
+	_add_poly(parent, PackedVector2Array([back + up, right + up, front + up, left + up]), BASE_TOP, 0)
 
-	# Machine and sand share one parent so their relative spacing cannot drift apart.
-	var equipment := Node2D.new()
-	equipment.name = "MachineAndSand"
-	equipment.position = Vector2(-7, mount_y)
-	equipment.scale = Vector2(EQUIPMENT_SCALE, EQUIPMENT_SCALE)
-	equipment.z_index = 10
-	bay.add_child(equipment)
-	_create_machine(equipment, Vector2(-17, 0))
-	_create_sand(equipment, Vector2(20, 3))
+func _create_backboard(parent: Node2D, mount_y: float) -> void:
+	# Backboard width follows the combined machine+sand set and stays behind it.
+	var left_bottom := Vector2(-11, mount_y - 8)
+	var right_bottom := Vector2(24, mount_y + 9)
+	var depth := Vector2(4, -2)
+	var up := Vector2(0, -BACKBOARD_HEIGHT)
 
-	# A single shallow shelf spans the equipment pair.
-	var equipment_top := mount_y - 49.0
-	var shelf_l := Vector2(-23, equipment_top - 3)
-	var shelf_f := Vector2(0, equipment_top + 8)
-	var shelf_r := Vector2(25, equipment_top + 6)
-	var shelf_b := Vector2(3, equipment_top - 5)
-	_add_poly(bay, PackedVector2Array([shelf_l, shelf_f, shelf_r, shelf_b]), SHELF, 20)
+	_add_poly(parent, PackedVector2Array([
+		left_bottom,
+		right_bottom,
+		right_bottom + up,
+		left_bottom + up
+	]), BACKBOARD, 1)
+	_add_poly(parent, PackedVector2Array([
+		right_bottom,
+		right_bottom + depth,
+		right_bottom + depth + up,
+		right_bottom + up
+	]), BACKBOARD_SIDE, 1)
 
-	# Compact counter centered over the pachislot machine, not over the sand.
-	var counter := Node2D.new()
-	counter.name = "DataCounter"
-	counter.position = Vector2(-8, equipment_top - 1)
-	counter.z_index = 30
-	bay.add_child(counter)
-	_create_counter(counter)
+func _create_machine_and_sand(parent: Node2D, mount_y: float) -> void:
+	# Machine and sand share one continuous front line and one common depth vector.
+	var depth := Vector2(12, -6)
 
-func _create_machine(parent: Node2D, origin: Vector2) -> void:
-	var lb := origin + Vector2(-16, 8)
-	var fb := origin + Vector2(12, 21)
-	var depth := Vector2(14, -7)
-	var up := Vector2(0, -68)
-	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), MACHINE_FRONT)
-	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), MACHINE_SIDE)
-	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), MACHINE_TOP)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.10, 0.90, 0.73, 0.91), MACHINE_DARK)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.10, 0.90, 0.44, 0.68), REEL_BG)
+	var machine_left := Vector2(-18, mount_y + 2)
+	var machine_right := Vector2(5, mount_y + 13)
+	_create_machine(parent, machine_left, machine_right, depth)
+
+	# The sand starts exactly at the machine's right edge: no gap, no overlap.
+	var sand_left := machine_right
+	var sand_right := Vector2(11, mount_y + 16)
+	_create_sand(parent, sand_left, sand_right, depth)
+
+func _create_machine(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> void:
+	var up := Vector2(0, -MACHINE_HEIGHT)
+	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), MACHINE_FRONT, 10)
+	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), MACHINE_SIDE, 10)
+	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), MACHINE_TOP, 10)
+
+	_add_poly(parent, _face_quad(lb, fb, up, 0.10, 0.90, 0.73, 0.91), MACHINE_DARK, 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.10, 0.90, 0.43, 0.68), REEL_BG, 11)
 	for i in range(3):
 		var u0: float = 0.14 + float(i) * 0.25
-		_add_poly(parent, _face_quad(lb, fb, up, u0, u0 + 0.19, 0.48, 0.64), Color("ffffff"))
-	_add_poly(parent, _face_quad(lb, fb, up, 0.12, 0.88, 0.12, 0.30), Color("20336f"))
+		_add_poly(parent, _face_quad(lb, fb, up, u0, u0 + 0.19, 0.48, 0.64), Color("ffffff"), 12)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.12, 0.88, 0.12, 0.30), Color("20336f"), 11)
 
-func _create_sand(parent: Node2D, origin: Vector2) -> void:
-	var lb := origin + Vector2(-4, 5)
-	var fb := origin + Vector2(4, 9)
-	var depth := Vector2(13, -6.5)
-	var up := Vector2(0, -58)
-	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), SAND_FRONT)
-	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), SAND_SIDE)
-	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), SAND_TOP)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.15, 0.85, 0.70, 0.85), Color("202a31"))
-	_add_poly(parent, _face_quad(lb, fb, up, 0.18, 0.82, 0.43, 0.54), Color("c3c8ce"))
-	_add_poly(parent, _face_quad(lb, fb, up, 0.20, 0.80, 0.18, 0.28), Color("343b43"))
+func _create_sand(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> void:
+	var up := Vector2(0, -SAND_HEIGHT)
+	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), SAND_FRONT, 10)
+	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), SAND_SIDE, 10)
+	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), SAND_TOP, 10)
 
-func _create_counter(parent: Node2D) -> void:
-	var lb := Vector2(-8, 2)
-	var fb := Vector2(8, 9)
-	var depth := Vector2(4, -2)
-	var up := Vector2(0, -8)
-	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), COUNTER)
-	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), Color("151a1f"))
-	_add_poly(parent, _face_quad(lb, fb, up, 0.12, 0.88, 0.20, 0.78), COUNTER_SCREEN)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.18, 0.82, 0.70, 0.85), SAND_SCREEN, 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.20, 0.80, 0.43, 0.54), Color("c3c8ce"), 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.22, 0.78, 0.18, 0.28), Color("343b43"), 11)
+
+func _create_shelf_and_counter(parent: Node2D, mount_y: float) -> void:
+	# Shelf is shallow, centered over the playable pair, and attached to the backboard.
+	var shelf_y: float = mount_y - MACHINE_HEIGHT - 2.0
+	var shelf_left := Vector2(-14, shelf_y - 3)
+	var shelf_front := Vector2(1, shelf_y + 4)
+	var shelf_right := Vector2(20, shelf_y + 3)
+	var shelf_back := Vector2(5, shelf_y - 5)
+	var drop := Vector2(0, 1.5)
+
+	_add_poly(parent, PackedVector2Array([shelf_left, shelf_front, shelf_right, shelf_back]), SHELF_TOP, 20)
+	_add_poly(parent, PackedVector2Array([shelf_left, shelf_front, shelf_front + drop, shelf_left + drop]), SHELF_EDGE, 20)
+	_add_poly(parent, PackedVector2Array([shelf_front, shelf_right, shelf_right + drop, shelf_front + drop]), SHELF_EDGE, 20)
+
+	# Counter sits above the machine center, not above the sand.
+	var counter_lb := Vector2(-7, shelf_y + 1)
+	var counter_fb := Vector2(7, shelf_y + 7)
+	var counter_depth := Vector2(3.5, -1.75)
+	var counter_up := Vector2(0, -7)
+
+	_add_poly(parent, PackedVector2Array([counter_lb, counter_fb, counter_fb + counter_up, counter_lb + counter_up]), COUNTER_FRONT, 30)
+	_add_poly(parent, PackedVector2Array([counter_fb, counter_fb + counter_depth, counter_fb + counter_depth + counter_up, counter_fb + counter_up]), COUNTER_SIDE, 30)
+	_add_poly(parent, _face_quad(counter_lb, counter_fb, counter_up, 0.12, 0.88, 0.20, 0.78), COUNTER_SCREEN, 31)
 
 func _create_stool(cell: Vector2i) -> void:
 	var stool := Node2D.new()
 	stool.name = "Stool"
-	stool.position = grid_to_world(cell) + Vector2(8, -3)
+	# Center the stool on the machine's front-axis rather than placing it arbitrarily.
+	stool.position = grid_to_world(cell) + Vector2(12, -4)
 	stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 	stool.z_index = int(stool.position.y)
 	world.add_child(stool)

@@ -1,7 +1,7 @@
 extends Node2D
 
 # Pachirou Step 1: isometric hall scale prototype.
-# Logical coordinates stay square; only rendering is converted to diamonds.
+# Logical coordinates stay square; rendering is converted to diamonds.
 
 @export var map_width: int = 10
 @export var map_height: int = 10
@@ -13,6 +13,8 @@ const FLOOR_B := Color("a8a8a8")
 const SLOT_FRONT := Color("344fd0")
 const SLOT_SIDE := Color("24378f")
 const SLOT_TOP := Color("5872f0")
+const SLOT_DARK := Color("151b48")
+const SLOT_REEL := Color("ecece6")
 const CHAIR_MAIN := Color("3d4148")
 const CHARACTER_BODY := Color("f4f4f4")
 const CHARACTER_HEAD := Color("e5b58f")
@@ -70,28 +72,58 @@ func _create_floor() -> void:
 
 func _create_slot_machine(cell: Vector2i) -> void:
 	var machine := Node2D.new()
-	machine.name = "TestSlotMachine"
+	machine.name = "TestSlotMachineIso"
 	machine.position = grid_to_world(cell)
 	machine.z_index = int(machine.position.y)
 	world.add_child(machine)
 
+	# Cabinet footprint uses the SAME isometric axes as the 64x32 floor tile.
+	# It occupies about 60% of one floor cell so its contact with the floor is readable.
+	var base_back := Vector2(0, -9)
+	var base_right := Vector2(20, 0)
+	var base_front := Vector2(0, 10)
+	var base_left := Vector2(-20, 0)
+	var cabinet_height := 44.0
+
+	var top_back := base_back + Vector2(0, -cabinet_height)
+	var top_right := base_right + Vector2(0, -cabinet_height)
+	var top_front := base_front + Vector2(0, -cabinet_height)
+	var top_left := base_left + Vector2(0, -cabinet_height)
+
+	# Contact shadow: same diamond orientation as the floor.
 	_add_polygon(machine, PackedVector2Array([
-		Vector2(-14, -42), Vector2(14, -42), Vector2(14, 0), Vector2(-14, 0)
+		base_back + Vector2(0, 2),
+		base_right + Vector2(0, 2),
+		base_front + Vector2(0, 2),
+		base_left + Vector2(0, 2)
+	]), Color(0.05, 0.05, 0.07, 0.35))
+
+	# Two visible vertical faces. The southwest face is treated as the cabinet front.
+	_add_polygon(machine, PackedVector2Array([
+		base_left, base_front, top_front, top_left
 	]), SLOT_FRONT)
 	_add_polygon(machine, PackedVector2Array([
-		Vector2(14, -42), Vector2(24, -36), Vector2(24, 6), Vector2(14, 0)
+		base_front, base_right, top_right, top_front
 	]), SLOT_SIDE)
+
+	# Top face is a smaller diamond parallel to the floor plane.
 	_add_polygon(machine, PackedVector2Array([
-		Vector2(-14, -42), Vector2(14, -42), Vector2(24, -36), Vector2(-4, -36)
+		top_back, top_right, top_front, top_left
 	]), SLOT_TOP)
 
-	# Small display/reel hints so the object reads as a slot cabinet at hall scale.
+	# Display and reel windows are parallelograms that sit ON the slanted front face.
+	# They follow the same left->front edge direction, rather than screen-aligned rectangles.
 	_add_polygon(machine, PackedVector2Array([
-		Vector2(-9, -34), Vector2(9, -34), Vector2(9, -23), Vector2(-9, -23)
-	]), Color("111827"))
+		Vector2(-15, -37), Vector2(-2, -30.5), Vector2(-2, -21.5), Vector2(-15, -28)
+	]), SLOT_DARK)
 	_add_polygon(machine, PackedVector2Array([
-		Vector2(-9, -19), Vector2(9, -19), Vector2(9, -10), Vector2(-9, -10)
-	]), Color("e8e8e2"))
+		Vector2(-14, -18), Vector2(-2, -12), Vector2(-2, -4), Vector2(-14, -10)
+	]), SLOT_REEL)
+
+	# Small control shelf protruding from the front edge.
+	_add_polygon(machine, PackedVector2Array([
+		Vector2(-13, -3), Vector2(1, 4), Vector2(-3, 7), Vector2(-17, 0)
+	]), Color("2b3fb0"))
 
 
 func _create_chair(cell: Vector2i) -> void:
@@ -142,14 +174,14 @@ func _create_title() -> void:
 	add_child(layer)
 
 	var label := Label.new()
-	label.text = "PACHIROU  |  ISOMETRIC SCALE TEST  |  10 x 10"
+	label.text = "PACHIROU  |  ISOMETRIC GEOMETRY TEST  |  10 x 10"
 	label.position = Vector2(24, 20)
 	label.add_theme_font_size_override("font_size", 20)
 	label.add_theme_color_override("font_color", Color("e8e8e8"))
 	layer.add_child(label)
 
 	var note := Label.new()
-	note.text = "Floor 64x32  /  character + slot + chair reference"
+	note.text = "Floor 64x32 / cabinet footprint aligned to floor isometric axes"
 	note.position = Vector2(24, 50)
 	note.add_theme_font_size_override("font_size", 14)
 	note.add_theme_color_override("font_color", Color("bfc4cc"))

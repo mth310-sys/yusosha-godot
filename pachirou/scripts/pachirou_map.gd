@@ -7,51 +7,32 @@ extends Node2D
 
 const FLOOR_A := Color("c9c9c9")
 const FLOOR_B := Color("a8a8a8")
-const OCCUPIED_CELL := Color("d6b96b")
-const STOOL_CELL := Color("7fa4b8")
-const GUIDE := Color("f1f1f1")
-const SHADOW := Color(0.04,0.04,0.05,0.25)
-const FRAME_FRONT := Color("555b62")
-const FRAME_SIDE := Color("3f454c")
-const FRAME_TOP := Color("8d9399")
-const FRAME_TRIM := Color("b1b6bc")
-const BACKBOARD_FRONT := Color("666d75")
+const BASE_FRONT := Color("555b62")
+const BASE_SIDE := Color("3f454c")
+const BASE_TOP := Color("8d9399")
+const BACKBOARD := Color("666d75")
 const BACKBOARD_SIDE := Color("444b53")
-const SHELF_TOP := Color("a7adb4")
-const SHELF_FRONT := Color("686f77")
-const SHELF_SIDE := Color("4a5159")
+const SHELF := Color("a7adb4")
 const MACHINE_FRONT := Color("2949c7")
 const MACHINE_SIDE := Color("19318e")
 const MACHINE_TOP := Color("5873e6")
 const MACHINE_DARK := Color("172139")
-const REEL_BG := Color("e7ebf1")
+const REEL_BG := Color("f4f6fa")
 const SAND_FRONT := Color("727982")
 const SAND_SIDE := Color("4c535b")
 const SAND_TOP := Color("a1a7ae")
-const SAND_SCREEN := Color("202a31")
-const COUNTER_FRONT := Color("242a31")
-const COUNTER_SIDE := Color("151a1f")
-const COUNTER_TOP := Color("4d555e")
+const COUNTER := Color("242a31")
 const COUNTER_SCREEN := Color("79b6d8")
 const SEAT_TOP := Color("4c535d")
-const SEAT_INNER := Color("3e454e")
-const SEAT_FRONT := Color("292f36")
-const PIPING := Color("737b86")
-const METAL_LIGHT := Color("d3d7dc")
-const METAL_MID := Color("9da4ac")
-const METAL_DARK := Color("646b74")
-const BASE_TOP := Color("7c838c")
-const BASE_FRONT := Color("4a5159")
+const SEAT_INNER := Color("343a42")
+const SEAT_SIDE := Color("292f36")
+const METAL := Color("aeb4bb")
+const METAL_DARK := Color("666d75")
 
-const STOOL_SEAT_HEIGHT_MM := 480.0
-const STOOL_SEAT_DIAMETER_MM := 400.0
-const STOOL_BASE_DIAMETER_MM := 380.0
-const MM_TO_PX := 0.08
-
-# The base owns one full 64x32 cell. Only the equipment is scaled to fit inside it.
-const MACHINE_DISPLAY_SCALE := 0.70
-const SAND_DISPLAY_SCALE := 0.70
-const STOOL_DISPLAY_SCALE := 0.80
+# Fixed design rules.
+# One island bay always owns one complete 64x32 grid cell.
+const EQUIPMENT_SCALE := 0.72
+const STOOL_SCALE := 0.76
 
 var world: Node2D
 
@@ -61,239 +42,172 @@ func _ready() -> void:
 	world.y_sort_enabled = true
 	add_child(world)
 	_create_floor()
-	var island_cell := Vector2i(6,4)
-	var stool_cell := Vector2i(5,5)
-	_highlight_cell(island_cell,OCCUPIED_CELL)
-	_highlight_cell(stool_cell,STOOL_CELL)
-	_create_island_frame_unit(island_cell)
-	_create_stool_reference(stool_cell)
-	_create_title()
+	_create_island_bay(Vector2i(6, 4))
+	_create_stool(Vector2i(5, 5))
 
 func grid_to_world(cell: Vector2i) -> Vector2:
-	var center_x: float = (map_width-1)*0.5
-	var center_y: float = (map_height-1)*0.5
-	var gx: float = float(cell.x)-center_x
-	var gy: float = float(cell.y)-center_y
-	return Vector2((gx-gy)*tile_width*0.5,(gx+gy)*tile_height*0.5)
+	var cx: float = (map_width - 1) * 0.5
+	var cy: float = (map_height - 1) * 0.5
+	var gx: float = float(cell.x) - cx
+	var gy: float = float(cell.y) - cy
+	return Vector2((gx - gy) * tile_width * 0.5, (gx + gy) * tile_height * 0.5)
 
 func _tile_points(scale: float = 1.0) -> PackedVector2Array:
-	return PackedVector2Array([Vector2(0,-tile_height*0.5*scale),Vector2(tile_width*0.5*scale,0),Vector2(0,tile_height*0.5*scale),Vector2(-tile_width*0.5*scale,0)])
+	return PackedVector2Array([
+		Vector2(0, -tile_height * 0.5 * scale),
+		Vector2(tile_width * 0.5 * scale, 0),
+		Vector2(0, tile_height * 0.5 * scale),
+		Vector2(-tile_width * 0.5 * scale, 0)
+	])
 
 func _create_floor() -> void:
-	var root := Node2D.new()
-	root.name = "Floor"
-	world.add_child(root)
+	var floor := Node2D.new()
+	floor.name = "Floor"
+	world.add_child(floor)
 	for y in range(map_height):
 		for x in range(map_width):
 			var tile := Polygon2D.new()
 			tile.polygon = _tile_points()
-			tile.color = FLOOR_A if (x+y)%2==0 else FLOOR_B
-			tile.position = grid_to_world(Vector2i(x,y))
+			tile.color = FLOOR_A if (x + y) % 2 == 0 else FLOOR_B
+			tile.position = grid_to_world(Vector2i(x, y))
 			tile.z_index = -1000
-			root.add_child(tile)
+			floor.add_child(tile)
 
-func _highlight_cell(cell: Vector2i,color: Color) -> void:
-	var marker := Polygon2D.new()
-	marker.polygon = _tile_points(0.92)
-	marker.color = color
-	marker.position = grid_to_world(cell)
-	marker.z_index = -900
-	world.add_child(marker)
+func _create_island_bay(cell: Vector2i) -> void:
+	var bay := Node2D.new()
+	bay.name = "IslandBay"
+	bay.position = grid_to_world(cell)
+	bay.z_index = int(bay.position.y)
+	world.add_child(bay)
 
-func _create_island_frame_unit(cell: Vector2i) -> void:
-	var unit := Node2D.new()
-	unit.name = "OneCellIslandBay"
-	unit.position = grid_to_world(cell)
-	unit.z_index = int(unit.position.y)
-	world.add_child(unit)
+	# Full-cell base: this footprint is never scaled with the equipment.
+	var back := Vector2(0, -16)
+	var right := Vector2(32, 0)
+	var front := Vector2(0, 16)
+	var left := Vector2(-32, 0)
+	var base_up := Vector2(0, -36)
+	_add_poly(bay, PackedVector2Array([left, front, front + base_up, left + base_up]), BASE_FRONT, 0)
+	_add_poly(bay, PackedVector2Array([front, right, right + base_up, front + base_up]), BASE_SIDE, 0)
+	_add_poly(bay, PackedVector2Array([back + base_up, right + base_up, front + base_up, left + base_up]), BASE_TOP, 0)
+	var mount_y := -36.0
 
-	# Full one-cell footprint. This must never be reduced by equipment scale changes.
-	var back := Vector2(0,-14)
-	var right := Vector2(28,0)
-	var front := Vector2(0,14)
-	var left := Vector2(-28,0)
-	var base_up := Vector2(0,-38.4)
-	_add_polygon_z(unit,PackedVector2Array([left+Vector2(2,3),front+Vector2(2,3),right+Vector2(2,3),back+Vector2(2,3)]),SHADOW,-5)
-	_add_polygon_z(unit,PackedVector2Array([left,front,front+base_up,left+base_up]),FRAME_FRONT,0)
-	_add_polygon_z(unit,PackedVector2Array([front,right,right+base_up,front+base_up]),FRAME_SIDE,0)
-	_add_polygon_z(unit,PackedVector2Array([back+base_up,right+base_up,front+base_up,left+base_up]),FRAME_TOP,0)
-	var mount_y: float = -38.4
+	# Backboard is one clean frame behind the machine+sand pair.
+	var board_l := Vector2(-25, mount_y - 5)
+	var board_r := Vector2(26, mount_y + 19)
+	var board_up := Vector2(0, -57)
+	var board_depth := Vector2(3.5, -1.75)
+	_add_poly(bay, PackedVector2Array([board_l, board_r, board_r + board_up, board_l + board_up]), BACKBOARD, 1)
+	_add_poly(bay, PackedVector2Array([board_r, board_r + board_depth, board_r + board_depth + board_up, board_r + board_up]), BACKBOARD_SIDE, 1)
 
-	# Backboard uses the one-cell frame, while machine + sand occupy the usable inner width.
-	var board_left_bottom := Vector2(-24,mount_y-6)
-	var board_right_bottom := Vector2(25,mount_y+17)
-	var board_depth := Vector2(4,-2)
-	var board_up := Vector2(0,-58)
-	_add_polygon_z(unit,PackedVector2Array([board_left_bottom,board_right_bottom,board_right_bottom+board_up,board_left_bottom+board_up]),BACKBOARD_FRONT,1)
-	_add_polygon_z(unit,PackedVector2Array([board_right_bottom,board_right_bottom+board_depth,board_right_bottom+board_depth+board_up,board_right_bottom+board_up]),BACKBOARD_SIDE,1)
+	# Machine and sand share one parent so their relative spacing cannot drift apart.
+	var equipment := Node2D.new()
+	equipment.name = "MachineAndSand"
+	equipment.position = Vector2(-7, mount_y)
+	equipment.scale = Vector2(EQUIPMENT_SCALE, EQUIPMENT_SCALE)
+	equipment.z_index = 10
+	bay.add_child(equipment)
+	_create_machine(equipment, Vector2(-17, 0))
+	_create_sand(equipment, Vector2(20, 3))
 
-	# Machine and sand are treated as one combined set inside the cell.
-	var machine := Node2D.new()
-	machine.name = "PachislotMachine"
-	machine.position = Vector2(-8.5,-2)+Vector2(0,-38.4*(1.0-MACHINE_DISPLAY_SCALE))
-	machine.scale = Vector2(MACHINE_DISPLAY_SCALE,MACHINE_DISPLAY_SCALE)
-	machine.z_index = 10
-	unit.add_child(machine)
-	_create_machine_insert(machine,-38.4)
+	# A single shallow shelf spans the equipment pair.
+	var equipment_top := mount_y - 49.0
+	var shelf_l := Vector2(-23, equipment_top - 3)
+	var shelf_f := Vector2(0, equipment_top + 8)
+	var shelf_r := Vector2(25, equipment_top + 6)
+	var shelf_b := Vector2(3, equipment_top - 5)
+	_add_poly(bay, PackedVector2Array([shelf_l, shelf_f, shelf_r, shelf_b]), SHELF, 20)
 
-	var sand := Node2D.new()
-	sand.name = "SandUnit"
-	sand.position = Vector2(11.5,3.1)+Vector2(0,mount_y*(1.0-SAND_DISPLAY_SCALE))
-	sand.scale = Vector2(SAND_DISPLAY_SCALE,SAND_DISPLAY_SCALE)
-	sand.z_index = 11
-	unit.add_child(sand)
-	_create_sand_insert(sand,mount_y)
-
-	# Shelf and counter follow the combined equipment envelope, not the machine alone.
-	var machine_top_y: float = mount_y-(64.8*MACHINE_DISPLAY_SCALE)
-	var shelf_y: float = machine_top_y-2.0
-	var shelf_left := Vector2(-22,shelf_y-4)
-	var shelf_front := Vector2(0,shelf_y+6)
-	var shelf_right := Vector2(24,shelf_y+5)
-	var shelf_back := Vector2(3,shelf_y-6)
-	var shelf_thickness := Vector2(0,1.6)
-	_add_polygon_z(unit,PackedVector2Array([shelf_left,shelf_front,shelf_right,shelf_back]),SHELF_TOP,20)
-	_add_polygon_z(unit,PackedVector2Array([shelf_left,shelf_front,shelf_front+shelf_thickness,shelf_left+shelf_thickness]),SHELF_FRONT,20)
-	_add_polygon_z(unit,PackedVector2Array([shelf_front,shelf_right,shelf_right+shelf_thickness,shelf_front+shelf_thickness]),SHELF_SIDE,20)
-
+	# Compact counter centered over the pachislot machine, not over the sand.
 	var counter := Node2D.new()
 	counter.name = "DataCounter"
-	counter.position = Vector2(-6,shelf_y+0.5)
+	counter.position = Vector2(-8, equipment_top - 1)
 	counter.z_index = 30
-	unit.add_child(counter)
-	_create_data_counter_compact(counter)
+	bay.add_child(counter)
+	_create_counter(counter)
 
-	_add_polygon_z(unit,PackedVector2Array([Vector2(-28,mount_y),Vector2(28,mount_y),Vector2(28,mount_y+1.5),Vector2(-28,mount_y+1.5)]),FRAME_TRIM,40)
-
-	var tag := Label.new()
-	tag.text = "ISLAND: FULL 1 CELL / MACHINE + SAND FIT"
-	tag.position = Vector2(-61,19)
-	tag.z_index = 50
-	tag.add_theme_font_size_override("font_size",9)
-	tag.add_theme_color_override("font_color",GUIDE)
-	unit.add_child(tag)
-
-func _create_machine_insert(parent: Node2D,mount_y: float) -> void:
-	var lb := Vector2(-20,mount_y+5)
-	var fb := Vector2(7,mount_y+18)
-	var depth_vec := Vector2(16,-8)
-	var rb := fb+depth_vec
-	var bb := lb+depth_vec
-	var up := Vector2(0,-64.8)
-	_add_polygon(parent,PackedVector2Array([lb,fb,fb+up,lb+up]),MACHINE_FRONT)
-	_add_polygon(parent,PackedVector2Array([fb,rb,rb+up,fb+up]),MACHINE_SIDE)
-	_add_polygon(parent,PackedVector2Array([bb+up,rb+up,fb+up,lb+up]),MACHINE_TOP)
-	_add_polygon(parent,_face_quad(lb,fb,up,0.10,0.90,0.72,0.90),MACHINE_DARK)
-	_add_polygon(parent,_face_quad(lb,fb,up,0.10,0.90,0.43,0.67),REEL_BG)
+func _create_machine(parent: Node2D, origin: Vector2) -> void:
+	var lb := origin + Vector2(-16, 8)
+	var fb := origin + Vector2(12, 21)
+	var depth := Vector2(14, -7)
+	var up := Vector2(0, -68)
+	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), MACHINE_FRONT)
+	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), MACHINE_SIDE)
+	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), MACHINE_TOP)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.10, 0.90, 0.73, 0.91), MACHINE_DARK)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.10, 0.90, 0.44, 0.68), REEL_BG)
 	for i in range(3):
-		var u0: float = 0.14+float(i)*0.25
-		_add_polygon(parent,_face_quad(lb,fb,up,u0,u0+0.19,0.47,0.63),Color("ffffff"))
-	_add_polygon(parent,_face_quad(lb,fb,up,0.10,0.90,0.31,0.39),Color("213164"))
-	_add_polygon(parent,_face_quad(lb,fb,up,0.14,0.86,0.08,0.26),Color("20336f"))
+		var u0: float = 0.14 + float(i) * 0.25
+		_add_poly(parent, _face_quad(lb, fb, up, u0, u0 + 0.19, 0.48, 0.64), Color("ffffff"))
+	_add_poly(parent, _face_quad(lb, fb, up, 0.12, 0.88, 0.12, 0.30), Color("20336f"))
 
-func _create_sand_insert(parent: Node2D,mount_y: float) -> void:
-	var lb := Vector2(-5,mount_y+2)
-	var fb := Vector2(2,mount_y+5.5)
-	var depth_vec := Vector2(14,-7)
-	var rb := fb+depth_vec
-	var bb := lb+depth_vec
-	var up := Vector2(0,-57.6)
-	_add_polygon(parent,PackedVector2Array([lb,fb,fb+up,lb+up]),SAND_FRONT)
-	_add_polygon(parent,PackedVector2Array([fb,rb,rb+up,fb+up]),SAND_SIDE)
-	_add_polygon(parent,PackedVector2Array([bb+up,rb+up,fb+up,lb+up]),SAND_TOP)
-	_add_polygon(parent,_face_quad(lb,fb,up,0.15,0.85,0.70,0.86),SAND_SCREEN)
-	_add_polygon(parent,_face_quad(lb,fb,up,0.18,0.82,0.45,0.56),Color("c3c8ce"))
-	_add_polygon(parent,_face_quad(lb,fb,up,0.20,0.80,0.20,0.30),Color("343b43"))
+func _create_sand(parent: Node2D, origin: Vector2) -> void:
+	var lb := origin + Vector2(-4, 5)
+	var fb := origin + Vector2(4, 9)
+	var depth := Vector2(13, -6.5)
+	var up := Vector2(0, -58)
+	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), SAND_FRONT)
+	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), SAND_SIDE)
+	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), SAND_TOP)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.15, 0.85, 0.70, 0.85), Color("202a31"))
+	_add_poly(parent, _face_quad(lb, fb, up, 0.18, 0.82, 0.43, 0.54), Color("c3c8ce"))
+	_add_poly(parent, _face_quad(lb, fb, up, 0.20, 0.80, 0.18, 0.28), Color("343b43"))
 
-func _create_data_counter_compact(parent: Node2D) -> void:
-	var lb := Vector2(-7.0,1)
-	var fb := Vector2(7.0,7.5)
-	var depth_vec := Vector2(3.5,-1.75)
-	var rb := fb+depth_vec
-	var bb := lb+depth_vec
-	var up := Vector2(0,-7.5)
-	_add_polygon(parent,PackedVector2Array([lb,fb,fb+up,lb+up]),COUNTER_FRONT)
-	_add_polygon(parent,PackedVector2Array([fb,rb,rb+up,fb+up]),COUNTER_SIDE)
-	_add_polygon(parent,PackedVector2Array([bb+up,rb+up,fb+up,lb+up]),COUNTER_TOP)
-	_add_polygon(parent,_face_quad(lb,fb,up,0.12,0.88,0.20,0.78),COUNTER_SCREEN)
+func _create_counter(parent: Node2D) -> void:
+	var lb := Vector2(-8, 2)
+	var fb := Vector2(8, 9)
+	var depth := Vector2(4, -2)
+	var up := Vector2(0, -8)
+	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), COUNTER)
+	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), Color("151a1f"))
+	_add_poly(parent, _face_quad(lb, fb, up, 0.12, 0.88, 0.20, 0.78), COUNTER_SCREEN)
 
-func _face_point(left_bottom: Vector2,front_bottom: Vector2,up: Vector2,u: float,v: float) -> Vector2:
-	return left_bottom.lerp(front_bottom,u)+up*v
-
-func _face_quad(left_bottom: Vector2,front_bottom: Vector2,up: Vector2,u0: float,u1: float,v0: float,v1: float) -> PackedVector2Array:
-	return PackedVector2Array([_face_point(left_bottom,front_bottom,up,u0,v0),_face_point(left_bottom,front_bottom,up,u1,v0),_face_point(left_bottom,front_bottom,up,u1,v1),_face_point(left_bottom,front_bottom,up,u0,v1)])
-
-func _create_stool_reference(cell: Vector2i) -> void:
+func _create_stool(cell: Vector2i) -> void:
 	var stool := Node2D.new()
-	stool.name = "StandardStool"
-	stool.position = grid_to_world(cell)+Vector2(9,-4)
-	stool.scale = Vector2(STOOL_DISPLAY_SCALE,STOOL_DISPLAY_SCALE)
+	stool.name = "Stool"
+	stool.position = grid_to_world(cell) + Vector2(8, -3)
+	stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 	stool.z_index = int(stool.position.y)
 	world.add_child(stool)
-	var seat_h: float = STOOL_SEAT_HEIGHT_MM*MM_TO_PX
-	var seat_rx: float = STOOL_SEAT_DIAMETER_MM*MM_TO_PX*0.5
-	var seat_ry: float = seat_rx*0.42
-	var base_rx: float = STOOL_BASE_DIAMETER_MM*MM_TO_PX*0.5
-	var base_ry: float = base_rx*0.42
-	var top_y: float = -seat_h
-	var seat_t: float = 5.6
-	_add_polygon(stool,_ellipse_points(Vector2(2,2),base_rx*1.06,base_ry*1.06,32),SHADOW)
-	_add_polygon(stool,_ellipse_front_band(Vector2(0,-1),base_rx,base_ry,3.0,24),BASE_FRONT)
-	_add_polygon(stool,_ellipse_points(Vector2(0,-1.5),base_rx,base_ry,32),BASE_TOP)
-	_add_polygon(stool,_ellipse_points(Vector2(0,-2),base_rx*0.65,base_ry*0.55,24),METAL_MID)
-	_add_polygon(stool,PackedVector2Array([Vector2(-3.6,top_y+seat_t+2),Vector2(3.6,top_y+seat_t+2),Vector2(3.6,-5),Vector2(-3.6,-5)]),METAL_DARK)
-	_add_polygon(stool,PackedVector2Array([Vector2(-0.8,top_y+seat_t+2),Vector2(1.2,top_y+seat_t+2),Vector2(1.2,-5),Vector2(-0.8,-5)]),METAL_LIGHT)
-	_add_polygon(stool,_ellipse_points(Vector2(0,top_y+seat_t+1),seat_rx*0.46,seat_ry*0.42,20),METAL_DARK)
-	_add_polygon(stool,_ellipse_front_band(Vector2(0,top_y),seat_rx,seat_ry,seat_t,28),SEAT_FRONT)
-	_add_polygon(stool,_ellipse_points(Vector2(0,top_y),seat_rx,seat_ry,36),PIPING)
-	_add_polygon(stool,_ellipse_points(Vector2(0,top_y-0.7),seat_rx-1.2,seat_ry-0.7,36),SEAT_TOP)
-	_add_polygon(stool,_ellipse_points(Vector2(0.4,top_y-1),seat_rx*0.76,seat_ry*0.67,28),SEAT_INNER)
-	var tag := Label.new()
-	tag.text = "STOOL"
-	tag.position = Vector2(-18,16)
-	tag.add_theme_font_size_override("font_size",9)
-	tag.add_theme_color_override("font_color",GUIDE)
-	stool.add_child(tag)
 
-func _create_title() -> void:
-	var layer := CanvasLayer.new()
-	add_child(layer)
-	var label := Label.new()
-	label.text = "PACHIROU  |  FULL-CELL MACHINE + SAND FIT TEST  |  10 x 10"
-	label.position = Vector2(24,20)
-	label.add_theme_font_size_override("font_size",20)
-	label.add_theme_color_override("font_color",GUIDE)
-	layer.add_child(label)
-	var note := Label.new()
-	note.text = "base footprint = full 64x32 cell / machine 70% / sand 70% / equipment centered inside cell"
-	note.position = Vector2(24,50)
-	note.add_theme_font_size_override("font_size",13)
-	note.add_theme_color_override("font_color",Color("d4d7db"))
-	layer.add_child(note)
+	var seat_y := -38.4
+	_add_poly(stool, _ellipse(Vector2(0, -1), 15.2, 6.4, 28), METAL_DARK)
+	_add_poly(stool, _ellipse(Vector2(0, -2), 11.0, 4.2, 24), METAL)
+	_add_poly(stool, PackedVector2Array([Vector2(-2, seat_y + 5), Vector2(2, seat_y + 5), Vector2(2, -5), Vector2(-2, -5)]), METAL)
+	_add_poly(stool, _ellipse_band(Vector2(0, seat_y), 16.0, 6.7, 5.0, 28), SEAT_SIDE)
+	_add_poly(stool, _ellipse(Vector2(0, seat_y), 16.0, 6.7, 32), SEAT_TOP)
+	_add_poly(stool, _ellipse(Vector2(0, seat_y - 0.7), 12.0, 4.4, 28), SEAT_INNER)
 
-func _ellipse_points(center: Vector2,radius_x: float,radius_y: float,segments: int) -> PackedVector2Array:
+func _face_point(lb: Vector2, fb: Vector2, up: Vector2, u: float, v: float) -> Vector2:
+	return lb.lerp(fb, u) + up * v
+
+func _face_quad(lb: Vector2, fb: Vector2, up: Vector2, u0: float, u1: float, v0: float, v1: float) -> PackedVector2Array:
+	return PackedVector2Array([
+		_face_point(lb, fb, up, u0, v0),
+		_face_point(lb, fb, up, u1, v0),
+		_face_point(lb, fb, up, u1, v1),
+		_face_point(lb, fb, up, u0, v1)
+	])
+
+func _ellipse(center: Vector2, rx: float, ry: float, segments: int) -> PackedVector2Array:
 	var points := PackedVector2Array()
 	for i in range(segments):
-		var angle: float = TAU*float(i)/float(segments)
-		points.append(center+Vector2(cos(angle)*radius_x,sin(angle)*radius_y))
+		var angle: float = TAU * float(i) / float(segments)
+		points.append(center + Vector2(cos(angle) * rx, sin(angle) * ry))
 	return points
 
-func _ellipse_front_band(center: Vector2,radius_x: float,radius_y: float,thickness: float,segments: int) -> PackedVector2Array:
+func _ellipse_band(center: Vector2, rx: float, ry: float, thickness: float, segments: int) -> PackedVector2Array:
 	var points := PackedVector2Array()
-	for i in range(segments+1):
-		var t: float = float(i)/float(segments)
-		var angle: float = PI*t
-		points.append(center+Vector2(cos(angle)*radius_x,sin(angle)*radius_y))
-	for i in range(segments,-1,-1):
-		var t: float = float(i)/float(segments)
-		var angle: float = PI*t
-		points.append(center+Vector2(cos(angle)*radius_x,sin(angle)*radius_y)+Vector2(0,thickness))
+	for i in range(segments + 1):
+		var t: float = float(i) / float(segments)
+		var angle: float = PI * t
+		points.append(center + Vector2(cos(angle) * rx, sin(angle) * ry))
+	for i in range(segments, -1, -1):
+		var t: float = float(i) / float(segments)
+		var angle: float = PI * t
+		points.append(center + Vector2(cos(angle) * rx, sin(angle) * ry) + Vector2(0, thickness))
 	return points
 
-func _add_polygon(parent: Node2D,points: PackedVector2Array,color: Color) -> Polygon2D:
-	return _add_polygon_z(parent,points,color,0)
-
-func _add_polygon_z(parent: Node2D,points: PackedVector2Array,color: Color,z: int) -> Polygon2D:
+func _add_poly(parent: Node2D, points: PackedVector2Array, color: Color, z: int = 0) -> Polygon2D:
 	var polygon := Polygon2D.new()
 	polygon.polygon = points
 	polygon.color = color

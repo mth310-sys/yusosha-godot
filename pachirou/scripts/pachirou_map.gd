@@ -1,8 +1,7 @@
 extends Node2D
 
-# Pachirou Step 12: machine-first one-cell proportion test.
-# The pachislot cabinet is the master visual reference. Sand, base, backboard,
-# shelf, data counter and stool are proportioned from that reference.
+# Pachirou Step 13: machine-first one-cell proportion test.
+# Explicit z-order keeps the backboard behind the machine/sand set.
 
 @export var map_width: int = 10
 @export var map_height: int = 10
@@ -51,8 +50,6 @@ const STOOL_SEAT_HEIGHT_MM := 480.0
 const STOOL_SEAT_DIAMETER_MM := 400.0
 const STOOL_BASE_DIAMETER_MM := 380.0
 const MM_TO_PX := 0.08
-
-# Machine 80% becomes the master display scale for one seat.
 const MASTER_SCALE := 0.80
 const MACHINE_DISPLAY_SCALE := MASTER_SCALE
 const STOOL_DISPLAY_SCALE := MASTER_SCALE
@@ -111,44 +108,42 @@ func _create_island_frame_unit(cell: Vector2i) -> void:
 	unit.z_index = int(unit.position.y)
 	world.add_child(unit)
 
-	# Base is rebuilt around the machine reference instead of using the former oversized frame.
-	# Seat height and base top remain matched after the shared 80% display reduction.
 	var back := Vector2(0,-11.5)
 	var right := Vector2(24,0)
 	var front := Vector2(0,11.5)
 	var left := Vector2(-24,0)
 	var base_up := Vector2(0,-30.72)
-	_add_polygon(unit,PackedVector2Array([left+Vector2(2,3),front+Vector2(2,3),right+Vector2(2,3),back+Vector2(2,3)]),SHADOW)
-	_add_polygon(unit,PackedVector2Array([left,front,front+base_up,left+base_up]),FRAME_FRONT)
-	_add_polygon(unit,PackedVector2Array([front,right,right+base_up,front+base_up]),FRAME_SIDE)
-	_add_polygon(unit,PackedVector2Array([back+base_up,right+base_up,front+base_up,left+base_up]),FRAME_TOP)
+	_add_polygon_z(unit,PackedVector2Array([left+Vector2(2,3),front+Vector2(2,3),right+Vector2(2,3),back+Vector2(2,3)]),SHADOW,-5)
+	_add_polygon_z(unit,PackedVector2Array([left,front,front+base_up,left+base_up]),FRAME_FRONT,0)
+	_add_polygon_z(unit,PackedVector2Array([front,right,right+base_up,front+base_up]),FRAME_SIDE,0)
+	_add_polygon_z(unit,PackedVector2Array([back+base_up,right+base_up,front+base_up,left+base_up]),FRAME_TOP,0)
 	var mount_y: float = -30.72
 
-	# Machine geometry is still generated from the original real-dimension template,
-	# then scaled to the master 80% reference while keeping its feet on the base top.
-	var machine := Node2D.new()
-	machine.name = "PachislotMachineMaster"
-	machine.position = Vector2(-7,-2)+Vector2(0,-38.4*(1.0-MACHINE_DISPLAY_SCALE))
-	machine.scale = Vector2(MACHINE_DISPLAY_SCALE,MACHINE_DISPLAY_SCALE)
-	unit.add_child(machine)
-	_create_machine_insert(machine,-38.4)
-
-	# Sand is positioned directly from the machine's right edge so both read as one seat set.
-	var sand := Node2D.new()
-	sand.name = "SandUnitMachineAligned"
-	sand.position = Vector2(15.0,5.5)
-	unit.add_child(sand)
-	_create_sand_machine_aligned(sand,mount_y)
-
-	# Backboard hugs the machine+sand set rather than filling the full cell width.
+	# Backboard is physically behind every playable component.
 	var board_left_bottom := Vector2(-20,mount_y-5)
 	var board_right_bottom := Vector2(22,mount_y+15)
 	var board_depth := Vector2(4,-2)
 	var board_up := Vector2(0,-61)
-	_add_polygon(unit,PackedVector2Array([board_left_bottom,board_right_bottom,board_right_bottom+board_up,board_left_bottom+board_up]),BACKBOARD_FRONT)
-	_add_polygon(unit,PackedVector2Array([board_right_bottom,board_right_bottom+board_depth,board_right_bottom+board_depth+board_up,board_right_bottom+board_up]),BACKBOARD_SIDE)
+	_add_polygon_z(unit,PackedVector2Array([board_left_bottom,board_right_bottom,board_right_bottom+board_up,board_left_bottom+board_up]),BACKBOARD_FRONT,1)
+	_add_polygon_z(unit,PackedVector2Array([board_right_bottom,board_right_bottom+board_depth,board_right_bottom+board_depth+board_up,board_right_bottom+board_up]),BACKBOARD_SIDE,1)
 
-	# Shelf is tied to the scaled machine top and only spans machine+sand.
+	# Machine and sand are explicitly in front of the backboard.
+	var machine := Node2D.new()
+	machine.name = "PachislotMachineMaster"
+	machine.position = Vector2(-7,-2)+Vector2(0,-38.4*(1.0-MACHINE_DISPLAY_SCALE))
+	machine.scale = Vector2(MACHINE_DISPLAY_SCALE,MACHINE_DISPLAY_SCALE)
+	machine.z_index = 10
+	unit.add_child(machine)
+	_create_machine_insert(machine,-38.4)
+
+	var sand := Node2D.new()
+	sand.name = "SandUnitMachineAligned"
+	sand.position = Vector2(15.0,5.5)
+	sand.z_index = 11
+	unit.add_child(sand)
+	_create_sand_machine_aligned(sand,mount_y)
+
+	# Shelf stays above the cabinet but behind the data counter.
 	var machine_top_y: float = mount_y-(64.8*MACHINE_DISPLAY_SCALE)
 	var shelf_y: float = machine_top_y-2.0
 	var shelf_left := Vector2(-20,shelf_y-4)
@@ -156,22 +151,23 @@ func _create_island_frame_unit(cell: Vector2i) -> void:
 	var shelf_right := Vector2(22,shelf_y+5)
 	var shelf_back := Vector2(3,shelf_y-6)
 	var shelf_thickness := Vector2(0,1.7)
-	_add_polygon(unit,PackedVector2Array([shelf_left,shelf_front,shelf_right,shelf_back]),SHELF_TOP)
-	_add_polygon(unit,PackedVector2Array([shelf_left,shelf_front,shelf_front+shelf_thickness,shelf_left+shelf_thickness]),SHELF_FRONT)
-	_add_polygon(unit,PackedVector2Array([shelf_front,shelf_right,shelf_right+shelf_thickness,shelf_front+shelf_thickness]),SHELF_SIDE)
+	_add_polygon_z(unit,PackedVector2Array([shelf_left,shelf_front,shelf_right,shelf_back]),SHELF_TOP,20)
+	_add_polygon_z(unit,PackedVector2Array([shelf_left,shelf_front,shelf_front+shelf_thickness,shelf_left+shelf_thickness]),SHELF_FRONT,20)
+	_add_polygon_z(unit,PackedVector2Array([shelf_front,shelf_right,shelf_right+shelf_thickness,shelf_front+shelf_thickness]),SHELF_SIDE,20)
 
-	# Counter width follows the machine face and is centered over the reel cabinet.
 	var counter := Node2D.new()
 	counter.name = "DataCounterMachineAligned"
 	counter.position = Vector2(-5,shelf_y+1)
+	counter.z_index = 30
 	unit.add_child(counter)
 	_create_data_counter_compact(counter)
 
-	_add_polygon(unit,PackedVector2Array([Vector2(-24,mount_y),Vector2(24,mount_y),Vector2(24,mount_y+1.6),Vector2(-24,mount_y+1.6)]),FRAME_TRIM)
+	_add_polygon_z(unit,PackedVector2Array([Vector2(-24,mount_y),Vector2(24,mount_y),Vector2(24,mount_y+1.6),Vector2(-24,mount_y+1.6)]),FRAME_TRIM,40)
 
 	var tag := Label.new()
 	tag.text = "ISLAND: 1 CELL / MACHINE-BASED"
 	tag.position = Vector2(-52,17)
+	tag.z_index = 50
 	tag.add_theme_font_size_override("font_size",9)
 	tag.add_theme_color_override("font_color",GUIDE)
 	unit.add_child(tag)
@@ -195,7 +191,6 @@ func _create_machine_insert(parent: Node2D,mount_y: float) -> void:
 	_add_polygon(parent,_face_quad(lb,fb,up,0.14,0.86,0.08,0.26),Color("20336f"))
 
 func _create_sand_machine_aligned(parent: Node2D,mount_y: float) -> void:
-	# Narrow front, but the same depth direction and bottom line as the machine.
 	var lb := Vector2(-3.2,mount_y+1.5)
 	var fb := Vector2(2.2,mount_y+4.2)
 	var depth_vec := Vector2(11,-5.5)
@@ -269,7 +264,7 @@ func _create_title() -> void:
 	label.add_theme_color_override("font_color",GUIDE)
 	layer.add_child(label)
 	var note := Label.new()
-	note.text = "machine 80% = master reference / base + sand + backboard + shelf + counter rebuilt around machine"
+	note.text = "machine 80% master / explicit draw order: backboard -> machine+sand -> shelf -> counter"
 	note.position = Vector2(24,50)
 	note.add_theme_font_size_override("font_size",13)
 	note.add_theme_color_override("font_color",Color("d4d7db"))
@@ -295,8 +290,12 @@ func _ellipse_front_band(center: Vector2,radius_x: float,radius_y: float,thickne
 	return points
 
 func _add_polygon(parent: Node2D,points: PackedVector2Array,color: Color) -> Polygon2D:
+	return _add_polygon_z(parent,points,color,0)
+
+func _add_polygon_z(parent: Node2D,points: PackedVector2Array,color: Color,z: int) -> Polygon2D:
 	var polygon := Polygon2D.new()
 	polygon.polygon = points
 	polygon.color = color
+	polygon.z_index = z
 	parent.add_child(polygon)
 	return polygon

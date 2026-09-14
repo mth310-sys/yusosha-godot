@@ -148,7 +148,6 @@ func _create_island_frame(parent: Node2D) -> void:
 	var board_thickness := _board_thickness()
 	_add_poly(parent, PackedVector2Array([top_back_left, top_back_right, top_back_right + board_up, top_back_left + board_up]), BACKBOARD, 1)
 	_add_poly(parent, PackedVector2Array([top_back_right, top_back_right + board_thickness, top_back_right + board_thickness + board_up, top_back_right + board_up]), BACKBOARD_SIDE, 2)
-	# Hall-style upper equipment box: integrated with the backboard instead of a thin shelf.
 	var box_bl := _upper_box_back_left()
 	var box_br := _upper_box_back_right()
 	var box_push := _upper_box_front_vector()
@@ -242,22 +241,29 @@ func _create_sand(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> v
 	_add_poly(parent, _face_quad(lb, fb, up, 0.22, 0.78, 0.18, 0.28), Color("343b43"), 11)
 
 func _create_data_counter(parent: Node2D) -> void:
-	# Mount the counter high on the front face of the continuous upper box.
 	var box_fl: Vector2 = _upper_box_back_left() + _upper_box_front_vector()
 	var box_fr: Vector2 = _upper_box_back_right() + _upper_box_front_vector()
 	var box_front_vector: Vector2 = box_fr - box_fl
 	var counter_left: Vector2 = box_fl + box_front_vector * 0.12 + Vector2(0, -2.0)
 	var counter_right: Vector2 = box_fl + box_front_vector * 0.88 + Vector2(0, -2.0)
 	var counter_up: Vector2 = Vector2(0, -8.0)
-	# Keep a visible forward mount without letting the counter overpower the cabinet.
 	var counter_push: Vector2 = -DEPTH_AXIS * 0.055
 	_create_front_box(parent, counter_left, counter_right, counter_up, counter_push, COUNTER_FRONT, COUNTER_SIDE, SHELF_EDGE, 30)
 	var face_left: Vector2 = counter_left + counter_push
 	var face_right: Vector2 = counter_right + counter_push
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.05, 0.95, 0.08, 0.92), Color("111820"), 31)
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.095, 0.905, 0.17, 0.80), COUNTER_SCREEN, 32)
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.13, 0.25, 0.27, 0.67), Color("9ed8ee"), 33)
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.75, 0.87, 0.27, 0.67), Color("9ed8ee"), 33)
+	# Layered bezel and glass give the small display a readable real-hall equipment silhouette.
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.035, 0.965, 0.055, 0.945), Color("0a0e13"), 31)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.075, 0.925, 0.12, 0.86), Color("4d5964"), 32)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.105, 0.895, 0.18, 0.78), COUNTER_SCREEN, 33)
+	# Screen hierarchy: header, central data field and side status blocks.
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.14, 0.86, 0.22, 0.32), Color("bcecff"), 34)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.37, 0.63, 0.39, 0.66), Color("d9f4ff"), 34)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.15, 0.27, 0.42, 0.68), Color("78d7a2"), 34)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.73, 0.85, 0.42, 0.68), Color("e6b35c"), 34)
+	# Tiny lower indicators remain visible at this scale without changing the approved proportions.
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.18, 0.28, 0.80, 0.88), Color("d65a4a"), 34)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.45, 0.55, 0.80, 0.88), Color("78d7a2"), 34)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.72, 0.82, 0.80, 0.88), Color("d5a84b"), 34)
 
 func _create_stool(cell: Vector2i) -> void:
 	var stool := Node2D.new()

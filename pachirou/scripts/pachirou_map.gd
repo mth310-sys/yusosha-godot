@@ -242,27 +242,21 @@ func _create_sand(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> v
 	_add_poly(parent, _face_quad(lb, fb, up, 0.22, 0.78, 0.18, 0.28), Color("343b43"), 11)
 
 func _create_data_counter(parent: Node2D) -> void:
-	# The counter is mounted into the front face of the integrated upper box.
-	var box_fl := _upper_box_back_left() + _upper_box_front_vector()
-	var box_fr := _upper_box_back_right() + _upper_box_front_vector()
-	var equipment_left := _equipment_front_left()
-	var machine_center := equipment_left + MACHINE_FRONT_VECTOR * 0.5
-	var counter_width := MACHINE_FRONT_VECTOR * 0.72
-	var counter_left := machine_center - counter_width * 0.5 + Vector2(0, -2.0)
-	var counter_right := machine_center + counter_width * 0.5 + Vector2(0, -2.0)
-	# Pull the display to the actual front plane of the box.
-	var front_correction := (box_fl + box_fr) * 0.5 - (counter_left + counter_right) * 0.5
-	counter_left += front_correction
-	counter_right += front_correction
-	var counter_up := Vector2(0, -7.0)
-	var counter_push := -DEPTH_AXIS * 0.045
+	# Keep the continuous hall upper box unchanged and enlarge only the per-machine counter.
+	var box_fl: Vector2 = _upper_box_back_left() + _upper_box_front_vector()
+	var box_fr: Vector2 = _upper_box_back_right() + _upper_box_front_vector()
+	var box_front_vector: Vector2 = box_fr - box_fl
+	var counter_left: Vector2 = box_fl + box_front_vector * 0.08 + Vector2(0, -1.0)
+	var counter_right: Vector2 = box_fl + box_front_vector * 0.92 + Vector2(0, -1.0)
+	var counter_up: Vector2 = Vector2(0, -9.0)
+	var counter_push: Vector2 = -DEPTH_AXIS * 0.055
 	_create_front_box(parent, counter_left, counter_right, counter_up, counter_push, COUNTER_FRONT, COUNTER_SIDE, SHELF_EDGE, 30)
-	var face_left := counter_left + counter_push
-	var face_right := counter_right + counter_push
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.07, 0.93, 0.12, 0.88), Color("111820"), 31)
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.13, 0.87, 0.22, 0.74), COUNTER_SCREEN, 32)
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.18, 0.30, 0.30, 0.65), Color("9ed8ee"), 33)
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.70, 0.82, 0.30, 0.65), Color("9ed8ee"), 33)
+	var face_left: Vector2 = counter_left + counter_push
+	var face_right: Vector2 = counter_right + counter_push
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.045, 0.955, 0.08, 0.92), Color("111820"), 31)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.085, 0.915, 0.17, 0.80), COUNTER_SCREEN, 32)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.12, 0.24, 0.27, 0.67), Color("9ed8ee"), 33)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.76, 0.88, 0.27, 0.67), Color("9ed8ee"), 33)
 
 func _create_stool(cell: Vector2i) -> void:
 	var stool := Node2D.new()

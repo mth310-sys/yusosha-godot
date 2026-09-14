@@ -116,7 +116,8 @@ func _create_island_frame(parent: Node2D) -> void:
 	var board_bottom_left := top_back
 	var board_bottom_right := top_right
 	var board_up := Vector2(0, -BACKBOARD_HEIGHT)
-	var board_thickness := DEPTH_AXIS * BACKBOARD_THICKNESS_RATIO
+	# Thickness projects toward the player/front side of the island, not behind it.
+	var board_thickness := -DEPTH_AXIS * BACKBOARD_THICKNESS_RATIO
 	_add_poly(parent, PackedVector2Array([board_bottom_left, board_bottom_right, board_bottom_right + board_up, board_bottom_left + board_up]), BACKBOARD, 1)
 	_add_poly(parent, PackedVector2Array([board_bottom_right, board_bottom_right + board_thickness, board_bottom_right + board_thickness + board_up, board_bottom_right + board_up]), BACKBOARD_SIDE, 1)
 	var shelf_back_left := board_bottom_left + Vector2(0, -MACHINE_HEIGHT)

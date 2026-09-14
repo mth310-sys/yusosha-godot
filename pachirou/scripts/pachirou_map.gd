@@ -158,32 +158,61 @@ func _create_machine_and_sand(parent: Node2D) -> void:
 
 func _create_machine(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> void:
 	var up := Vector2(0, -MACHINE_HEIGHT)
-	# Standard cabinet A: conventional three-reel pachislot proportions.
+	var front_push := -depth * 0.14
+	# Main cabinet shell stays fixed; only the front assemblies gain physical projection.
 	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), MACHINE_FRONT, 10)
 	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), MACHINE_SIDE, 10)
 	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), MACHINE_TOP, 10)
-	# Metallic outer rails keep the cabinet readable at isometric scale.
 	_add_poly(parent, _face_quad(lb, fb, up, 0.03, 0.10, 0.06, 0.96), MACHINE_TRIM, 11)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.90, 0.97, 0.06, 0.96), MACHINE_TRIM, 11)
-	# Upper title / lamp panel.
-	_add_poly(parent, _face_quad(lb, fb, up, 0.11, 0.89, 0.79, 0.94), MACHINE_DARK, 11)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.18, 0.82, 0.82, 0.90), MACHINE_ACCENT, 12)
-	# Three-reel window with separators.
-	_add_poly(parent, _face_quad(lb, fb, up, 0.10, 0.90, 0.45, 0.72), MACHINE_TRIM, 11)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.14, 0.86, 0.48, 0.69), REEL_BG, 12)
+
+	# Upper lamp/title bezel projects slightly from the cabinet face.
+	var upper_lb := _face_point(lb, fb, up, 0.10, 0.78)
+	var upper_rb := _face_point(lb, fb, up, 0.90, 0.78)
+	var upper_up := Vector2(0, -MACHINE_HEIGHT * 0.17)
+	_create_front_box(parent, upper_lb, upper_rb, upper_up, front_push * 0.45, MACHINE_DARK, MACHINE_SIDE, MACHINE_TOP, 14)
+	_add_poly(parent, _face_quad(upper_lb + front_push * 0.45, upper_rb + front_push * 0.45, upper_up, 0.10, 0.90, 0.22, 0.72), MACHINE_ACCENT, 15)
+
+	# Larger recessed three-reel window with a proper surrounding bezel.
+	var reel_lb := _face_point(lb, fb, up, 0.08, 0.43)
+	var reel_rb := _face_point(lb, fb, up, 0.92, 0.43)
+	var reel_up := Vector2(0, -MACHINE_HEIGHT * 0.31)
+	_create_front_box(parent, reel_lb, reel_rb, reel_up, front_push * 0.28, MACHINE_TRIM, MACHINE_SIDE, MACHINE_TOP, 14)
+	var reel_face_lb := reel_lb + front_push * 0.28
+	var reel_face_rb := reel_rb + front_push * 0.28
+	_add_poly(parent, _face_quad(reel_face_lb, reel_face_rb, reel_up, 0.07, 0.93, 0.10, 0.88), REEL_BG, 15)
 	for i in range(1, 3):
-		var u: float = 0.14 + float(i) * 0.24
-		_add_poly(parent, _face_quad(lb, fb, up, u - 0.015, u + 0.015, 0.48, 0.69), REEL_LINE, 13)
-	# Control deck: dark fascia, MAX BET and three stop buttons.
-	_add_poly(parent, _face_quad(lb, fb, up, 0.08, 0.92, 0.30, 0.42), MACHINE_DARK, 11)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.13, 0.27, 0.33, 0.38), BUTTON_DARK, 12)
+		var u: float = 0.07 + float(i) * 0.286
+		_add_poly(parent, _face_quad(reel_face_lb, reel_face_rb, reel_up, u - 0.014, u + 0.014, 0.10, 0.88), REEL_LINE, 16)
+
+	# Slab-like control deck projects farther toward the player than the reel bezel.
+	var deck_lb := _face_point(lb, fb, up, 0.06, 0.28)
+	var deck_rb := _face_point(lb, fb, up, 0.94, 0.28)
+	var deck_up := Vector2(0, -MACHINE_HEIGHT * 0.13)
+	_create_front_box(parent, deck_lb, deck_rb, deck_up, front_push, MACHINE_DARK, MACHINE_SIDE, MACHINE_TOP, 17)
+	var deck_face_lb := deck_lb + front_push
+	var deck_face_rb := deck_rb + front_push
+	_add_poly(parent, _face_quad(deck_face_lb, deck_face_rb, deck_up, 0.10, 0.25, 0.25, 0.66), BUTTON_DARK, 18)
 	for i in range(3):
-		var center: float = 0.43 + float(i) * 0.17
-		_add_poly(parent, _face_quad(lb, fb, up, center - 0.055, center + 0.055, 0.33, 0.39), BUTTON_RED, 12)
-	# Lower decorative panel and medal tray slot.
-	_add_poly(parent, _face_quad(lb, fb, up, 0.11, 0.89, 0.10, 0.27), Color("303741"), 11)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.20, 0.80, 0.14, 0.22), MACHINE_ACCENT, 12)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.18, 0.82, 0.045, 0.09), MACHINE_DARK, 12)
+		var center: float = 0.43 + float(i) * 0.18
+		_add_poly(parent, _face_quad(deck_face_lb, deck_face_rb, deck_up, center - 0.060, center + 0.060, 0.22, 0.70), BUTTON_RED, 18)
+
+	# Lower panel plus a projecting medal tray/lip gives the cabinet a pachislot silhouette.
+	_add_poly(parent, _face_quad(lb, fb, up, 0.10, 0.90, 0.09, 0.27), Color("303741"), 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.19, 0.81, 0.14, 0.23), MACHINE_ACCENT, 12)
+	var tray_lb := _face_point(lb, fb, up, 0.12, 0.045)
+	var tray_rb := _face_point(lb, fb, up, 0.88, 0.045)
+	var tray_up := Vector2(0, -MACHINE_HEIGHT * 0.055)
+	_create_front_box(parent, tray_lb, tray_rb, tray_up, front_push * 0.85, MACHINE_DARK, MACHINE_SIDE, MACHINE_TOP, 17)
+
+func _create_front_box(parent: Node2D, lb: Vector2, rb: Vector2, up: Vector2, push: Vector2, front_color: Color, side_color: Color, top_color: Color, z: int) -> void:
+	var fl := lb + push
+	var fr := rb + push
+	var bl := lb
+	var br := rb
+	_add_poly(parent, PackedVector2Array([fl, fr, fr + up, fl + up]), front_color, z)
+	_add_poly(parent, PackedVector2Array([fr, br, br + up, fr + up]), side_color, z - 1)
+	_add_poly(parent, PackedVector2Array([bl + up, br + up, fr + up, fl + up]), top_color, z)
 
 func _create_sand(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> void:
 	var up := Vector2(0, -SAND_HEIGHT)

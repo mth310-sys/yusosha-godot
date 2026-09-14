@@ -236,9 +236,23 @@ func _create_sand(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> v
 	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), SAND_FRONT, 10)
 	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), SAND_SIDE, 10)
 	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), SAND_TOP, 10)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.18, 0.82, 0.70, 0.85), SAND_SCREEN, 11)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.20, 0.80, 0.43, 0.54), Color("c3c8ce"), 11)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.22, 0.78, 0.18, 0.28), Color("343b43"), 11)
+	# Upper display area with a recessed bezel and small status strip.
+	_add_poly(parent, _face_quad(lb, fb, up, 0.14, 0.86, 0.68, 0.88), Color("3b434c"), 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.22, 0.78, 0.73, 0.84), SAND_SCREEN, 12)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.29, 0.49, 0.765, 0.805), Color("77c7df"), 13)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.56, 0.71, 0.765, 0.805), Color("78d7a2"), 13)
+	# Bill/card inlet band and a thin metallic guide below it.
+	_add_poly(parent, _face_quad(lb, fb, up, 0.14, 0.86, 0.48, 0.60), Color("2b3138"), 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.25, 0.75, 0.515, 0.555), Color("0a0d11"), 12)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.30, 0.70, 0.455, 0.485), Color("c3c8ce"), 12)
+	# Central operation / payout area.
+	_add_poly(parent, _face_quad(lb, fb, up, 0.16, 0.84, 0.30, 0.42), Color("59616a"), 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.23, 0.50, 0.335, 0.385), Color("d5a84b"), 12)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.59, 0.75, 0.325, 0.395), Color("2b3037"), 12)
+	# Lower medal outlet / access panel keeps the cabinet readable as a sand unit at this scale.
+	_add_poly(parent, _face_quad(lb, fb, up, 0.16, 0.84, 0.12, 0.24), Color("343b43"), 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.28, 0.72, 0.145, 0.185), Color("11151b"), 12)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.34, 0.66, 0.205, 0.225), Color("aeb4bb"), 12)
 
 func _create_data_counter(parent: Node2D) -> void:
 	var box_fl: Vector2 = _upper_box_back_left() + _upper_box_front_vector()

@@ -37,6 +37,7 @@ const MACHINE_HEIGHT := 54.0
 const SAND_HEIGHT := 48.0
 const BACKBOARD_HEIGHT := 62.0
 const STOOL_SCALE := 0.76
+const EQUIPMENT_SHIFT_X := -6.0
 
 var world: Node2D
 
@@ -46,15 +47,15 @@ func _ready() -> void:
 	world.y_sort_enabled = true
 	add_child(world)
 	_create_floor()
-	_create_island_bay(Vector2i(6, 4))
-	_create_stool(Vector2i(5, 5))
+	_create_island_bay(Vector2i(6,4))
+	_create_stool(Vector2i(5,5))
 
 func grid_to_world(cell: Vector2i) -> Vector2:
-	var cx: float = (map_width - 1) * 0.5
-	var cy: float = (map_height - 1) * 0.5
-	var gx: float = float(cell.x) - cx
-	var gy: float = float(cell.y) - cy
-	return Vector2((gx - gy) * tile_width * 0.5, (gx + gy) * tile_height * 0.5)
+	var cx: float = (map_width-1)*0.5
+	var cy: float = (map_height-1)*0.5
+	var gx: float = float(cell.x)-cx
+	var gy: float = float(cell.y)-cy
+	return Vector2((gx-gy)*tile_width*0.5,(gx+gy)*tile_height*0.5)
 
 func _tile_points() -> PackedVector2Array:
 	return PackedVector2Array([Vector2(0,-16),Vector2(32,0),Vector2(0,16),Vector2(-32,0)])
@@ -95,20 +96,21 @@ func _create_full_cell_base(parent: Node2D,mount_y: float) -> void:
 	_add_poly(parent,PackedVector2Array([back+up,right+up,front+up,left+up]),BASE_TOP,0)
 
 func _create_machine_and_sand(parent: Node2D,mount_y: float) -> void:
-	# Treat machine + sand as one centered front-face envelope.
-	# The pair spans x=-14..14 and remains comfortably inside the full-cell top.
+	# Shift the complete machine+sand assembly left. Sand stays attached to the machine,
+	# but its outer/depth edge no longer hangs over the right side of the one-cell base.
+	var sx := EQUIPMENT_SHIFT_X
 	var depth := Vector2(10,-5)
-	var machine_left := Vector2(-14,mount_y+3)
-	var machine_right := Vector2(7,mount_y+13)
+	var machine_left := Vector2(-14+sx,mount_y+3)
+	var machine_right := Vector2(7+sx,mount_y+13)
 	var sand_left := machine_right
-	var sand_right := Vector2(14,mount_y+16)
+	var sand_right := Vector2(14+sx,mount_y+16)
 	_create_machine(parent,machine_left,machine_right,depth)
 	_create_sand(parent,sand_left,sand_right,depth)
 
 func _create_backboard(parent: Node2D,mount_y: float) -> void:
-	# Backboard follows the centered equipment envelope and does not extend past the cell.
-	var left_bottom := Vector2(-17,mount_y-5)
-	var right_bottom := Vector2(18,mount_y+12)
+	var sx := EQUIPMENT_SHIFT_X
+	var left_bottom := Vector2(-17+sx,mount_y-5)
+	var right_bottom := Vector2(18+sx,mount_y+12)
 	var depth := Vector2(3,-1.5)
 	var up := Vector2(0,-BACKBOARD_HEIGHT)
 	_add_poly(parent,PackedVector2Array([left_bottom,right_bottom,right_bottom+up,left_bottom+up]),BACKBOARD,1)
@@ -136,18 +138,18 @@ func _create_sand(parent: Node2D,lb: Vector2,fb: Vector2,depth: Vector2) -> void
 	_add_poly(parent,_face_quad(lb,fb,up,0.22,0.78,0.18,0.28),Color("343b43"),11)
 
 func _create_shelf_and_counter(parent: Node2D,mount_y: float) -> void:
+	var sx := EQUIPMENT_SHIFT_X
 	var shelf_y: float = mount_y-MACHINE_HEIGHT-2.0
-	var shelf_left := Vector2(-17,shelf_y-3)
-	var shelf_front := Vector2(0,shelf_y+5)
-	var shelf_right := Vector2(18,shelf_y+4)
-	var shelf_back := Vector2(3,shelf_y-5)
+	var shelf_left := Vector2(-17+sx,shelf_y-3)
+	var shelf_front := Vector2(0+sx,shelf_y+5)
+	var shelf_right := Vector2(18+sx,shelf_y+4)
+	var shelf_back := Vector2(3+sx,shelf_y-5)
 	var drop := Vector2(0,1.5)
 	_add_poly(parent,PackedVector2Array([shelf_left,shelf_front,shelf_right,shelf_back]),SHELF_TOP,20)
 	_add_poly(parent,PackedVector2Array([shelf_left,shelf_front,shelf_front+drop,shelf_left+drop]),SHELF_EDGE,20)
 	_add_poly(parent,PackedVector2Array([shelf_front,shelf_right,shelf_right+drop,shelf_front+drop]),SHELF_EDGE,20)
-	# Counter follows the machine center, shifted left of the combined machine+sand center.
-	var counter_lb := Vector2(-10,shelf_y+1)
-	var counter_fb := Vector2(4,shelf_y+7)
+	var counter_lb := Vector2(-10+sx,shelf_y+1)
+	var counter_fb := Vector2(4+sx,shelf_y+7)
 	var counter_depth := Vector2(3.5,-1.75)
 	var counter_up := Vector2(0,-7)
 	_add_poly(parent,PackedVector2Array([counter_lb,counter_fb,counter_fb+counter_up,counter_lb+counter_up]),COUNTER_FRONT,30)
@@ -157,8 +159,8 @@ func _create_shelf_and_counter(parent: Node2D,mount_y: float) -> void:
 func _create_stool(cell: Vector2i) -> void:
 	var stool := Node2D.new()
 	stool.name = "Stool"
-	# Keep the stool aligned with the machine, not the machine+sand pair.
-	stool.position = grid_to_world(cell)+Vector2(7,-4)
+	# Stool follows the machine axis by the same left shift.
+	stool.position = grid_to_world(cell)+Vector2(7+EQUIPMENT_SHIFT_X,-4)
 	stool.scale = Vector2(STOOL_SCALE,STOOL_SCALE)
 	stool.z_index = int(stool.position.y)
 	world.add_child(stool)

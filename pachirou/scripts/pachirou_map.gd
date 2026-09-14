@@ -47,9 +47,11 @@ const STOOL_SEAT_HEIGHT_MM := 480.0
 const STOOL_SEAT_DIAMETER_MM := 400.0
 const STOOL_BASE_DIAMETER_MM := 380.0
 const MM_TO_PX := 0.08
-const MASTER_SCALE := 0.80
-const MACHINE_DISPLAY_SCALE := MASTER_SCALE
-const STOOL_DISPLAY_SCALE := MASTER_SCALE
+
+# The base owns one full 64x32 cell. Only the equipment is scaled to fit inside it.
+const MACHINE_DISPLAY_SCALE := 0.70
+const SAND_DISPLAY_SCALE := 0.70
+const STOOL_DISPLAY_SCALE := 0.80
 
 var world: Node2D
 
@@ -100,70 +102,72 @@ func _highlight_cell(cell: Vector2i,color: Color) -> void:
 
 func _create_island_frame_unit(cell: Vector2i) -> void:
 	var unit := Node2D.new()
-	unit.name = "MachineBasedOneCellBay"
+	unit.name = "OneCellIslandBay"
 	unit.position = grid_to_world(cell)
 	unit.z_index = int(unit.position.y)
 	world.add_child(unit)
 
-	# Tightened base: the machine+sand set is now the dimensional master.
-	var back := Vector2(0,-9.5)
-	var right := Vector2(21.5,0)
-	var front := Vector2(0,9.5)
-	var left := Vector2(-21.5,0)
-	var base_up := Vector2(0,-30.72)
+	# Full one-cell footprint. This must never be reduced by equipment scale changes.
+	var back := Vector2(0,-14)
+	var right := Vector2(28,0)
+	var front := Vector2(0,14)
+	var left := Vector2(-28,0)
+	var base_up := Vector2(0,-38.4)
 	_add_polygon_z(unit,PackedVector2Array([left+Vector2(2,3),front+Vector2(2,3),right+Vector2(2,3),back+Vector2(2,3)]),SHADOW,-5)
 	_add_polygon_z(unit,PackedVector2Array([left,front,front+base_up,left+base_up]),FRAME_FRONT,0)
 	_add_polygon_z(unit,PackedVector2Array([front,right,right+base_up,front+base_up]),FRAME_SIDE,0)
 	_add_polygon_z(unit,PackedVector2Array([back+base_up,right+base_up,front+base_up,left+base_up]),FRAME_TOP,0)
-	var mount_y: float = -30.72
+	var mount_y: float = -38.4
 
-	# Backboard follows the combined machine+sand envelope with less unused overhang.
-	var board_left_bottom := Vector2(-18,mount_y-4)
-	var board_right_bottom := Vector2(20,mount_y+14)
-	var board_depth := Vector2(3.5,-1.75)
-	var board_up := Vector2(0,-57)
+	# Backboard uses the one-cell frame, while machine + sand occupy the usable inner width.
+	var board_left_bottom := Vector2(-24,mount_y-6)
+	var board_right_bottom := Vector2(25,mount_y+17)
+	var board_depth := Vector2(4,-2)
+	var board_up := Vector2(0,-58)
 	_add_polygon_z(unit,PackedVector2Array([board_left_bottom,board_right_bottom,board_right_bottom+board_up,board_left_bottom+board_up]),BACKBOARD_FRONT,1)
 	_add_polygon_z(unit,PackedVector2Array([board_right_bottom,board_right_bottom+board_depth,board_right_bottom+board_depth+board_up,board_right_bottom+board_up]),BACKBOARD_SIDE,1)
 
+	# Machine and sand are treated as one combined set inside the cell.
 	var machine := Node2D.new()
-	machine.name = "PachislotMachineMaster"
-	machine.position = Vector2(-7,-2)+Vector2(0,-38.4*(1.0-MACHINE_DISPLAY_SCALE))
+	machine.name = "PachislotMachine"
+	machine.position = Vector2(-8.5,-2)+Vector2(0,-38.4*(1.0-MACHINE_DISPLAY_SCALE))
 	machine.scale = Vector2(MACHINE_DISPLAY_SCALE,MACHINE_DISPLAY_SCALE)
 	machine.z_index = 10
 	unit.add_child(machine)
 	_create_machine_insert(machine,-38.4)
 
 	var sand := Node2D.new()
-	sand.name = "SandUnitMachineAligned"
-	sand.position = Vector2(14.0,4.8)
+	sand.name = "SandUnit"
+	sand.position = Vector2(11.5,3.1)+Vector2(0,mount_y*(1.0-SAND_DISPLAY_SCALE))
+	sand.scale = Vector2(SAND_DISPLAY_SCALE,SAND_DISPLAY_SCALE)
 	sand.z_index = 11
 	unit.add_child(sand)
-	_create_sand_machine_aligned(sand,mount_y)
+	_create_sand_insert(sand,mount_y)
 
-	# Shelf follows the same compact envelope and sits just above the machine.
+	# Shelf and counter follow the combined equipment envelope, not the machine alone.
 	var machine_top_y: float = mount_y-(64.8*MACHINE_DISPLAY_SCALE)
-	var shelf_y: float = machine_top_y-1.5
-	var shelf_left := Vector2(-18,shelf_y-3.5)
-	var shelf_front := Vector2(0,shelf_y+5)
-	var shelf_right := Vector2(20,shelf_y+4.5)
-	var shelf_back := Vector2(3,shelf_y-5)
-	var shelf_thickness := Vector2(0,1.5)
+	var shelf_y: float = machine_top_y-2.0
+	var shelf_left := Vector2(-22,shelf_y-4)
+	var shelf_front := Vector2(0,shelf_y+6)
+	var shelf_right := Vector2(24,shelf_y+5)
+	var shelf_back := Vector2(3,shelf_y-6)
+	var shelf_thickness := Vector2(0,1.6)
 	_add_polygon_z(unit,PackedVector2Array([shelf_left,shelf_front,shelf_right,shelf_back]),SHELF_TOP,20)
 	_add_polygon_z(unit,PackedVector2Array([shelf_left,shelf_front,shelf_front+shelf_thickness,shelf_left+shelf_thickness]),SHELF_FRONT,20)
 	_add_polygon_z(unit,PackedVector2Array([shelf_front,shelf_right,shelf_right+shelf_thickness,shelf_front+shelf_thickness]),SHELF_SIDE,20)
 
 	var counter := Node2D.new()
-	counter.name = "DataCounterMachineAligned"
+	counter.name = "DataCounter"
 	counter.position = Vector2(-6,shelf_y+0.5)
 	counter.z_index = 30
 	unit.add_child(counter)
 	_create_data_counter_compact(counter)
 
-	_add_polygon_z(unit,PackedVector2Array([Vector2(-21.5,mount_y),Vector2(21.5,mount_y),Vector2(21.5,mount_y+1.4),Vector2(-21.5,mount_y+1.4)]),FRAME_TRIM,40)
+	_add_polygon_z(unit,PackedVector2Array([Vector2(-28,mount_y),Vector2(28,mount_y),Vector2(28,mount_y+1.5),Vector2(-28,mount_y+1.5)]),FRAME_TRIM,40)
 
 	var tag := Label.new()
-	tag.text = "ISLAND: 1 CELL / MACHINE FIT"
-	tag.position = Vector2(-48,15)
+	tag.text = "ISLAND: FULL 1 CELL / MACHINE + SAND FIT"
+	tag.position = Vector2(-61,19)
 	tag.z_index = 50
 	tag.add_theme_font_size_override("font_size",9)
 	tag.add_theme_color_override("font_color",GUIDE)
@@ -187,13 +191,13 @@ func _create_machine_insert(parent: Node2D,mount_y: float) -> void:
 	_add_polygon(parent,_face_quad(lb,fb,up,0.10,0.90,0.31,0.39),Color("213164"))
 	_add_polygon(parent,_face_quad(lb,fb,up,0.14,0.86,0.08,0.26),Color("20336f"))
 
-func _create_sand_machine_aligned(parent: Node2D,mount_y: float) -> void:
-	var lb := Vector2(-3.2,mount_y+1.5)
-	var fb := Vector2(2.2,mount_y+4.2)
-	var depth_vec := Vector2(11,-5.5)
+func _create_sand_insert(parent: Node2D,mount_y: float) -> void:
+	var lb := Vector2(-5,mount_y+2)
+	var fb := Vector2(2,mount_y+5.5)
+	var depth_vec := Vector2(14,-7)
 	var rb := fb+depth_vec
 	var bb := lb+depth_vec
-	var up := Vector2(0,-44.5)
+	var up := Vector2(0,-57.6)
 	_add_polygon(parent,PackedVector2Array([lb,fb,fb+up,lb+up]),SAND_FRONT)
 	_add_polygon(parent,PackedVector2Array([fb,rb,rb+up,fb+up]),SAND_SIDE)
 	_add_polygon(parent,PackedVector2Array([bb+up,rb+up,fb+up,lb+up]),SAND_TOP)
@@ -245,8 +249,8 @@ func _create_stool_reference(cell: Vector2i) -> void:
 	_add_polygon(stool,_ellipse_points(Vector2(0,top_y-0.7),seat_rx-1.2,seat_ry-0.7,36),SEAT_TOP)
 	_add_polygon(stool,_ellipse_points(Vector2(0.4,top_y-1),seat_rx*0.76,seat_ry*0.67,28),SEAT_INNER)
 	var tag := Label.new()
-	tag.text = "STOOL / MACHINE SCALE"
-	tag.position = Vector2(-40,16)
+	tag.text = "STOOL"
+	tag.position = Vector2(-18,16)
 	tag.add_theme_font_size_override("font_size",9)
 	tag.add_theme_color_override("font_color",GUIDE)
 	stool.add_child(tag)
@@ -255,13 +259,13 @@ func _create_title() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	var label := Label.new()
-	label.text = "PACHIROU  |  MACHINE-FIT ONE-CELL TEST  |  10 x 10"
+	label.text = "PACHIROU  |  FULL-CELL MACHINE + SAND FIT TEST  |  10 x 10"
 	label.position = Vector2(24,20)
 	label.add_theme_font_size_override("font_size",20)
 	label.add_theme_color_override("font_color",GUIDE)
 	layer.add_child(label)
 	var note := Label.new()
-	note.text = "machine 80% master / base + backboard + shelf + counter tightened to machine+sand envelope"
+	note.text = "base footprint = full 64x32 cell / machine 70% / sand 70% / equipment centered inside cell"
 	note.position = Vector2(24,50)
 	note.add_theme_font_size_override("font_size",13)
 	note.add_theme_color_override("font_color",Color("d4d7db"))

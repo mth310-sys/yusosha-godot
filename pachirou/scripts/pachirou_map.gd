@@ -45,6 +45,7 @@ const SAND_FRONT_VECTOR := Vector2(6.0, 3.0)
 const MACHINE_DEPTH := Vector2(16.0, -8.0)
 const SAND_DEPTH := Vector2(12.0, -6.0)
 const BACKBOARD_THICKNESS_RATIO := 0.12
+const BASE_DEPTH_RATIO := 0.70
 
 var world: Node2D
 
@@ -93,36 +94,51 @@ func _create_island_bay(cell: Vector2i) -> void:
 func _base_top_left() -> Vector2:
 	return Vector2(-32, -BASE_HEIGHT)
 
-func _base_top_back() -> Vector2:
-	return Vector2(0, -16 - BASE_HEIGHT)
-
-func _base_top_right() -> Vector2:
-	return Vector2(32, -BASE_HEIGHT)
-
 func _base_top_front() -> Vector2:
 	return Vector2(0, 16 - BASE_HEIGHT)
+
+func _base_back_left() -> Vector2:
+	return _base_top_left() + DEPTH_AXIS * BASE_DEPTH_RATIO
+
+func _base_back_right() -> Vector2:
+	return _base_top_front() + DEPTH_AXIS * BASE_DEPTH_RATIO
+
+func _board_thickness() -> Vector2:
+	return -DEPTH_AXIS * BACKBOARD_THICKNESS_RATIO
+
+func _board_front_left() -> Vector2:
+	return _base_back_left() + _board_thickness()
+
+func _board_front_right() -> Vector2:
+	return _base_back_right() + _board_thickness()
 
 func _create_island_frame(parent: Node2D) -> void:
 	var floor_left := Vector2(-32, 0)
 	var floor_front := Vector2(0, 16)
-	var floor_right := Vector2(32, 0)
+	var floor_back_left := floor_left + DEPTH_AXIS * BASE_DEPTH_RATIO
+	var floor_back_right := floor_front + DEPTH_AXIS * BASE_DEPTH_RATIO
 	var top_left := _base_top_left()
 	var top_front := _base_top_front()
-	var top_right := _base_top_right()
-	var top_back := _base_top_back()
+	var top_back_left := _base_back_left()
+	var top_back_right := _base_back_right()
+
+	# Base ends at the backboard. The unused rear 30% of the original cell-depth box is removed.
 	_add_poly(parent, PackedVector2Array([floor_left, floor_front, top_front, top_left]), BASE_FRONT, 0)
-	_add_poly(parent, PackedVector2Array([floor_front, floor_right, top_right, top_front]), BASE_SIDE, 0)
-	_add_poly(parent, PackedVector2Array([top_back, top_right, top_front, top_left]), BASE_TOP, 0)
-	var board_bottom_left := top_back
-	var board_bottom_right := top_right
+	_add_poly(parent, PackedVector2Array([floor_front, floor_back_right, top_back_right, top_front]), BASE_SIDE, 0)
+	_add_poly(parent, PackedVector2Array([top_back_left, top_back_right, top_front, top_left]), BASE_TOP, 0)
+
+	# Backboard is part of the island frame. Its front surface sits immediately behind the machine depth.
+	var board_bottom_left := top_back_left
+	var board_bottom_right := top_back_right
 	var board_up := Vector2(0, -BACKBOARD_HEIGHT)
-	# Thickness projects toward the player/front side of the island, not behind it.
-	var board_thickness := -DEPTH_AXIS * BACKBOARD_THICKNESS_RATIO
+	var board_thickness := _board_thickness()
 	_add_poly(parent, PackedVector2Array([board_bottom_left, board_bottom_right, board_bottom_right + board_up, board_bottom_left + board_up]), BACKBOARD, 1)
-	_add_poly(parent, PackedVector2Array([board_bottom_right, board_bottom_right + board_thickness, board_bottom_right + board_thickness + board_up, board_bottom_right + board_up]), BACKBOARD_SIDE, 1)
-	var shelf_back_left := board_bottom_left + Vector2(0, -MACHINE_HEIGHT)
-	var shelf_back_right := board_bottom_right + Vector2(0, -MACHINE_HEIGHT)
-	var shelf_forward := -DEPTH_AXIS * 0.25
+	_add_poly(parent, PackedVector2Array([board_bottom_right, board_bottom_right + board_thickness, board_bottom_right + board_thickness + board_up, board_bottom_right + board_up]), BACKBOARD_SIDE, 2)
+
+	# Shelf grows from the front face of the structural backboard.
+	var shelf_back_left := _board_front_left() + Vector2(0, -MACHINE_HEIGHT)
+	var shelf_back_right := _board_front_right() + Vector2(0, -MACHINE_HEIGHT)
+	var shelf_forward := -DEPTH_AXIS * 0.18
 	var shelf_front_left := shelf_back_left + shelf_forward
 	var shelf_front_right := shelf_back_right + shelf_forward
 	var shelf_drop := Vector2(0, 1.5)
@@ -162,9 +178,8 @@ func _create_sand(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> v
 	_add_poly(parent, _face_quad(lb, fb, up, 0.22, 0.78, 0.18, 0.28), Color("343b43"), 11)
 
 func _create_data_counter(parent: Node2D) -> void:
-	var board_bottom_left: Vector2 = _base_top_back()
-	var shelf_back_left: Vector2 = board_bottom_left + Vector2(0, -MACHINE_HEIGHT)
-	var shelf_forward: Vector2 = -DEPTH_AXIS * 0.25
+	var shelf_back_left: Vector2 = _board_front_left() + Vector2(0, -MACHINE_HEIGHT)
+	var shelf_forward: Vector2 = -DEPTH_AXIS * 0.18
 	var shelf_front_left: Vector2 = shelf_back_left + shelf_forward
 	var machine_ratio: float = MACHINE_FRONT_VECTOR.x / WIDTH_AXIS.x
 	var counter_right_ratio: float = minf(machine_ratio - 0.06, 0.62)

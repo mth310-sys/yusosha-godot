@@ -54,7 +54,8 @@ const MACHINE_DEPTH := Vector2(16.0, -8.0)
 const SAND_DEPTH := Vector2(16.0, -8.0)
 const BACKBOARD_THICKNESS_RATIO := 0.12
 const BASE_DEPTH_RATIO := 0.70
-const SHELF_FORWARD_RATIO := 0.30
+const UPPER_BOX_FORWARD_RATIO := 0.34
+const UPPER_BOX_HEIGHT := 10.0
 const UNIT_REAR_SHIFT := Vector2(6.0, -3.0)
 const STOOL_FRONT_OFFSET := Vector2(-40.0, 18.0)
 
@@ -123,6 +124,15 @@ func _board_front_left() -> Vector2:
 func _board_front_right() -> Vector2:
 	return _base_back_right() + _board_thickness()
 
+func _upper_box_back_left() -> Vector2:
+	return _board_front_left() + Vector2(0, -MACHINE_HEIGHT + 2.0)
+
+func _upper_box_back_right() -> Vector2:
+	return _board_front_right() + Vector2(0, -MACHINE_HEIGHT + 2.0)
+
+func _upper_box_front_vector() -> Vector2:
+	return -DEPTH_AXIS * UPPER_BOX_FORWARD_RATIO
+
 func _create_island_frame(parent: Node2D) -> void:
 	var floor_left := Vector2(-32, 0)
 	var floor_front := Vector2(0, 16)
@@ -134,20 +144,21 @@ func _create_island_frame(parent: Node2D) -> void:
 	_add_poly(parent, PackedVector2Array([floor_left, floor_front, top_front, top_left]), BASE_FRONT, 0)
 	_add_poly(parent, PackedVector2Array([floor_front, floor_back_right, top_back_right, top_front]), BASE_SIDE, 0)
 	_add_poly(parent, PackedVector2Array([top_back_left, top_back_right, top_front, top_left]), BASE_TOP, 0)
-	var board_bottom_left := top_back_left
-	var board_bottom_right := top_back_right
 	var board_up := Vector2(0, -BACKBOARD_HEIGHT)
 	var board_thickness := _board_thickness()
-	_add_poly(parent, PackedVector2Array([board_bottom_left, board_bottom_right, board_bottom_right + board_up, board_bottom_left + board_up]), BACKBOARD, 1)
-	_add_poly(parent, PackedVector2Array([board_bottom_right, board_bottom_right + board_thickness, board_bottom_right + board_thickness + board_up, board_bottom_right + board_up]), BACKBOARD_SIDE, 2)
-	var shelf_back_left := _board_front_left() + Vector2(0, -MACHINE_HEIGHT)
-	var shelf_back_right := _board_front_right() + Vector2(0, -MACHINE_HEIGHT)
-	var shelf_forward := -DEPTH_AXIS * SHELF_FORWARD_RATIO
-	var shelf_front_left := shelf_back_left + shelf_forward
-	var shelf_front_right := shelf_back_right + shelf_forward
-	var shelf_drop := Vector2(0, 2.0)
-	_add_poly(parent, PackedVector2Array([shelf_back_left, shelf_back_right, shelf_front_right, shelf_front_left]), SHELF_TOP, 20)
-	_add_poly(parent, PackedVector2Array([shelf_front_left, shelf_front_right, shelf_front_right + shelf_drop, shelf_front_left + shelf_drop]), SHELF_EDGE, 20)
+	_add_poly(parent, PackedVector2Array([top_back_left, top_back_right, top_back_right + board_up, top_back_left + board_up]), BACKBOARD, 1)
+	_add_poly(parent, PackedVector2Array([top_back_right, top_back_right + board_thickness, top_back_right + board_thickness + board_up, top_back_right + board_up]), BACKBOARD_SIDE, 2)
+	# Hall-style upper equipment box: integrated with the backboard instead of a thin shelf.
+	var box_bl := _upper_box_back_left()
+	var box_br := _upper_box_back_right()
+	var box_push := _upper_box_front_vector()
+	var box_fl := box_bl + box_push
+	var box_fr := box_br + box_push
+	var box_up := Vector2(0, -UPPER_BOX_HEIGHT)
+	_add_poly(parent, PackedVector2Array([box_fl, box_fr, box_fr + box_up, box_fl + box_up]), SHELF_EDGE, 20)
+	_add_poly(parent, PackedVector2Array([box_fr, box_br, box_br + box_up, box_fr + box_up]), BACKBOARD_SIDE, 19)
+	_add_poly(parent, PackedVector2Array([box_bl + box_up, box_br + box_up, box_fr + box_up, box_fl + box_up]), SHELF_TOP, 20)
+	_add_poly(parent, PackedVector2Array([box_bl, box_br, box_fr, box_fl]), Color("555c64"), 19)
 
 func _equipment_front_left() -> Vector2:
 	var total_width_ratio: float = (MACHINE_FRONT_VECTOR.x + SAND_FRONT_VECTOR.x) / WIDTH_AXIS.x
@@ -231,21 +242,27 @@ func _create_sand(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> v
 	_add_poly(parent, _face_quad(lb, fb, up, 0.22, 0.78, 0.18, 0.28), Color("343b43"), 11)
 
 func _create_data_counter(parent: Node2D) -> void:
-	var shelf_back_left: Vector2 = _board_front_left() + Vector2(0, -MACHINE_HEIGHT)
-	var shelf_forward: Vector2 = -DEPTH_AXIS * SHELF_FORWARD_RATIO
-	var shelf_front_left: Vector2 = shelf_back_left + shelf_forward
-	var equipment_left: Vector2 = _equipment_front_left()
-	var counter_left: Vector2 = shelf_front_left + WIDTH_AXIS * 0.10
-	var counter_right: Vector2 = counter_left + MACHINE_FRONT_VECTOR * 0.78
-	var counter_up := Vector2(0, -9.0)
-	var counter_push := -DEPTH_AXIS * 0.08
+	# The counter is mounted into the front face of the integrated upper box.
+	var box_fl := _upper_box_back_left() + _upper_box_front_vector()
+	var box_fr := _upper_box_back_right() + _upper_box_front_vector()
+	var equipment_left := _equipment_front_left()
+	var machine_center := equipment_left + MACHINE_FRONT_VECTOR * 0.5
+	var counter_width := MACHINE_FRONT_VECTOR * 0.72
+	var counter_left := machine_center - counter_width * 0.5 + Vector2(0, -2.0)
+	var counter_right := machine_center + counter_width * 0.5 + Vector2(0, -2.0)
+	# Pull the display to the actual front plane of the box.
+	var front_correction := (box_fl + box_fr) * 0.5 - (counter_left + counter_right) * 0.5
+	counter_left += front_correction
+	counter_right += front_correction
+	var counter_up := Vector2(0, -7.0)
+	var counter_push := -DEPTH_AXIS * 0.045
 	_create_front_box(parent, counter_left, counter_right, counter_up, counter_push, COUNTER_FRONT, COUNTER_SIDE, SHELF_EDGE, 30)
 	var face_left := counter_left + counter_push
 	var face_right := counter_right + counter_push
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.08, 0.92, 0.14, 0.86), Color("111820"), 31)
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.14, 0.86, 0.24, 0.72), COUNTER_SCREEN, 32)
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.18, 0.30, 0.31, 0.63), Color("9ed8ee"), 33)
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.70, 0.82, 0.31, 0.63), Color("9ed8ee"), 33)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.07, 0.93, 0.12, 0.88), Color("111820"), 31)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.13, 0.87, 0.22, 0.74), COUNTER_SCREEN, 32)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.18, 0.30, 0.30, 0.65), Color("9ed8ee"), 33)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.70, 0.82, 0.30, 0.65), Color("9ed8ee"), 33)
 
 func _create_stool(cell: Vector2i) -> void:
 	var stool := Node2D.new()

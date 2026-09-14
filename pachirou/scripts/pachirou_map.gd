@@ -14,11 +14,16 @@ const BACKBOARD := Color("666d75")
 const BACKBOARD_SIDE := Color("444b53")
 const SHELF_TOP := Color("a7adb4")
 const SHELF_EDGE := Color("656c74")
-const MACHINE_FRONT := Color("2949c7")
-const MACHINE_SIDE := Color("19318e")
-const MACHINE_TOP := Color("5873e6")
-const MACHINE_DARK := Color("172139")
-const REEL_BG := Color("f4f6fa")
+const MACHINE_FRONT := Color("242932")
+const MACHINE_SIDE := Color("171b22")
+const MACHINE_TOP := Color("555b64")
+const MACHINE_TRIM := Color("a7adb5")
+const MACHINE_ACCENT := Color("c45139")
+const MACHINE_DARK := Color("11151b")
+const REEL_BG := Color("f2eee3")
+const REEL_LINE := Color("c9c2b2")
+const BUTTON_RED := Color("d94a3f")
+const BUTTON_DARK := Color("2b3037")
 const SAND_FRONT := Color("727982")
 const SAND_SIDE := Color("4c535b")
 const SAND_TOP := Color("a1a7ae")
@@ -117,7 +122,6 @@ func _board_front_right() -> Vector2:
 func _create_island_frame(parent: Node2D) -> void:
 	var floor_left := Vector2(-32, 0)
 	var floor_front := Vector2(0, 16)
-	var floor_back_left := floor_left + DEPTH_AXIS * BASE_DEPTH_RATIO
 	var floor_back_right := floor_front + DEPTH_AXIS * BASE_DEPTH_RATIO
 	var top_left := _base_top_left()
 	var top_front := _base_top_front()
@@ -154,15 +158,32 @@ func _create_machine_and_sand(parent: Node2D) -> void:
 
 func _create_machine(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> void:
 	var up := Vector2(0, -MACHINE_HEIGHT)
+	# Standard cabinet A: conventional three-reel pachislot proportions.
 	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), MACHINE_FRONT, 10)
 	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), MACHINE_SIDE, 10)
 	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), MACHINE_TOP, 10)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.10, 0.90, 0.73, 0.91), MACHINE_DARK, 11)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.10, 0.90, 0.43, 0.68), REEL_BG, 11)
+	# Metallic outer rails keep the cabinet readable at isometric scale.
+	_add_poly(parent, _face_quad(lb, fb, up, 0.03, 0.10, 0.06, 0.96), MACHINE_TRIM, 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.90, 0.97, 0.06, 0.96), MACHINE_TRIM, 11)
+	# Upper title / lamp panel.
+	_add_poly(parent, _face_quad(lb, fb, up, 0.11, 0.89, 0.79, 0.94), MACHINE_DARK, 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.18, 0.82, 0.82, 0.90), MACHINE_ACCENT, 12)
+	# Three-reel window with separators.
+	_add_poly(parent, _face_quad(lb, fb, up, 0.10, 0.90, 0.45, 0.72), MACHINE_TRIM, 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.14, 0.86, 0.48, 0.69), REEL_BG, 12)
+	for i in range(1, 3):
+		var u: float = 0.14 + float(i) * 0.24
+		_add_poly(parent, _face_quad(lb, fb, up, u - 0.015, u + 0.015, 0.48, 0.69), REEL_LINE, 13)
+	# Control deck: dark fascia, MAX BET and three stop buttons.
+	_add_poly(parent, _face_quad(lb, fb, up, 0.08, 0.92, 0.30, 0.42), MACHINE_DARK, 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.13, 0.27, 0.33, 0.38), BUTTON_DARK, 12)
 	for i in range(3):
-		var u0: float = 0.14 + float(i) * 0.25
-		_add_poly(parent, _face_quad(lb, fb, up, u0, u0 + 0.19, 0.48, 0.64), Color("ffffff"), 12)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.12, 0.88, 0.12, 0.30), Color("20336f"), 11)
+		var center: float = 0.43 + float(i) * 0.17
+		_add_poly(parent, _face_quad(lb, fb, up, center - 0.055, center + 0.055, 0.33, 0.39), BUTTON_RED, 12)
+	# Lower decorative panel and medal tray slot.
+	_add_poly(parent, _face_quad(lb, fb, up, 0.11, 0.89, 0.10, 0.27), Color("303741"), 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.20, 0.80, 0.14, 0.22), MACHINE_ACCENT, 12)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.18, 0.82, 0.045, 0.09), MACHINE_DARK, 12)
 
 func _create_sand(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> void:
 	var up := Vector2(0, -SAND_HEIGHT)

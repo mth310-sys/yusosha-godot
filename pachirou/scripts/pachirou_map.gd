@@ -22,6 +22,9 @@ const MACHINE_ACCENT := Color("c45139")
 const MACHINE_DARK := Color("11151b")
 const REEL_BG := Color("f2eee3")
 const REEL_LINE := Color("c9c2b2")
+const REEL_SYMBOL_RED := Color("d65a4a")
+const REEL_SYMBOL_BLUE := Color("4d76b8")
+const REEL_SYMBOL_GOLD := Color("d5a84b")
 const BUTTON_RED := Color("d94a3f")
 const BUTTON_DARK := Color("2b3037")
 const SAND_FRONT := Color("727982")
@@ -159,51 +162,59 @@ func _create_machine_and_sand(parent: Node2D) -> void:
 func _create_machine(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> void:
 	var up := Vector2(0, -MACHINE_HEIGHT)
 	var front_push := -depth * 0.14
-	# Main cabinet shell stays fixed; only the front assemblies gain physical projection.
 	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), MACHINE_FRONT, 10)
 	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), MACHINE_SIDE, 10)
 	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), MACHINE_TOP, 10)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.03, 0.10, 0.06, 0.96), MACHINE_TRIM, 11)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.90, 0.97, 0.06, 0.96), MACHINE_TRIM, 11)
 
-	# Upper lamp/title bezel projects slightly from the cabinet face.
 	var upper_lb := _face_point(lb, fb, up, 0.10, 0.78)
 	var upper_rb := _face_point(lb, fb, up, 0.90, 0.78)
 	var upper_up := Vector2(0, -MACHINE_HEIGHT * 0.17)
 	_create_front_box(parent, upper_lb, upper_rb, upper_up, front_push * 0.45, MACHINE_DARK, MACHINE_SIDE, MACHINE_TOP, 14)
 	_add_poly(parent, _face_quad(upper_lb + front_push * 0.45, upper_rb + front_push * 0.45, upper_up, 0.10, 0.90, 0.22, 0.72), MACHINE_ACCENT, 15)
 
-	# Larger recessed three-reel window with a proper surrounding bezel.
+	# Three clearly separated reels with small symbol marks.
 	var reel_lb := _face_point(lb, fb, up, 0.08, 0.43)
 	var reel_rb := _face_point(lb, fb, up, 0.92, 0.43)
 	var reel_up := Vector2(0, -MACHINE_HEIGHT * 0.31)
 	_create_front_box(parent, reel_lb, reel_rb, reel_up, front_push * 0.28, MACHINE_TRIM, MACHINE_SIDE, MACHINE_TOP, 14)
 	var reel_face_lb := reel_lb + front_push * 0.28
 	var reel_face_rb := reel_rb + front_push * 0.28
-	_add_poly(parent, _face_quad(reel_face_lb, reel_face_rb, reel_up, 0.07, 0.93, 0.10, 0.88), REEL_BG, 15)
-	for i in range(1, 3):
-		var u: float = 0.07 + float(i) * 0.286
-		_add_poly(parent, _face_quad(reel_face_lb, reel_face_rb, reel_up, u - 0.014, u + 0.014, 0.10, 0.88), REEL_LINE, 16)
+	for i in range(3):
+		var u0: float = 0.07 + float(i) * 0.30
+		var u1: float = u0 + 0.24
+		_add_poly(parent, _face_quad(reel_face_lb, reel_face_rb, reel_up, u0, u1, 0.10, 0.88), REEL_BG, 15)
+		_add_poly(parent, _face_quad(reel_face_lb, reel_face_rb, reel_up, u0 + 0.05, u1 - 0.05, 0.20, 0.31), REEL_SYMBOL_RED, 16)
+		_add_poly(parent, _face_quad(reel_face_lb, reel_face_rb, reel_up, u0 + 0.05, u1 - 0.05, 0.44, 0.55), REEL_SYMBOL_GOLD, 16)
+		_add_poly(parent, _face_quad(reel_face_lb, reel_face_rb, reel_up, u0 + 0.05, u1 - 0.05, 0.68, 0.79), REEL_SYMBOL_BLUE, 16)
+		if i < 2:
+			_add_poly(parent, _face_quad(reel_face_lb, reel_face_rb, reel_up, u1 + 0.015, u1 + 0.035, 0.08, 0.90), REEL_LINE, 16)
 
-	# Slab-like control deck projects farther toward the player than the reel bezel.
+	# Control deck with three round STOP buttons.
 	var deck_lb := _face_point(lb, fb, up, 0.06, 0.28)
 	var deck_rb := _face_point(lb, fb, up, 0.94, 0.28)
 	var deck_up := Vector2(0, -MACHINE_HEIGHT * 0.13)
 	_create_front_box(parent, deck_lb, deck_rb, deck_up, front_push, MACHINE_DARK, MACHINE_SIDE, MACHINE_TOP, 17)
 	var deck_face_lb := deck_lb + front_push
 	var deck_face_rb := deck_rb + front_push
-	_add_poly(parent, _face_quad(deck_face_lb, deck_face_rb, deck_up, 0.10, 0.25, 0.25, 0.66), BUTTON_DARK, 18)
+	_add_poly(parent, _face_quad(deck_face_lb, deck_face_rb, deck_up, 0.09, 0.24, 0.22, 0.72), BUTTON_DARK, 18)
 	for i in range(3):
-		var center: float = 0.43 + float(i) * 0.18
-		_add_poly(parent, _face_quad(deck_face_lb, deck_face_rb, deck_up, center - 0.060, center + 0.060, 0.22, 0.70), BUTTON_RED, 18)
+		var center_u: float = 0.43 + float(i) * 0.18
+		_add_poly(parent, _face_ellipse(deck_face_lb, deck_face_rb, deck_up, center_u, 0.47, 0.060, 0.23, 18), BUTTON_RED, 18)
+		_add_poly(parent, _face_ellipse(deck_face_lb, deck_face_rb, deck_up, center_u, 0.47, 0.034, 0.13, 16), Color("f4d4cf"), 19)
 
-	# Lower panel plus a projecting medal tray/lip gives the cabinet a pachislot silhouette.
+	# Lower panel and deeper medal tray with visible opening.
 	_add_poly(parent, _face_quad(lb, fb, up, 0.10, 0.90, 0.09, 0.27), Color("303741"), 11)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.19, 0.81, 0.14, 0.23), MACHINE_ACCENT, 12)
-	var tray_lb := _face_point(lb, fb, up, 0.12, 0.045)
-	var tray_rb := _face_point(lb, fb, up, 0.88, 0.045)
-	var tray_up := Vector2(0, -MACHINE_HEIGHT * 0.055)
-	_create_front_box(parent, tray_lb, tray_rb, tray_up, front_push * 0.85, MACHINE_DARK, MACHINE_SIDE, MACHINE_TOP, 17)
+	var tray_lb := _face_point(lb, fb, up, 0.10, 0.035)
+	var tray_rb := _face_point(lb, fb, up, 0.90, 0.035)
+	var tray_up := Vector2(0, -MACHINE_HEIGHT * 0.075)
+	_create_front_box(parent, tray_lb, tray_rb, tray_up, front_push * 1.05, MACHINE_DARK, MACHINE_SIDE, MACHINE_TOP, 17)
+	var tray_face_lb := tray_lb + front_push * 1.05
+	var tray_face_rb := tray_rb + front_push * 1.05
+	_add_poly(parent, _face_quad(tray_face_lb, tray_face_rb, tray_up, 0.13, 0.87, 0.18, 0.60), Color("07090c"), 18)
+	_add_poly(parent, _face_quad(tray_face_lb, tray_face_rb, tray_up, 0.20, 0.80, 0.12, 0.23), MACHINE_TRIM, 19)
 
 func _create_front_box(parent: Node2D, lb: Vector2, rb: Vector2, up: Vector2, push: Vector2, front_color: Color, side_color: Color, top_color: Color, z: int) -> void:
 	var fl := lb + push
@@ -257,6 +268,15 @@ func _face_point(lb: Vector2, fb: Vector2, up: Vector2, u: float, v: float) -> V
 
 func _face_quad(lb: Vector2, fb: Vector2, up: Vector2, u0: float, u1: float, v0: float, v1: float) -> PackedVector2Array:
 	return PackedVector2Array([_face_point(lb, fb, up, u0, v0), _face_point(lb, fb, up, u1, v0), _face_point(lb, fb, up, u1, v1), _face_point(lb, fb, up, u0, v1)])
+
+func _face_ellipse(lb: Vector2, fb: Vector2, up: Vector2, center_u: float, center_v: float, radius_u: float, radius_v: float, segments: int) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in range(segments):
+		var angle: float = TAU * float(i) / float(segments)
+		var u: float = center_u + cos(angle) * radius_u
+		var v: float = center_v + sin(angle) * radius_v
+		points.append(_face_point(lb, fb, up, u, v))
+	return points
 
 func _ellipse(center: Vector2, rx: float, ry: float, segments: int) -> PackedVector2Array:
 	var points := PackedVector2Array()

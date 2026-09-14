@@ -48,10 +48,10 @@ const STOOL_SCALE := 0.90
 
 const WIDTH_AXIS := Vector2(32.0, 16.0)
 const DEPTH_AXIS := Vector2(32.0, -16.0)
-const MACHINE_FRONT_VECTOR := Vector2(21.0, 10.5)
-const SAND_FRONT_VECTOR := Vector2(6.0, 3.0)
+const MACHINE_FRONT_VECTOR := Vector2(20.5, 10.25)
+const SAND_FRONT_VECTOR := Vector2(7.0, 3.5)
 const MACHINE_DEPTH := Vector2(16.0, -8.0)
-const SAND_DEPTH := Vector2(12.0, -6.0)
+const SAND_DEPTH := Vector2(16.0, -8.0)
 const BACKBOARD_THICKNESS_RATIO := 0.12
 const BASE_DEPTH_RATIO := 0.70
 const UNIT_REAR_SHIFT := Vector2(6.0, -3.0)
@@ -149,7 +149,9 @@ func _create_island_frame(parent: Node2D) -> void:
 	_add_poly(parent, PackedVector2Array([shelf_front_left, shelf_front_right, shelf_front_right + shelf_drop, shelf_front_left + shelf_drop]), SHELF_EDGE, 20)
 
 func _equipment_front_left() -> Vector2:
-	return _base_top_left() + WIDTH_AXIS * 0.03 + DEPTH_AXIS * 0.08
+	var total_width_ratio: float = (MACHINE_FRONT_VECTOR.x + SAND_FRONT_VECTOR.x) / WIDTH_AXIS.x
+	var side_margin_ratio: float = (1.0 - total_width_ratio) * 0.5
+	return _base_top_left() + WIDTH_AXIS * side_margin_ratio + DEPTH_AXIS * 0.08
 
 func _create_machine_and_sand(parent: Node2D) -> void:
 	var machine_lb := _equipment_front_left()

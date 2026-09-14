@@ -1,7 +1,7 @@
 extends Node2D
 
-@export var map_width: int = 10
-@export var map_height: int = 10
+@export var map_width: int = 14
+@export var map_height: int = 14
 @export var tile_width: float = 64.0
 @export var tile_height: float = 32.0
 

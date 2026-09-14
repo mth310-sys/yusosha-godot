@@ -47,6 +47,7 @@ const SAND_DEPTH := Vector2(12.0, -6.0)
 const BACKBOARD_THICKNESS_RATIO := 0.12
 const BASE_DEPTH_RATIO := 0.70
 const UNIT_REAR_SHIFT := Vector2(6.0, -3.0)
+const STOOL_FRONT_OFFSET := Vector2(-40.0, 18.0)
 
 var world: Node2D
 
@@ -57,7 +58,7 @@ func _ready() -> void:
 	add_child(world)
 	_create_floor()
 	_create_island_bay(Vector2i(6, 4))
-	_create_stool(Vector2i(5, 5))
+	_create_stool(Vector2i(6, 4))
 
 func grid_to_world(cell: Vector2i) -> Vector2:
 	var cx: float = (map_width - 1) * 0.5
@@ -85,7 +86,6 @@ func _create_floor() -> void:
 func _create_island_bay(cell: Vector2i) -> void:
 	var bay := Node2D.new()
 	bay.name = "IslandBay"
-	# Keep the same logical floor cell; only bias the complete island unit toward its rear half.
 	bay.position = grid_to_world(cell) + UNIT_REAR_SHIFT
 	bay.z_index = int(bay.position.y)
 	world.add_child(bay)
@@ -190,11 +190,8 @@ func _create_data_counter(parent: Node2D) -> void:
 func _create_stool(cell: Vector2i) -> void:
 	var stool := Node2D.new()
 	stool.name = "Stool"
-	var machine_left := _equipment_front_left()
-	var machine_right := machine_left + MACHINE_FRONT_VECTOR
-	var machine_center_x := (machine_left.x + machine_right.x) * 0.5
-	# Stool follows the same within-cell rear bias so its spacing to the machine is unchanged.
-	stool.position = grid_to_world(cell) + UNIT_REAR_SHIFT + Vector2(machine_center_x * 0.25, -4)
+	# Place the stool directly in front of the island base in the same logical bay.
+	stool.position = grid_to_world(cell) + UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
 	stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 	stool.z_index = int(stool.position.y)
 	world.add_child(stool)

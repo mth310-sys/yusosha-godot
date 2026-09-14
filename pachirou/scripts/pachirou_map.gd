@@ -46,6 +46,7 @@ const MACHINE_DEPTH := Vector2(16.0, -8.0)
 const SAND_DEPTH := Vector2(12.0, -6.0)
 const BACKBOARD_THICKNESS_RATIO := 0.12
 const BASE_DEPTH_RATIO := 0.70
+const UNIT_REAR_SHIFT := Vector2(6.0, -3.0)
 
 var world: Node2D
 
@@ -84,7 +85,8 @@ func _create_floor() -> void:
 func _create_island_bay(cell: Vector2i) -> void:
 	var bay := Node2D.new()
 	bay.name = "IslandBay"
-	bay.position = grid_to_world(cell)
+	# Keep the same logical floor cell; only bias the complete island unit toward its rear half.
+	bay.position = grid_to_world(cell) + UNIT_REAR_SHIFT
 	bay.z_index = int(bay.position.y)
 	world.add_child(bay)
 	_create_island_frame(bay)
@@ -121,21 +123,15 @@ func _create_island_frame(parent: Node2D) -> void:
 	var top_front := _base_top_front()
 	var top_back_left := _base_back_left()
 	var top_back_right := _base_back_right()
-
-	# Base ends at the backboard. The unused rear 30% of the original cell-depth box is removed.
 	_add_poly(parent, PackedVector2Array([floor_left, floor_front, top_front, top_left]), BASE_FRONT, 0)
 	_add_poly(parent, PackedVector2Array([floor_front, floor_back_right, top_back_right, top_front]), BASE_SIDE, 0)
 	_add_poly(parent, PackedVector2Array([top_back_left, top_back_right, top_front, top_left]), BASE_TOP, 0)
-
-	# Backboard is part of the island frame. Its front surface sits immediately behind the machine depth.
 	var board_bottom_left := top_back_left
 	var board_bottom_right := top_back_right
 	var board_up := Vector2(0, -BACKBOARD_HEIGHT)
 	var board_thickness := _board_thickness()
 	_add_poly(parent, PackedVector2Array([board_bottom_left, board_bottom_right, board_bottom_right + board_up, board_bottom_left + board_up]), BACKBOARD, 1)
 	_add_poly(parent, PackedVector2Array([board_bottom_right, board_bottom_right + board_thickness, board_bottom_right + board_thickness + board_up, board_bottom_right + board_up]), BACKBOARD_SIDE, 2)
-
-	# Shelf grows from the front face of the structural backboard.
 	var shelf_back_left := _board_front_left() + Vector2(0, -MACHINE_HEIGHT)
 	var shelf_back_right := _board_front_right() + Vector2(0, -MACHINE_HEIGHT)
 	var shelf_forward := -DEPTH_AXIS * 0.18
@@ -197,7 +193,8 @@ func _create_stool(cell: Vector2i) -> void:
 	var machine_left := _equipment_front_left()
 	var machine_right := machine_left + MACHINE_FRONT_VECTOR
 	var machine_center_x := (machine_left.x + machine_right.x) * 0.5
-	stool.position = grid_to_world(cell) + Vector2(machine_center_x * 0.25, -4)
+	# Stool follows the same within-cell rear bias so its spacing to the machine is unchanged.
+	stool.position = grid_to_world(cell) + UNIT_REAR_SHIFT + Vector2(machine_center_x * 0.25, -4)
 	stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 	stool.z_index = int(stool.position.y)
 	world.add_child(stool)

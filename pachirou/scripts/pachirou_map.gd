@@ -242,22 +242,22 @@ func _create_sand(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> v
 	_add_poly(parent, _face_quad(lb, fb, up, 0.22, 0.78, 0.18, 0.28), Color("343b43"), 11)
 
 func _create_data_counter(parent: Node2D) -> void:
-	# Mount the counter on the front face of the continuous upper box, as in a hall installation.
+	# Mount the counter on the front face of the continuous upper box, with restrained proportions.
 	var box_fl: Vector2 = _upper_box_back_left() + _upper_box_front_vector()
 	var box_fr: Vector2 = _upper_box_back_right() + _upper_box_front_vector()
 	var box_front_vector: Vector2 = box_fr - box_fl
-	var counter_left: Vector2 = box_fl + box_front_vector * 0.08 + Vector2(0, 2.0)
-	var counter_right: Vector2 = box_fl + box_front_vector * 0.92 + Vector2(0, 2.0)
-	var counter_up: Vector2 = Vector2(0, -9.0)
-	# Project the display toward the player so it reads as a separately mounted call/data lamp.
-	var counter_push: Vector2 = -DEPTH_AXIS * 0.075
+	var counter_left: Vector2 = box_fl + box_front_vector * 0.12 + Vector2(0, 2.0)
+	var counter_right: Vector2 = box_fl + box_front_vector * 0.88 + Vector2(0, 2.0)
+	var counter_up: Vector2 = Vector2(0, -8.0)
+	# Keep a visible forward mount without letting the counter overpower the cabinet.
+	var counter_push: Vector2 = -DEPTH_AXIS * 0.055
 	_create_front_box(parent, counter_left, counter_right, counter_up, counter_push, COUNTER_FRONT, COUNTER_SIDE, SHELF_EDGE, 30)
 	var face_left: Vector2 = counter_left + counter_push
 	var face_right: Vector2 = counter_right + counter_push
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.045, 0.955, 0.08, 0.92), Color("111820"), 31)
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.085, 0.915, 0.17, 0.80), COUNTER_SCREEN, 32)
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.12, 0.24, 0.27, 0.67), Color("9ed8ee"), 33)
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.76, 0.88, 0.27, 0.67), Color("9ed8ee"), 33)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.05, 0.95, 0.08, 0.92), Color("111820"), 31)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.095, 0.905, 0.17, 0.80), COUNTER_SCREEN, 32)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.13, 0.25, 0.27, 0.67), Color("9ed8ee"), 33)
+	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.75, 0.87, 0.27, 0.67), Color("9ed8ee"), 33)
 
 func _create_stool(cell: Vector2i) -> void:
 	var stool := Node2D.new()

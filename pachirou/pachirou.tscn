@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://pachirou/scripts/pachirou_map.gd" id="1_script"]
+
+[node name="Pachirou" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(1.5, 1.5)
+enabled = true
+

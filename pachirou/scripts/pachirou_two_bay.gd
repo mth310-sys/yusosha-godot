@@ -7,14 +7,19 @@ func _ready() -> void:
 	add_child(world)
 	_create_floor()
 
-	var bay_cells: Array[Vector2i] = [Vector2i(6, 4), Vector2i(7, 4)]
+	var bay_cells: Array[Vector2i] = [
+		Vector2i(6, 4),
+		Vector2i(7, 4),
+		Vector2i(8, 4),
+	]
 	for cell: Vector2i in bay_cells:
 		_create_island_bay(cell)
 		_create_stool(cell)
 
-	# Connected bays share one inner frame. Keep the second bay's left frame as
-	# the joint and mask the first bay's right frame so the center does not double up.
-	_mask_inner_right_frame(bay_cells[0])
+	# Every internal joint keeps only the next bay's left frame. Mask the
+	# preceding bay's right frame so three or more bays still read as one island.
+	for i in range(bay_cells.size() - 1):
+		_mask_inner_right_frame(bay_cells[i])
 
 func _mask_inner_right_frame(cell: Vector2i) -> void:
 	var mask := Node2D.new()

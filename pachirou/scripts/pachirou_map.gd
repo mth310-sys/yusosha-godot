@@ -18,8 +18,6 @@ const MACHINE_FRONT := Color("242932")
 const MACHINE_SIDE := Color("171b22")
 const MACHINE_TOP := Color("555b64")
 const MACHINE_TRIM := Color("a7adb5")
-const MACHINE_TRIM_DARK := Color("686f78")
-const MACHINE_HIGHLIGHT := Color("d3d7dc")
 const MACHINE_ACCENT := Color("c45139")
 const MACHINE_DARK := Color("11151b")
 const REEL_BG := Color("f2eee3")
@@ -169,19 +167,12 @@ func _create_machine(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -
 	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), MACHINE_TOP, 10)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.03, 0.10, 0.06, 0.96), MACHINE_TRIM, 11)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.90, 0.97, 0.06, 0.96), MACHINE_TRIM, 11)
-	# Thin inner rails and side highlight break up the flat cabinet shell.
-	_add_poly(parent, _face_quad(lb, fb, up, 0.105, 0.135, 0.08, 0.94), MACHINE_TRIM_DARK, 12)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.865, 0.895, 0.08, 0.94), MACHINE_TRIM_DARK, 12)
-	_add_poly(parent, PackedVector2Array([fb + depth * 0.10, fb + depth * 0.20, fb + depth * 0.20 + up * 0.90, fb + depth * 0.10 + up * 0.90]), MACHINE_HIGHLIGHT, 11)
 
 	var upper_lb := _face_point(lb, fb, up, 0.10, 0.78)
 	var upper_rb := _face_point(lb, fb, up, 0.90, 0.78)
 	var upper_up := Vector2(0, -MACHINE_HEIGHT * 0.17)
 	_create_front_box(parent, upper_lb, upper_rb, upper_up, front_push * 0.45, MACHINE_DARK, MACHINE_SIDE, MACHINE_TOP, 14)
-	var upper_face_lb := upper_lb + front_push * 0.45
-	var upper_face_rb := upper_rb + front_push * 0.45
-	_add_poly(parent, _face_quad(upper_face_lb, upper_face_rb, upper_up, 0.08, 0.92, 0.16, 0.78), MACHINE_TRIM_DARK, 15)
-	_add_poly(parent, _face_quad(upper_face_lb, upper_face_rb, upper_up, 0.14, 0.86, 0.25, 0.68), MACHINE_ACCENT, 16)
+	_add_poly(parent, _face_quad(upper_lb + front_push * 0.45, upper_rb + front_push * 0.45, upper_up, 0.10, 0.90, 0.22, 0.72), MACHINE_ACCENT, 15)
 
 	var reel_lb := _face_point(lb, fb, up, 0.08, 0.43)
 	var reel_rb := _face_point(lb, fb, up, 0.92, 0.43)
@@ -202,10 +193,9 @@ func _create_machine(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -
 	var deck_lb := _face_point(lb, fb, up, 0.06, 0.28)
 	var deck_rb := _face_point(lb, fb, up, 0.94, 0.28)
 	var deck_up := Vector2(0, -MACHINE_HEIGHT * 0.13)
-	_create_front_box(parent, deck_lb, deck_rb, deck_up, front_push * 1.08, MACHINE_DARK, MACHINE_SIDE, MACHINE_TOP, 17)
-	var deck_face_lb := deck_lb + front_push * 1.08
-	var deck_face_rb := deck_rb + front_push * 1.08
-	_add_poly(parent, _face_quad(deck_face_lb, deck_face_rb, deck_up, 0.04, 0.96, 0.78, 0.94), MACHINE_TRIM, 18)
+	_create_front_box(parent, deck_lb, deck_rb, deck_up, front_push, MACHINE_DARK, MACHINE_SIDE, MACHINE_TOP, 17)
+	var deck_face_lb := deck_lb + front_push
+	var deck_face_rb := deck_rb + front_push
 	_add_poly(parent, _face_quad(deck_face_lb, deck_face_rb, deck_up, 0.09, 0.24, 0.22, 0.72), BUTTON_DARK, 18)
 	for i in range(3):
 		var center_u: float = 0.43 + float(i) * 0.18
@@ -214,15 +204,14 @@ func _create_machine(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -
 
 	_add_poly(parent, _face_quad(lb, fb, up, 0.10, 0.90, 0.09, 0.27), Color("303741"), 11)
 	_add_poly(parent, _face_quad(lb, fb, up, 0.19, 0.81, 0.14, 0.23), MACHINE_ACCENT, 12)
-	var tray_lb := _face_point(lb, fb, up, 0.08, 0.025)
-	var tray_rb := _face_point(lb, fb, up, 0.92, 0.025)
-	var tray_up := Vector2(0, -MACHINE_HEIGHT * 0.095)
-	_create_front_box(parent, tray_lb, tray_rb, tray_up, front_push * 1.28, MACHINE_DARK, MACHINE_SIDE, MACHINE_TOP, 18)
-	var tray_face_lb := tray_lb + front_push * 1.28
-	var tray_face_rb := tray_rb + front_push * 1.28
-	_add_poly(parent, _face_quad(tray_face_lb, tray_face_rb, tray_up, 0.08, 0.92, 0.12, 0.68), MACHINE_TRIM_DARK, 19)
-	_add_poly(parent, _face_quad(tray_face_lb, tray_face_rb, tray_up, 0.15, 0.85, 0.22, 0.58), Color("07090c"), 20)
-	_add_poly(parent, _face_quad(tray_face_lb, tray_face_rb, tray_up, 0.20, 0.80, 0.10, 0.20), MACHINE_HIGHLIGHT, 21)
+	var tray_lb := _face_point(lb, fb, up, 0.10, 0.035)
+	var tray_rb := _face_point(lb, fb, up, 0.90, 0.035)
+	var tray_up := Vector2(0, -MACHINE_HEIGHT * 0.075)
+	_create_front_box(parent, tray_lb, tray_rb, tray_up, front_push * 1.05, MACHINE_DARK, MACHINE_SIDE, MACHINE_TOP, 17)
+	var tray_face_lb := tray_lb + front_push * 1.05
+	var tray_face_rb := tray_rb + front_push * 1.05
+	_add_poly(parent, _face_quad(tray_face_lb, tray_face_rb, tray_up, 0.13, 0.87, 0.18, 0.60), Color("07090c"), 18)
+	_add_poly(parent, _face_quad(tray_face_lb, tray_face_rb, tray_up, 0.20, 0.80, 0.12, 0.23), MACHINE_TRIM, 19)
 
 func _create_front_box(parent: Node2D, lb: Vector2, rb: Vector2, up: Vector2, push: Vector2, front_color: Color, side_color: Color, top_color: Color, z: int) -> void:
 	var fl := lb + push

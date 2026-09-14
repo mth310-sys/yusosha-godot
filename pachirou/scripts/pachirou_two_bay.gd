@@ -7,17 +7,17 @@ func _ready() -> void:
 	add_child(world)
 	_create_floor()
 
-	var bay_cells: Array[Vector2i] = [
-		Vector2i(6, 4),
-		Vector2i(7, 4),
-		Vector2i(8, 4),
-	]
+	# Nine-seat island test on the expanded 14x14 map.
+	var bay_cells: Array[Vector2i] = []
+	for x in range(2, 11):
+		bay_cells.append(Vector2i(x, 5))
+
 	for cell: Vector2i in bay_cells:
 		_create_island_bay(cell)
 		_create_stool(cell)
 
 	# Every internal joint keeps only the next bay's left frame. Mask the
-	# preceding bay's right frame so three or more bays still read as one island.
+	# preceding bay's right frame so the full row reads as one continuous island.
 	for i in range(bay_cells.size() - 1):
 		_mask_inner_right_frame(bay_cells[i])
 

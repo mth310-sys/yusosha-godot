@@ -1,7 +1,7 @@
 extends Node2D
 
-# Pachirou Step 10: keep the hall equipment at full one-cell scale,
-# while reducing only the pachislot cabinet for a better bay proportion.
+# Pachirou Step 11: one-cell proportion test.
+# Island structure stays 100%; machine, sand, counter and stool use tuned display scales.
 
 @export var map_width: int = 10
 @export var map_height: int = 10
@@ -51,6 +51,8 @@ const STOOL_SEAT_DIAMETER_MM := 400.0
 const STOOL_BASE_DIAMETER_MM := 380.0
 const MM_TO_PX := 0.08
 const MACHINE_DISPLAY_SCALE := 0.80
+const SAND_DISPLAY_SCALE := 0.80
+const COUNTER_DISPLAY_SCALE := 0.80
 const STOOL_DISPLAY_SCALE := 0.80
 
 var world: Node2D
@@ -107,7 +109,6 @@ func _create_island_frame_unit(cell: Vector2i) -> void:
 	unit.z_index = int(unit.position.y)
 	world.add_child(unit)
 
-	# Island equipment returns to the full one-cell reference size.
 	var back := Vector2(0,-14)
 	var right := Vector2(28,0)
 	var front := Vector2(0,14)
@@ -127,7 +128,6 @@ func _create_island_frame_unit(cell: Vector2i) -> void:
 	_add_polygon(unit,PackedVector2Array([board_left_bottom,board_right_bottom,board_right_bottom+board_up,board_left_bottom+board_up]),BACKBOARD_FRONT)
 	_add_polygon(unit,PackedVector2Array([board_right_bottom,board_right_bottom+board_depth,board_right_bottom+board_depth+board_up,board_right_bottom+board_up]),BACKBOARD_SIDE)
 
-	# Only the pachislot cabinet is reduced. Pivot compensation keeps its mounting point on the 480 mm base.
 	var machine := Node2D.new()
 	machine.name = "PachislotMachine"
 	machine.position = Vector2(-8,-2)+Vector2(0,mount_y*(1.0-MACHINE_DISPLAY_SCALE))
@@ -135,10 +135,11 @@ func _create_island_frame_unit(cell: Vector2i) -> void:
 	unit.add_child(machine)
 	_create_machine_insert(machine,mount_y)
 
-	# Sand, backboard, shelf and data counter remain at the original full equipment scale.
+	# Sand is reduced to the same visual class as the machine and stays seated on the base.
 	var sand := Node2D.new()
 	sand.name = "SandUnit"
-	sand.position = Vector2(18,11)
+	sand.position = Vector2(16,9)+Vector2(0,mount_y*(1.0-SAND_DISPLAY_SCALE))
+	sand.scale = Vector2(SAND_DISPLAY_SCALE,SAND_DISPLAY_SCALE)
 	unit.add_child(sand)
 	_create_sand_insert(sand,mount_y)
 
@@ -152,16 +153,18 @@ func _create_island_frame_unit(cell: Vector2i) -> void:
 	_add_polygon(unit,PackedVector2Array([shelf_left,shelf_front,shelf_front+shelf_thickness,shelf_left+shelf_thickness]),SHELF_FRONT)
 	_add_polygon(unit,PackedVector2Array([shelf_front,shelf_right,shelf_right+shelf_thickness,shelf_front+shelf_thickness]),SHELF_SIDE)
 
+	# Counter is also reduced and centered above the machine instead of dominating the shelf.
 	var counter := Node2D.new()
 	counter.name = "DataCounter"
-	counter.position = Vector2(-7,shelf_y+1)
+	counter.position = Vector2(-5,shelf_y+1)
+	counter.scale = Vector2(COUNTER_DISPLAY_SCALE,COUNTER_DISPLAY_SCALE)
 	unit.add_child(counter)
 	_create_data_counter(counter)
 	_add_polygon(unit,PackedVector2Array([Vector2(-28,mount_y),Vector2(28,mount_y),Vector2(28,mount_y+2),Vector2(-28,mount_y+2)]),FRAME_TRIM)
 
 	var tag := Label.new()
-	tag.text = "ISLAND: 1 CELL / EQUIPMENT 100%"
-	tag.position = Vector2(-58,20)
+	tag.text = "ISLAND: 1 CELL / FRAME 100%"
+	tag.position = Vector2(-55,20)
 	tag.add_theme_font_size_override("font_size",10)
 	tag.add_theme_color_override("font_color",GUIDE)
 	unit.add_child(tag)
@@ -252,13 +255,13 @@ func _create_title() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	var label := Label.new()
-	label.text = "PACHIROU  |  MACHINE SCALE TEST  |  10 x 10"
+	label.text = "PACHIROU  |  ONE-CELL PROPORTION TEST  |  10 x 10"
 	label.position = Vector2(24,20)
 	label.add_theme_font_size_override("font_size",20)
 	label.add_theme_color_override("font_color",GUIDE)
 	layer.add_child(label)
 	var note := Label.new()
-	note.text = "island/sand/backboard/shelf/counter 100% / machine 80% / stool 80% / logical cells unchanged"
+	note.text = "frame/backboard/shelf 100% / machine 80% / sand 80% / counter 80% / stool 80%"
 	note.position = Vector2(24,50)
 	note.add_theme_font_size_override("font_size",13)
 	note.add_theme_color_override("font_color",Color("d4d7db"))

@@ -38,16 +38,10 @@ const SAND_HEIGHT := 48.0
 const BACKBOARD_HEIGHT := 64.0
 const STOOL_SCALE := 0.76
 
-# Floor-isometric basis on the top of one 64x32 cell.
-# WIDTH_AXIS runs left -> front / back -> right.
-# DEPTH_AXIS runs left -> back / front -> right.
 const WIDTH_AXIS := Vector2(32.0, 16.0)
 const DEPTH_AXIS := Vector2(32.0, -16.0)
-
-# Machine + sand share one front line. Their total width is 28/32 of the cell.
 const MACHINE_FRONT_VECTOR := Vector2(21.0, 10.5)
 const SAND_FRONT_VECTOR := Vector2(7.0, 3.5)
-# Real cabinet thickness is expressed along the same depth axis as the floor.
 const EQUIPMENT_DEPTH := Vector2(24.0, -12.0)
 
 var world: Node2D
@@ -113,7 +107,6 @@ func _base_top_front() -> Vector2:
 	return Vector2(0, 16 - BASE_HEIGHT)
 
 func _create_island_frame(parent: Node2D) -> void:
-	# 1) Base occupies the complete 64x32 cell.
 	var floor_left := Vector2(-32, 0)
 	var floor_front := Vector2(0, 16)
 	var floor_right := Vector2(32, 0)
@@ -126,8 +119,6 @@ func _create_island_frame(parent: Node2D) -> void:
 	_add_poly(parent, PackedVector2Array([floor_front, floor_right, top_right, top_front]), BASE_SIDE, 0)
 	_add_poly(parent, PackedVector2Array([top_back, top_right, top_front, top_left]), BASE_TOP, 0)
 
-	# 2) Backboard is part of the island itself: it rises directly from the
-	#    complete rear edge of the base (back -> right). It does not follow the cabinet.
 	var board_bottom_left := top_back
 	var board_bottom_right := top_right
 	var board_up := Vector2(0, -BACKBOARD_HEIGHT)
@@ -146,8 +137,6 @@ func _create_island_frame(parent: Node2D) -> void:
 		board_bottom_right + board_up
 	]), BACKBOARD_SIDE, 1)
 
-	# 3) Shelf is also island equipment. It is attached to the backboard at the
-	#    cabinet-top height and projects forward from that fixed rear edge.
 	var shelf_back_left := board_bottom_left + Vector2(0, -MACHINE_HEIGHT)
 	var shelf_back_right := board_bottom_right + Vector2(0, -MACHINE_HEIGHT)
 	var shelf_forward := -DEPTH_AXIS * 0.25
@@ -169,8 +158,6 @@ func _create_island_frame(parent: Node2D) -> void:
 	]), SHELF_EDGE, 20)
 
 func _equipment_front_left() -> Vector2:
-	# Start from the full-cell front edge and inset only enough to leave a clean margin.
-	# This deliberately places the machine left so the sand can remain inside the same cell.
 	return _base_top_left() + WIDTH_AXIS * 0.06 + DEPTH_AXIS * 0.10
 
 func _create_machine_and_sand(parent: Node2D) -> void:
@@ -206,17 +193,17 @@ func _create_sand(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> v
 	_add_poly(parent, _face_quad(lb, fb, up, 0.22, 0.78, 0.18, 0.28), Color("343b43"), 11)
 
 func _create_data_counter(parent: Node2D) -> void:
-	# Counter sits on the island shelf above the machine portion only.
-	var board_bottom_left := _base_top_back()
-	var shelf_back_left := board_bottom_left + Vector2(0, -MACHINE_HEIGHT)
-	var shelf_forward := -DEPTH_AXIS * 0.25
-	var shelf_front_left := shelf_back_left + shelf_forward
+	var board_bottom_left: Vector2 = _base_top_back()
+	var shelf_back_left: Vector2 = board_bottom_left + Vector2(0, -MACHINE_HEIGHT)
+	var shelf_forward: Vector2 = -DEPTH_AXIS * 0.25
+	var shelf_front_left: Vector2 = shelf_back_left + shelf_forward
 
 	var machine_ratio: float = MACHINE_FRONT_VECTOR.x / WIDTH_AXIS.x
-	var counter_left := shelf_front_left + WIDTH_AXIS * 0.08
-	var counter_right := shelf_front_left + WIDTH_AXIS * min(machine_ratio - 0.06, 0.62)
-	var counter_up := Vector2(0, -7)
-	var counter_depth := DEPTH_AXIS * 0.10
+	var counter_right_ratio: float = minf(machine_ratio - 0.06, 0.62)
+	var counter_left: Vector2 = shelf_front_left + WIDTH_AXIS * 0.08
+	var counter_right: Vector2 = shelf_front_left + WIDTH_AXIS * counter_right_ratio
+	var counter_up: Vector2 = Vector2(0, -7)
+	var counter_depth: Vector2 = DEPTH_AXIS * 0.10
 
 	_add_poly(parent, PackedVector2Array([
 		counter_left,

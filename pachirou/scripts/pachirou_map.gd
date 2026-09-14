@@ -11,12 +11,19 @@ extends Node2D
 const FLOOR_A := Color("c9c9c9")
 const FLOOR_B := Color("a8a8a8")
 
-const STOOL_SEAT := Color("454b54")
-const STOOL_SEAT_SIDE := Color("30353c")
-const STOOL_COLUMN := Color("aeb4bc")
-const STOOL_COLUMN_DARK := Color("747b84")
-const STOOL_BASE := Color("697079")
-const STOOL_BASE_SIDE := Color("4d535b")
+const STOOL_SEAT_TOP := Color("4d535d")
+const STOOL_SEAT_INNER := Color("414750")
+const STOOL_SEAT_FRONT := Color("2e333a")
+const STOOL_SEAT_SIDE := Color("363c44")
+const STOOL_PIPING := Color("6a717b")
+const STOOL_COLUMN_LIGHT := Color("c4c9cf")
+const STOOL_COLUMN_MID := Color("949ba4")
+const STOOL_COLUMN_DARK := Color("686f78")
+const STOOL_COLLAR := Color("777e87")
+const STOOL_BASE_TOP := Color("7b828b")
+const STOOL_BASE_FRONT := Color("4d535b")
+const STOOL_BASE_EDGE := Color("3c4249")
+const STOOL_SHADOW := Color(0.05, 0.05, 0.06, 0.22)
 const GUIDE := Color("e8e8e8")
 const GUIDE_DIM := Color("bcc2ca")
 
@@ -93,52 +100,59 @@ func _create_stool_reference(cell: Vector2i) -> void:
 	var base_width_px := STOOL_BASE_DIAMETER_MM * MM_TO_PX
 	var column_width_px := STOOL_COLUMN_DIAMETER_MM * MM_TO_PX
 
-	# Round objects are drawn as flattened ellipses to match the 2:1 isometric floor projection.
 	var seat_top_y := -seat_height_px
 	var seat_rx := seat_width_px * 0.5
 	var seat_ry := seat_rx * 0.42
 	var base_rx := base_width_px * 0.5
 	var base_ry := base_rx * 0.42
-
-	# Floor-mounted circular base.
-	_add_polygon(stool, _ellipse_points(Vector2(0, -1), base_rx, base_ry, 24), STOOL_BASE)
-	_add_polygon(stool, PackedVector2Array([
-		Vector2(-base_rx, -1),
-		Vector2(0, base_ry - 1),
-		Vector2(0, base_ry + 3),
-		Vector2(-base_rx, 3)
-	]), STOOL_BASE_SIDE)
-
-	# Central pedestal column.
 	var column_half := column_width_px * 0.5
-	var column_top_y := seat_top_y + seat_thickness_px
-	_add_polygon(stool, PackedVector2Array([
-		Vector2(-column_half, column_top_y),
-		Vector2(column_half, column_top_y),
-		Vector2(column_half, -2),
-		Vector2(-column_half, -2)
-	]), STOOL_COLUMN)
-	_add_polygon(stool, PackedVector2Array([
-		Vector2(column_half, column_top_y),
-		Vector2(column_half + 2, column_top_y + 1),
-		Vector2(column_half + 2, -1),
-		Vector2(column_half, -2)
-	]), STOOL_COLUMN_DARK)
+	var seat_bottom_y := seat_top_y + seat_thickness_px
 
-	# Seat cushion side thickness first, then the top surface.
+	# Soft floor shadow anchors the stool to the tile plane.
+	_add_polygon(stool, _ellipse_points(Vector2(2, 2), base_rx * 1.08, base_ry * 1.08, 32), STOOL_SHADOW)
+
+	# Floor plate: shallow metal disc with a visible front rim.
+	_add_polygon(stool, _ellipse_front_band(Vector2(0, -1), base_rx, base_ry, 3.0, 18), STOOL_BASE_FRONT)
+	_add_polygon(stool, _ellipse_points(Vector2(0, -1), base_rx, base_ry, 32), STOOL_BASE_TOP)
+	_add_line(stool, Vector2(-base_rx + 2, -1), Vector2(0, base_ry - 1), STOOL_BASE_EDGE, 1.2)
+	_add_line(stool, Vector2(0, base_ry - 1), Vector2(base_rx - 2, -1), STOOL_BASE_EDGE, 1.2)
+
+	# Lower collar hides the pedestal-to-base joint like a real floor-fixed parlor stool.
+	var lower_collar_rx := column_half + 3.0
+	var lower_collar_ry := lower_collar_rx * 0.40
+	_add_polygon(stool, _ellipse_front_band(Vector2(0, -5), lower_collar_rx, lower_collar_ry, 2.5, 16), STOOL_COLUMN_DARK)
+	_add_polygon(stool, _ellipse_points(Vector2(0, -5), lower_collar_rx, lower_collar_ry, 24), STOOL_COLLAR)
+
+	# Pedestal uses three vertical tones so it reads as a cylindrical metal post.
+	var column_top_y := seat_bottom_y + 1.0
+	var column_bottom_y := -5.0
 	_add_polygon(stool, PackedVector2Array([
-		Vector2(-seat_rx, seat_top_y),
-		Vector2(0, seat_top_y + seat_ry),
-		Vector2(0, seat_top_y + seat_ry + seat_thickness_px),
-		Vector2(-seat_rx, seat_top_y + seat_thickness_px)
-	]), STOOL_SEAT_SIDE)
+		Vector2(-column_half, column_top_y), Vector2(-column_half * 0.18, column_top_y),
+		Vector2(-column_half * 0.18, column_bottom_y), Vector2(-column_half, column_bottom_y)
+	]), STOOL_COLUMN_DARK)
 	_add_polygon(stool, PackedVector2Array([
-		Vector2(0, seat_top_y + seat_ry),
-		Vector2(seat_rx, seat_top_y),
-		Vector2(seat_rx, seat_top_y + seat_thickness_px),
-		Vector2(0, seat_top_y + seat_ry + seat_thickness_px)
-	]), Color("383e46"))
-	_add_polygon(stool, _ellipse_points(Vector2(0, seat_top_y), seat_rx, seat_ry, 24), STOOL_SEAT)
+		Vector2(-column_half * 0.18, column_top_y), Vector2(column_half * 0.48, column_top_y),
+		Vector2(column_half * 0.48, column_bottom_y), Vector2(-column_half * 0.18, column_bottom_y)
+	]), STOOL_COLUMN_LIGHT)
+	_add_polygon(stool, PackedVector2Array([
+		Vector2(column_half * 0.48, column_top_y), Vector2(column_half, column_top_y),
+		Vector2(column_half, column_bottom_y), Vector2(column_half * 0.48, column_bottom_y)
+	]), STOOL_COLUMN_MID)
+
+	# Upper mounting collar under the cushion.
+	var upper_collar_rx := column_half + 2.0
+	var upper_collar_ry := upper_collar_rx * 0.40
+	_add_polygon(stool, _ellipse_points(Vector2(0, seat_bottom_y + 1.0), upper_collar_rx, upper_collar_ry, 24), STOOL_COLUMN_DARK)
+
+	# Seat cushion: full curved side wall, piping and inset top surface.
+	_add_polygon(stool, _ellipse_front_band(Vector2(0, seat_top_y), seat_rx, seat_ry, seat_thickness_px, 24), STOOL_SEAT_FRONT)
+	_add_polygon(stool, _ellipse_points(Vector2(0, seat_top_y), seat_rx, seat_ry, 36), STOOL_PIPING)
+	_add_polygon(stool, _ellipse_points(Vector2(0, seat_top_y - 0.5), seat_rx - 1.4, seat_ry - 0.8, 36), STOOL_SEAT_TOP)
+	_add_polygon(stool, _ellipse_points(Vector2(-1.0, seat_top_y - 1.0), seat_rx * 0.72, seat_ry * 0.64, 28), STOOL_SEAT_INNER)
+
+	# A small front highlight/shadow break makes the cushion edge less flat at hall scale.
+	_add_line(stool, Vector2(-seat_rx * 0.72, seat_top_y + seat_ry * 0.72), Vector2(0, seat_top_y + seat_ry), STOOL_SEAT_SIDE, 1.3)
+	_add_line(stool, Vector2(0, seat_top_y + seat_ry), Vector2(seat_rx * 0.72, seat_top_y + seat_ry * 0.72), STOOL_SEAT_SIDE, 1.3)
 
 	# Dimension guide: floor to seat top. This will later be aligned to the island base top.
 	var guide_x := seat_rx + 18.0
@@ -167,14 +181,14 @@ func _create_title() -> void:
 	add_child(layer)
 
 	var label := Label.new()
-	label.text = "PACHIROU  |  PACHISLOT STOOL SCALE TEST  |  10 x 10"
+	label.text = "PACHIROU  |  PACHISLOT STOOL QUALITY TEST  |  10 x 10"
 	label.position = Vector2(24, 20)
 	label.add_theme_font_size_override("font_size", 20)
 	label.add_theme_color_override("font_color", Color("e8e8e8"))
 	layer.add_child(label)
 
 	var note := Label.new()
-	note.text = "chair first: 480 mm seat height / 400 mm seat / 380 mm floor base"
+	note.text = "480 mm seat height / upholstered round seat / metal pedestal / floor disc"
 	note.position = Vector2(24, 50)
 	note.add_theme_font_size_override("font_size", 14)
 	note.add_theme_color_override("font_color", Color("bfc4cc"))
@@ -186,6 +200,19 @@ func _ellipse_points(center: Vector2, radius_x: float, radius_y: float, segments
 	for i in range(segments):
 		var angle := TAU * float(i) / float(segments)
 		points.append(center + Vector2(cos(angle) * radius_x, sin(angle) * radius_y))
+	return points
+
+
+func _ellipse_front_band(center: Vector2, radius_x: float, radius_y: float, thickness: float, segments: int) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in range(segments + 1):
+		var t := float(i) / float(segments)
+		var angle := PI * t
+		points.append(center + Vector2(cos(angle) * radius_x, sin(angle) * radius_y))
+	for i in range(segments, -1, -1):
+		var t := float(i) / float(segments)
+		var angle := PI * t
+		points.append(center + Vector2(cos(angle) * radius_x, sin(angle) * radius_y) + Vector2(0, thickness))
 	return points
 
 

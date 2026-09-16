@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource path="res://scripts/pachirou_3d.gd" type="Script" id="1_main"]
+
+[node name="Pachirou3D" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="World" type="Node3D" parent="."]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+projection = 1
+size = 10.5
+position = Vector3(7.5, 8.5, 7.5)
+rotation_degrees = Vector3(-35.264, 45, 0)
+current = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-55, -35, 0)
+shadow_enabled = true
+light_energy = 1.2

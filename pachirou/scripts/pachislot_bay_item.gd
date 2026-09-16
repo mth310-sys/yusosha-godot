@@ -133,6 +133,12 @@ func _reset_component_transforms() -> void:
 	equipment.scale = Vector2.ONE
 	machine_slot.scale = Vector2.ONE
 	stool.scale = Vector2.ONE
+	# Machine and island equipment are separate items/layers. The sand and
+	# counter sit beside/in front of the cabinet and must not be swallowed by
+	# the later MachineSlot sibling when their projected faces overlap.
+	machine_slot.z_index = 0
+	sand.z_index = 2
+	data_counter.z_index = 3
 
 func _clear_visual_children(parent: Node2D) -> void:
 	for child in parent.get_children():

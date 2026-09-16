@@ -5,6 +5,23 @@ const GRID_SIZE: int = 18
 
 func _ready() -> void:
 	_build_floor_details()
+	call_deferred("_remove_counter_overlaps")
+
+func _remove_counter_overlaps() -> void:
+	# ClayTop sits in the data-counter sightline on the clay/toy machine.
+	# Remove the generated part entirely so the equipment-mounted counter stays readable.
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var world := get_parent().get_node_or_null("World")
+	if world != null:
+		_remove_named_recursive(world,"ClayTop")
+
+func _remove_named_recursive(node: Node,target_name: String) -> void:
+	for child in node.get_children():
+		if String(child.name) == target_name:
+			child.queue_free()
+		else:
+			_remove_named_recursive(child,target_name)
 
 func _build_floor_details() -> void:
 	# Keep only subtle grid joints. Old fixed-position machine pads were prototype decoration

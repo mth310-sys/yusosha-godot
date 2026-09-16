@@ -19,15 +19,24 @@ func _create_bay_item(cell: Vector2i) -> void:
 	item.build()
 
 func _render_bay_item(item: PachislotBayItem) -> void:
+	# All physical component roots share the approved bay origin.
 	item.frame.position = UNIT_REAR_SHIFT
 	item.equipment.position = UNIT_REAR_SHIFT
 	item.stool.position = UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
 	item.stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 
-	# LEFT_DOWN is the only canonical bay. No experimental direction code remains.
+	# Frame appearance is kept exactly as the approved source for now.
 	_create_island_frame(item.frame)
-	_create_machine_and_sand(item.equipment)
-	_create_data_counter(item.equipment)
+
+	# Equipment is no longer one anonymous polygon group: each physical item owns
+	# its own geometry while using the exact same approved dimensions/coordinates.
+	var machine_lb: Vector2 = _equipment_front_left()
+	var machine_fb: Vector2 = machine_lb + MACHINE_FRONT_VECTOR
+	var sand_lb: Vector2 = machine_fb
+	var sand_fb: Vector2 = sand_lb + SAND_FRONT_VECTOR
+	_create_machine(item.machine, machine_lb, machine_fb, MACHINE_DEPTH)
+	_create_sand(item.sand, sand_lb, sand_fb, SAND_DEPTH)
+	_create_data_counter(item.data_counter)
 	_create_stool_geometry(item.stool)
 
 func _create_stool_geometry(stool: Node2D) -> void:

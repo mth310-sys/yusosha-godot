@@ -62,14 +62,17 @@ func _build_canonical_bay(cell: Vector2i) -> void:
 	_box(island, "BackRailR", Vector3(0.045, 0.92, 0.025), Vector3(0.45, BASE_H + 0.50, BACK_Z + 0.052), Color("565d65"))
 	_box(island, "BackRailMid", Vector3(0.025, 0.92, 0.025), Vector3(0.0, BASE_H + 0.50, BACK_Z + 0.052), Color("515860"))
 
-	# Upper equipment projects clearly forward over the front equipment.
-	var upper_box_z: float = 0.04
-	_box(island, "UpperBox", Vector3(BASE_W, 0.14, 0.26), Vector3(0.0, 1.42, upper_box_z), Color("8d9399"))
+	# Keep the accepted front projection, but extend the upper equipment rearward until it physically meets the backboard.
+	var upper_front_z: float = 0.17
+	var upper_rear_z: float = BACK_Z + 0.04
+	var upper_box_depth: float = upper_front_z - upper_rear_z
+	var upper_box_z: float = (upper_front_z + upper_rear_z) * 0.5
+	_box(island, "UpperBox", Vector3(BASE_W, 0.14, upper_box_depth), Vector3(0.0, 1.42, upper_box_z), Color("8d9399"))
 
-	# Data counter remains part of and moves with the upper island equipment.
+	# Data counter remains at the accepted front edge of the upper island equipment.
 	var counter_x: float = 0.0
 	var counter_y: float = 1.35
-	var counter_z: float = upper_box_z + 0.155
+	var counter_z: float = upper_front_z + 0.025
 	_box(island, "DataCounter", Vector3(BASE_W * 0.76, 0.13, 0.10), Vector3(counter_x, counter_y, counter_z), Color("242a31"))
 	_box(island, "CounterInset", Vector3(BASE_W * 0.70, 0.105, 0.025), Vector3(counter_x, counter_y, counter_z + 0.063), Color("4d5964"))
 	_box(island, "CounterScreen", Vector3(BASE_W * 0.60, 0.075, 0.028), Vector3(counter_x, counter_y, counter_z + 0.079), Color("79b6d8"))

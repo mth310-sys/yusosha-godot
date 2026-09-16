@@ -13,15 +13,16 @@ var direction: Direction = Direction.LEFT_DOWN
 var footprint: Array[Vector2i] = [Vector2i.ZERO]
 var renderer: Callable
 var grid: IsometricGrid
+var installed_machine: PachislotMachineItem
 
 @onready var frame: Node2D = $Frame
 @onready var island_base: Node2D = $Frame/IslandBase
 @onready var back_board: Node2D = $Frame/BackBoard
 @onready var upper_box: Node2D = $Frame/UpperBox
 @onready var equipment: Node2D = $Equipment
-@onready var machine: Node2D = $Equipment/Machine
 @onready var sand: Node2D = $Equipment/Sand
 @onready var data_counter: Node2D = $Equipment/DataCounter
+@onready var machine_slot: Node2D = $MachineSlot
 @onready var stool: Node2D = $Stool
 
 func setup(p_grid: IsometricGrid, p_cell: Vector2i, p_direction: Direction, p_renderer: Callable) -> bool:
@@ -55,6 +56,25 @@ func rotate_to(p_direction: Direction) -> bool:
 	build()
 	return true
 
+func install_machine(machine_item: PachislotMachineItem) -> bool:
+	if machine_item == null or installed_machine != null:
+		return false
+	installed_machine = machine_item
+	machine_slot.add_child(machine_item)
+	machine_item.position = Vector2.ZERO
+	return true
+
+func remove_machine() -> PachislotMachineItem:
+	var machine_item: PachislotMachineItem = installed_machine
+	if machine_item == null:
+		return null
+	machine_slot.remove_child(machine_item)
+	installed_machine = null
+	return machine_item
+
+func has_machine() -> bool:
+	return installed_machine != null
+
 func remove_from_grid() -> void:
 	if grid != null:
 		grid.remove(self)
@@ -74,7 +94,6 @@ func clear_visuals() -> void:
 	_clear_visual_children(island_base)
 	_clear_visual_children(back_board)
 	_clear_visual_children(upper_box)
-	_clear_visual_children(machine)
 	_clear_visual_children(sand)
 	_clear_visual_children(data_counter)
 	_clear_visual_children(stool)
@@ -104,12 +123,15 @@ func _grid_direction(p_direction: Direction) -> IsometricGrid.Direction:
 func _reset_component_transforms() -> void:
 	frame.position = Vector2.ZERO
 	equipment.position = Vector2.ZERO
+	machine_slot.position = Vector2.ZERO
 	stool.position = Vector2.ZERO
 	frame.rotation = 0.0
 	equipment.rotation = 0.0
+	machine_slot.rotation = 0.0
 	stool.rotation = 0.0
 	frame.scale = Vector2.ONE
 	equipment.scale = Vector2.ONE
+	machine_slot.scale = Vector2.ONE
 	stool.scale = Vector2.ONE
 
 func _clear_visual_children(parent: Node2D) -> void:

@@ -1,33 +1,31 @@
 extends Node3D
 
-const MACHINE_PITCH: float = 1.02
-const GROUP_GAP_SLOTS: int = 1
-const ROW_STEP: float = 4.0
+const GRID_SIZE: int = 18
+const TILE_SIZE: float = 1.0
+const GROUP_GAP_CELLS: int = 1
+const ROW_STEP_CELLS: int = 3
 const EXPECTED_STYLE_COUNT: int = 18
+const START_CELL_X: int = 2
+const START_CELL_Z: int = 5
 
 func _ready() -> void:
 	call_deferred("_arrange_showcase")
 
 func _arrange_showcase() -> void:
-	# Builders create the first 12 and ExtraSix creates the last 6 deferred.
-	# Wait long enough for both branches to exist before collecting them recursively.
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var world := get_parent().get_node_or_null("World") as Node3D
 	if world == null:
 		return
-	# Remove only duplicates previously created by this layout script.
 	_remove_old_pairs(world)
 	var by_style: Dictionary = {}
 	_collect_style_roots(world,by_style)
 	if by_style.size() < EXPECTED_STYLE_COUNT:
 		push_warning("ShowcaseLayout: expected 18 source styles, found %d" % by_style.size())
 		return
-	# Requested layout:
-	# row 0: styles 1-3 x2, one empty slot, styles 4-6 x2
-	# row 1: styles 7-9 x2, one empty slot, styles 10-12 x2
-	# row 2: styles 13-15 x2, one empty slot, styles 16-18 x2
-	# Rows are separated by two empty grid rows.
+	# Every position below is an integer map cell. No free-form world spacing is used.
+	# Each row: 3 styles x 2 machines, 1 empty cell, 3 styles x 2 machines.
+	# Row origins advance by 3 cells, leaving two empty grid rows between machine rows.
 	for style_number in range(1,EXPECTED_STYLE_COUNT+1):
 		if not by_style.has(style_number):
 			push_warning("ShowcaseLayout: missing style %d" % style_number)
@@ -37,12 +35,13 @@ func _arrange_showcase() -> void:
 		var index_in_row: int = (style_number-1)%6
 		var group: int = index_in_row/3
 		var index_in_group: int = index_in_row%3
-		var first_slot: int = group*(6+GROUP_GAP_SLOTS)+index_in_group*2
-		_place(source,first_slot,row)
+		var first_cell_x: int = START_CELL_X+group*(6+GROUP_GAP_CELLS)+index_in_group*2
+		var cell_z: int = START_CELL_Z+row*ROW_STEP_CELLS
+		_place_on_cell(source,Vector2i(first_cell_x,cell_z),row)
 		var pair := source.duplicate() as Node3D
 		pair.name = "ShowcasePair_%02d" % style_number
 		world.add_child(pair)
-		_place(pair,first_slot+1,row)
+		_place_on_cell(pair,Vector2i(first_cell_x+1,cell_z),row)
 
 func _collect_style_roots(node: Node,by_style: Dictionary) -> void:
 	for child in node.get_children():
@@ -71,11 +70,15 @@ func _remove_old_pairs(node: Node) -> void:
 		else:
 			_remove_old_pairs(child)
 
-func _place(node: Node3D,slot: int,row: int) -> void:
-	# 13 occupied/empty slots across: 6 machines + gap + 6 machines.
-	var total_span: float = 12.0*MACHINE_PITCH
-	var x: float = -total_span*0.5+float(slot)*MACHINE_PITCH
-	var z: float = -4.0+float(row)*ROW_STEP
-	node.global_position = Vector3(x,0.0,z)
+func _cell_to_world(cell: Vector2i) -> Vector3:
+	var half: float = float(GRID_SIZE-1)*0.5
+	return Vector3((float(cell.x)-half)*TILE_SIZE,0.0,(float(cell.y)-half)*TILE_SIZE)
+
+func _place_on_cell(node: Node3D,cell: Vector2i,row: int) -> void:
+	if cell.x < 0 or cell.x >= GRID_SIZE or cell.y < 0 or cell.y >= GRID_SIZE:
+		push_warning("ShowcaseLayout: cell outside map: %s" % cell)
+		return
+	node.global_position = _cell_to_world(cell)
 	node.global_rotation_degrees = Vector3.ZERO
+	node.set_meta("grid_cell",cell)
 	node.set_meta("showcase_row",row)

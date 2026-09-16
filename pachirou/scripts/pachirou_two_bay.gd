@@ -31,8 +31,11 @@ func _render_bay_item(item: PachislotBayItem) -> void:
 	var sand_lb: Vector2 = machine_fb
 	var sand_fb: Vector2 = sand_lb + SAND_FRONT_VECTOR
 	_create_machine(item.machine, machine_lb, machine_fb, MACHINE_DEPTH)
+	_create_machine_hidden_faces(item.machine, machine_lb, machine_fb)
 	_create_sand(item.sand, sand_lb, sand_fb, SAND_DEPTH)
+	_create_sand_hidden_faces(item.sand, sand_lb, sand_fb)
 	_create_data_counter(item.data_counter)
+	_create_counter_hidden_faces(item.data_counter)
 	_create_stool_geometry(item.stool)
 
 func _create_island_base_item(parent: Node2D) -> void:
@@ -86,6 +89,42 @@ func _create_upper_box_item(parent: Node2D) -> void:
 	_add_poly(parent, PackedVector2Array([bl, br, fr, fl]), Color("555c64"), 19)
 	_add_poly(parent, PackedVector2Array([bl, br, br + up, bl + up]), Color("4b525a"), 18)
 	_add_poly(parent, PackedVector2Array([bl, fl, fl + up, bl + up]), Color("5c636b"), 18)
+
+func _create_machine_hidden_faces(parent: Node2D, fl: Vector2, fr: Vector2) -> void:
+	var rl: Vector2 = fl + MACHINE_DEPTH
+	var rr: Vector2 = fr + MACHINE_DEPTH
+	var up := Vector2(0.0, -MACHINE_HEIGHT)
+	_add_poly(parent, PackedVector2Array([rl, rr, rr + up, rl + up]), Color("343b43"), 8)
+	_add_poly(parent, _face_quad(rl, rr, up, 0.10, 0.90, 0.12, 0.88), Color("292f36"), 9)
+	_add_poly(parent, _face_quad(rl, rr, up, 0.18, 0.82, 0.20, 0.40), Color("3e454d"), 9)
+	_add_poly(parent, _face_quad(rl, rr, up, 0.22, 0.78, 0.60, 0.66), Color("151a20"), 10)
+	_add_poly(parent, _face_quad(rl, rr, up, 0.22, 0.78, 0.72, 0.78), Color("151a20"), 10)
+	_add_poly(parent, _face_quad(rl, rr, up, 0.43, 0.57, 0.84, 0.89), Color("777f87"), 10)
+	_add_poly(parent, PackedVector2Array([fl, rl, rl + up, fl + up]), Color("4b525a"), 8)
+
+func _create_sand_hidden_faces(parent: Node2D, fl: Vector2, fr: Vector2) -> void:
+	var rl: Vector2 = fl + SAND_DEPTH
+	var rr: Vector2 = fr + SAND_DEPTH
+	var up := Vector2(0.0, -SAND_HEIGHT)
+	_add_poly(parent, PackedVector2Array([rl, rr, rr + up, rl + up]), Color("59616a"), 8)
+	_add_poly(parent, _face_quad(rl, rr, up, 0.14, 0.86, 0.14, 0.86), Color("444b53"), 9)
+	_add_poly(parent, _face_quad(rl, rr, up, 0.24, 0.76, 0.60, 0.66), Color("171c21"), 10)
+	_add_poly(parent, _face_quad(rl, rr, up, 0.24, 0.76, 0.72, 0.78), Color("171c21"), 10)
+	_add_poly(parent, PackedVector2Array([fl, rl, rl + up, fl + up]), Color("676e76"), 8)
+
+func _create_counter_hidden_faces(parent: Node2D) -> void:
+	var box_fl: Vector2 = _upper_box_back_left() + _upper_box_front_vector()
+	var box_fr: Vector2 = _upper_box_back_right() + _upper_box_front_vector()
+	var span: Vector2 = box_fr - box_fl
+	var fl: Vector2 = box_fl + span * 0.12 + Vector2(0.0, -2.0)
+	var fr: Vector2 = box_fl + span * 0.88 + Vector2(0.0, -2.0)
+	var depth: Vector2 = DEPTH_AXIS * 0.055
+	var rl: Vector2 = fl + depth
+	var rr: Vector2 = fr + depth
+	var up := Vector2(0.0, -8.0)
+	_add_poly(parent, PackedVector2Array([rl, rr, rr + up, rl + up]), Color("353c44"), 28)
+	_add_poly(parent, _face_quad(rl, rr, up, 0.12, 0.88, 0.24, 0.72), Color("20262d"), 29)
+	_add_poly(parent, PackedVector2Array([fl, rl, rl + up, fl + up]), Color("242a30"), 28)
 
 func _create_stool_geometry(stool: Node2D) -> void:
 	var seat_y: float = -38.4

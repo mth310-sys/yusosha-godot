@@ -1,6 +1,7 @@
 extends "res://scripts/pachirou_map.gd"
 
 const PACHISLOT_BAY_SCENE := preload("res://items/pachislot_bay.tscn")
+const PACHISLOT_MACHINE_SCENE := preload("res://items/pachislot_machine.tscn")
 
 var placement_grid: IsometricGrid
 
@@ -11,68 +12,57 @@ func _ready() -> void:
 	add_child(world)
 	placement_grid = IsometricGrid.new(map_width, map_height, tile_width, tile_height)
 	_create_floor()
-	_create_bay_item(Vector2i(6, 7), PachislotBayItem.Direction.LEFT_DOWN)
-	_create_bay_item(Vector2i(8, 7), PachislotBayItem.Direction.LEFT_UP)
+	_create_bay_item(Vector2i(6, 7), PachislotBayItem.Direction.LEFT_DOWN, true)
 
-func _create_bay_item(cell: Vector2i, direction: PachislotBayItem.Direction) -> void:
+func _create_bay_item(cell: Vector2i, direction: PachislotBayItem.Direction, with_machine: bool = false) -> void:
 	var item := PACHISLOT_BAY_SCENE.instantiate() as PachislotBayItem
 	world.add_child(item)
 	if not item.setup(placement_grid, cell, direction, _render_bay_item):
 		item.queue_free()
 		return
 	item.build()
+	if with_machine:
+		_install_standard_machine(item)
+
+func _install_standard_machine(item: PachislotBayItem) -> void:
+	var machine_item := PACHISLOT_MACHINE_SCENE.instantiate() as PachislotMachineItem
+	if not item.install_machine(machine_item):
+		machine_item.queue_free()
+		return
+	machine_item.setup("standard_a", _render_standard_machine)
 
 func _render_bay_item(item: PachislotBayItem, direction: PachislotBayItem.Direction) -> void:
 	match direction:
 		PachislotBayItem.Direction.LEFT_DOWN:
-			_render_left_down_item(item)
-		PachislotBayItem.Direction.LEFT_UP:
-			_render_left_up_item(item)
+			_render_left_down_island_set(item)
 
-func _render_left_down_item(item: PachislotBayItem) -> void:
+func _render_left_down_island_set(item: PachislotBayItem) -> void:
+	# The island set owns its own fixed local geometry. The machine slot is a
+	# separate child and receives an independent machine item afterwards.
 	item.frame.position = UNIT_REAR_SHIFT
 	item.equipment.position = UNIT_REAR_SHIFT
+	item.machine_slot.position = UNIT_REAR_SHIFT
 	item.stool.position = UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
 	item.stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 	_create_island_base_item(item.island_base)
 	_create_backboard_item(item.back_board)
 	_create_upper_box_item(item.upper_box)
-	var machine_lb: Vector2 = _equipment_front_left()
-	var machine_fb: Vector2 = machine_lb + MACHINE_FRONT_VECTOR
-	var sand_lb: Vector2 = machine_fb
+
+	var machine_slot_lb: Vector2 = _equipment_front_left()
+	var machine_slot_fb: Vector2 = machine_slot_lb + MACHINE_FRONT_VECTOR
+	var sand_lb: Vector2 = machine_slot_fb
 	var sand_fb: Vector2 = sand_lb + SAND_FRONT_VECTOR
-	_create_machine(item.machine, machine_lb, machine_fb, MACHINE_DEPTH)
-	_create_machine_hidden_faces(item.machine, machine_lb, machine_fb)
 	_create_sand(item.sand, sand_lb, sand_fb, SAND_DEPTH)
 	_create_sand_hidden_faces(item.sand, sand_lb, sand_fb)
 	_create_data_counter(item.data_counter)
 	_create_counter_hidden_faces(item.data_counter)
 	_create_stool_geometry(item.stool)
 
-func _render_left_up_item(item: PachislotBayItem) -> void:
-	item.frame.position = UNIT_REAR_SHIFT
-	_create_left_up_island_base(item.island_base)
-
-func _create_left_up_island_base(parent: Node2D) -> void:
-	var floor_left := Vector2(-32.0, 0.0)
-	var floor_front := Vector2(0.0, -16.0)
-	var depth := Vector2(DEPTH_AXIS.x, -DEPTH_AXIS.y) * BASE_DEPTH_RATIO
-	var rear_left: Vector2 = floor_left + depth
-	var rear_right: Vector2 = floor_front + depth
-	var up := Vector2(0.0, -BASE_HEIGHT)
-	var top_left: Vector2 = floor_left + up
-	var top_front: Vector2 = floor_front + up
-	var top_rear_left: Vector2 = rear_left + up
-	var top_rear_right: Vector2 = rear_right + up
-	_add_poly(parent, PackedVector2Array([floor_left, floor_front, top_front, top_left]), BASE_FRONT, 0)
-	_add_poly(parent, PackedVector2Array([floor_front, rear_right, top_rear_right, top_front]), BASE_SIDE, 0)
-	_add_poly(parent, PackedVector2Array([top_rear_left, top_rear_right, top_front, top_left]), BASE_TOP, 0)
-	_add_poly(parent, _face_quad(floor_left, floor_front, up, 0.04, 0.96, 0.05, 0.14), Color("3d4349"), 1)
-	_add_poly(parent, _face_quad(floor_left, floor_front, up, 0.49, 0.51, 0.16, 0.94), Color("464c53"), 1)
-	_add_poly(parent, _face_quad(floor_left, floor_front, up, 0.05, 0.95, 0.91, 0.955), Color("70767d"), 1)
-	_add_poly(parent, _face_quad(floor_front, rear_right, up, 0.04, 0.96, 0.05, 0.13), Color("30363c"), 1)
-	_add_poly(parent, PackedVector2Array([rear_left, rear_right, top_rear_right, top_rear_left]), Color("353b41"), -2)
-	_add_poly(parent, PackedVector2Array([floor_left, rear_left, top_rear_left, top_left]), Color("454b52"), -2)
+func _render_standard_machine(machine_item: PachislotMachineItem) -> void:
+	var machine_lb: Vector2 = _equipment_front_left()
+	var machine_fb: Vector2 = machine_lb + MACHINE_FRONT_VECTOR
+	_create_machine(machine_item, machine_lb, machine_fb, MACHINE_DEPTH)
+	_create_machine_hidden_faces(machine_item, machine_lb, machine_fb)
 
 func _create_island_base_item(parent: Node2D) -> void:
 	var floor_left := Vector2(-32.0, 0.0)

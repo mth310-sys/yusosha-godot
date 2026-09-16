@@ -63,6 +63,15 @@ func _build_canonical_bay(cell: Vector2i) -> void:
 	_box(island, "BackRailMid", Vector3(0.025, 0.92, 0.025), Vector3(0.0, BASE_H + 0.50, BACK_Z + 0.052), Color("515860"))
 	_box(island, "UpperBox", Vector3(BASE_W, 0.14, 0.26), Vector3(0.0, 1.42, -0.17), Color("8d9399"))
 
+	# Data counter belongs to the island upper equipment, not to the machine.
+	# The accepted 2D unit derives it from the upper-box front span (12%-88%).
+	var counter_x: float = 0.0
+	var counter_y: float = 1.35
+	var counter_z: float = -0.015
+	_box(island, "DataCounter", Vector3(BASE_W * 0.76, 0.13, 0.10), Vector3(counter_x, counter_y, counter_z), Color("242a31"))
+	_box(island, "CounterInset", Vector3(BASE_W * 0.70, 0.105, 0.025), Vector3(counter_x, counter_y, counter_z + 0.063), Color("4d5964"))
+	_box(island, "CounterScreen", Vector3(BASE_W * 0.60, 0.075, 0.028), Vector3(counter_x, counter_y, counter_z + 0.079), Color("79b6d8"))
+
 	var machine_slot := Node3D.new()
 	machine_slot.name = "MachineSlot"
 	machine_slot.position = Vector3(MACHINE_X, BASE_H, FRONT_Z)
@@ -79,13 +88,6 @@ func _build_canonical_bay(cell: Vector2i) -> void:
 	_box(sand, "Display", Vector3(SAND_W * 0.54, SAND_H * 0.18, 0.028), Vector3(0.0, SAND_H * 0.70, sand_face + 0.003), Color("20262d"))
 	_box(sand, "SlotA", Vector3(SAND_W * 0.48, 0.035, 0.029), Vector3(0.0, SAND_H * 0.38, sand_face + 0.004), Color("171c21"))
 	_box(sand, "SlotB", Vector3(SAND_W * 0.48, 0.035, 0.029), Vector3(0.0, SAND_H * 0.27, sand_face + 0.004), Color("171c21"))
-
-	# Data counter: directly above the machine face, under the upper equipment.
-	# It shares MACHINE_X and the machine front plane instead of floating rearward.
-	var counter_y: float = BASE_H + MACHINE_H + 0.055
-	var counter_z: float = FRONT_Z + MACHINE_D * 0.5 + 0.045
-	_box(island, "DataCounter", Vector3(MACHINE_W * 0.76, 0.13, 0.10), Vector3(MACHINE_X, counter_y, counter_z), Color("242a31"))
-	_box(island, "CounterScreen", Vector3(MACHINE_W * 0.54, 0.065, 0.025), Vector3(MACHINE_X, counter_y, counter_z + 0.063), Color("79b6d8"))
 
 	_build_stool(island, Vector3(MACHINE_X, 0.0, 0.92))
 

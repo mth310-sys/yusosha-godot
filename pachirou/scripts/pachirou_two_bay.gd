@@ -2,21 +2,24 @@ extends "res://scripts/pachirou_map.gd"
 
 const PACHISLOT_BAY_SCENE := preload("res://items/pachislot_bay.tscn")
 
+var placement_grid: IsometricGrid
+
 func _ready() -> void:
 	world = Node2D.new()
 	world.name = "World"
 	world.y_sort_enabled = true
 	add_child(world)
+	placement_grid = IsometricGrid.new(map_width, map_height, tile_width, tile_height)
 	_create_floor()
 	_create_bay_item(Vector2i(6, 7), PachislotBayItem.Direction.LEFT_DOWN)
 	_create_bay_item(Vector2i(8, 7), PachislotBayItem.Direction.LEFT_UP)
 
 func _create_bay_item(cell: Vector2i, direction: PachislotBayItem.Direction) -> void:
 	var item := PACHISLOT_BAY_SCENE.instantiate() as PachislotBayItem
-	item.position = grid_to_world(cell)
-	item.z_index = int(item.position.y)
 	world.add_child(item)
-	item.setup(direction, _render_bay_item)
+	if not item.setup(placement_grid, cell, direction, _render_bay_item):
+		item.queue_free()
+		return
 	item.build()
 
 func _render_bay_item(item: PachislotBayItem, direction: PachislotBayItem.Direction) -> void:
@@ -47,14 +50,10 @@ func _render_left_down_item(item: PachislotBayItem) -> void:
 	_create_stool_geometry(item.stool)
 
 func _render_left_up_item(item: PachislotBayItem) -> void:
-	# Keep the exact same one-cell anchor/inset as the approved LEFT_DOWN item.
-	# Direction changes the footprint geometry only; it must not move the item.
 	item.frame.position = UNIT_REAR_SHIFT
 	_create_left_up_island_base(item.island_base)
 
 func _create_left_up_island_base(parent: Node2D) -> void:
-	# Same physical dimensions and occupancy as LEFT_DOWN, with only the
-	# ground-plane facing changed from the left-bottom edge to left-top edge.
 	var floor_left := Vector2(-32.0, 0.0)
 	var floor_front := Vector2(0.0, -16.0)
 	var depth := Vector2(DEPTH_AXIS.x, -DEPTH_AXIS.y) * BASE_DEPTH_RATIO

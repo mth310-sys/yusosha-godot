@@ -31,7 +31,9 @@ func _arrange_showcase() -> void:
 		var index_in_group: int = index_in_row%3
 		var first_cell_x: int = START_CELL_X+group*(6+GROUP_GAP_CELLS)+index_in_group*2
 		var front_z: int = ISLAND_FRONT_ROWS[row]
-		var back_z: int = front_z+1
+		# The physical rear of the current 0-degree unit is toward -Z.
+		# Therefore the back-to-back copy belongs on the preceding grid row, not +Z.
+		var back_z: int = front_z-1
 		_remove_clay_discs(source)
 		_place_front(source,Vector2i(first_cell_x,front_z),row)
 		var front_pair := source.duplicate() as Node3D
@@ -39,8 +41,6 @@ func _arrange_showcase() -> void:
 		world.add_child(front_pair)
 		_remove_clay_discs(front_pair)
 		_place_front(front_pair,Vector2i(first_cell_x+1,front_z),row)
-		# Back copies: first rotate the unchanged unit 180 degrees around its own origin,
-		# then snap that rotated unit to the grid cell directly behind the front unit.
 		var back_a := source.duplicate() as Node3D
 		back_a.name = "ShowcaseBack_%02d_A" % style_number
 		world.add_child(back_a)

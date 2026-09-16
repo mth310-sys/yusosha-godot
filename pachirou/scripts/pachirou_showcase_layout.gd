@@ -33,23 +33,24 @@ func _arrange_showcase() -> void:
 		var front_z: int = ISLAND_FRONT_ROWS[row]
 		var back_z: int = front_z+1
 		_remove_clay_discs(source)
-		_place_on_cell(source,Vector2i(first_cell_x,front_z),row,false)
+		_place_front(source,Vector2i(first_cell_x,front_z),row)
 		var front_pair := source.duplicate() as Node3D
 		front_pair.name = "ShowcasePair_%02d" % style_number
 		world.add_child(front_pair)
 		_remove_clay_discs(front_pair)
-		_place_on_cell(front_pair,Vector2i(first_cell_x+1,front_z),row,false)
-		# Exact unchanged copies on the snapped row directly behind, facing 180 degrees back.
+		_place_front(front_pair,Vector2i(first_cell_x+1,front_z),row)
+		# Back copies: first rotate the unchanged unit 180 degrees around its own origin,
+		# then snap that rotated unit to the grid cell directly behind the front unit.
 		var back_a := source.duplicate() as Node3D
 		back_a.name = "ShowcaseBack_%02d_A" % style_number
 		world.add_child(back_a)
 		_remove_clay_discs(back_a)
-		_place_on_cell(back_a,Vector2i(first_cell_x,back_z),row,true)
+		_rotate_then_snap_back(back_a,Vector2i(first_cell_x,back_z),row)
 		var back_b := source.duplicate() as Node3D
 		back_b.name = "ShowcaseBack_%02d_B" % style_number
 		world.add_child(back_b)
 		_remove_clay_discs(back_b)
-		_place_on_cell(back_b,Vector2i(first_cell_x+1,back_z),row,true)
+		_rotate_then_snap_back(back_b,Vector2i(first_cell_x+1,back_z),row)
 
 func _remove_clay_discs(node: Node) -> void:
 	for child in node.get_children():
@@ -86,12 +87,25 @@ func _cell_to_world(cell: Vector2i) -> Vector3:
 	var half: float = float(GRID_SIZE-1)*0.5
 	return Vector3((float(cell.x)-half)*TILE_SIZE,0.0,(float(cell.y)-half)*TILE_SIZE)
 
-func _place_on_cell(node: Node3D,cell: Vector2i,row: int,is_back: bool) -> void:
+func _place_front(node: Node3D,cell: Vector2i,row: int) -> void:
+	if not _cell_is_valid(cell): return
+	node.global_rotation_degrees = Vector3.ZERO
+	node.global_position = _cell_to_world(cell)
+	_set_grid_meta(node,cell,row,"front")
+
+func _rotate_then_snap_back(node: Node3D,cell: Vector2i,row: int) -> void:
+	if not _cell_is_valid(cell): return
+	node.global_rotation_degrees = Vector3(0.0,180.0,0.0)
+	node.global_position = _cell_to_world(cell)
+	_set_grid_meta(node,cell,row,"back")
+
+func _cell_is_valid(cell: Vector2i) -> bool:
 	if cell.x < 0 or cell.x >= GRID_SIZE or cell.y < 0 or cell.y >= GRID_SIZE:
 		push_warning("ShowcaseLayout: cell outside map: %s" % cell)
-		return
-	node.global_position = _cell_to_world(cell)
-	node.global_rotation_degrees = Vector3(0.0,180.0 if is_back else 0.0,0.0)
+		return false
+	return true
+
+func _set_grid_meta(node: Node3D,cell: Vector2i,row: int,side: String) -> void:
 	node.set_meta("grid_cell",cell)
 	node.set_meta("showcase_row",row)
-	node.set_meta("island_side","back" if is_back else "front")
+	node.set_meta("island_side",side)

@@ -18,14 +18,12 @@ const SAND_X := MACHINE_X + MACHINE_W * 0.5 + SAND_W * 0.5
 
 func _ready() -> void:
 	_build_floor()
-	# First six remain on the selected row. Six new styles are added two cells below,
-	# preserving the same one-empty-cell horizontal spacing.
 	var cells: Array[Vector2i] = [
-		Vector2i(3,2), Vector2i(5,2), Vector2i(7,2), Vector2i(9,2), Vector2i(11,2), Vector2i(13,2),
-		Vector2i(3,4), Vector2i(5,4), Vector2i(7,4), Vector2i(9,4), Vector2i(11,4), Vector2i(13,4)
+		Vector2i(3,2),Vector2i(5,2),Vector2i(7,2),Vector2i(9,2),Vector2i(11,2),Vector2i(13,2),
+		Vector2i(3,4),Vector2i(5,4),Vector2i(7,4),Vector2i(9,4),Vector2i(11,4),Vector2i(13,4)
 	]
 	for i in range(12):
-		_build_bay(cells[i], i)
+		_build_bay(cells[i],i)
 
 func _build_floor() -> void:
 	for z in range(GRID_SIZE):
@@ -34,7 +32,7 @@ func _build_floor() -> void:
 			var mesh := BoxMesh.new()
 			mesh.size = Vector3(TILE_SIZE,0.04,TILE_SIZE)
 			tile.mesh = mesh
-			tile.position = _cell_to_world(Vector2i(x,z)) + Vector3(0,-0.02,0)
+			tile.position = _cell_to_world(Vector2i(x,z))+Vector3(0,-0.02,0)
 			var shade: float = 0.72 if (x+z)%2 == 0 else 0.58
 			tile.material_override = _material(Color(shade,shade,shade))
 			$World.add_child(tile)
@@ -51,17 +49,17 @@ func _palette(style: int) -> Array[Color]:
 		3: return [Color("92999a"),Color("d2d6d4"),Color("596061"),Color("ee9b75"),Color("9edbd5"),Color("f4eadc")]
 		4: return [Color("526078"),Color("bac5d8"),Color("121722"),Color("f15a69"),Color("79bdff"),Color("fffdf0")]
 		5: return [Color("202537"),Color("626b86"),Color("090d16"),Color("ff3f7d"),Color("36efff"),Color("f8f2ff")]
-		6: return [Color("d6d0c4"),Color("f0eadc"),Color("3b4147"),Color("d94f3d"),Color("4e9fb8"),Color("fff8e8")]
-		7: return [Color("315b4a"),Color("7fa68c"),Color("162b24"),Color("e6b64d"),Color("80d6c0"),Color("f4edcf")]
-		8: return [Color("3d3d43"),Color("8b8b91"),Color("141418"),Color("e8e8e8"),Color("ffcf4a"),Color("ffffff")]
-		9: return [Color("6a4f78"),Color("c6a9d3"),Color("2b2031"),Color("ff8ab3"),Color("82d8ff"),Color("fff1f7")]
-		10: return [Color("3d566e"),Color("8fb6cf"),Color("15222d"),Color("ffb347"),Color("65e0d5"),Color("edf8ff")]
-		_: return [Color("6b2f2f"),Color("c97a52"),Color("241313"),Color("ffd15c"),Color("ff765f"),Color("fff0c2")]
+		6: return [Color("79a9a0"),Color("d9e6b8"),Color("35454b"),Color("ef7d4d"),Color("72d4dd"),Color("fff3c4")]
+		7: return [Color("314a54"),Color("83a2a6"),Color("17242b"),Color("d65a46"),Color("f2c94c"),Color("f4e8c8")]
+		8: return [Color("5b7991"),Color("aac4d1"),Color("243846"),Color("e87f55"),Color("75d3cb"),Color("f4ead5")]
+		9: return [Color("d8b9a7"),Color("f0d9c9"),Color("775e57"),Color("e98b72"),Color("8fc9c0"),Color("fff1dc")]
+		10: return [Color("f3d65c"),Color("fff0a3"),Color("22222a"),Color("ff4f62"),Color("4dd7e8"),Color("fffdf1")]
+		_: return [Color("f05d5e"),Color("ffca5c"),Color("24202e"),Color("ff3c8e"),Color("42d9ff"),Color("fff6d8")]
 
 func _build_bay(cell: Vector2i, style: int) -> void:
 	var p: Array[Color] = _palette(style)
 	var bay := Node3D.new()
-	bay.name = "Style_%d" % (style+1)
+	bay.name = "Style_%d"%(style+1)
 	bay.position = _cell_to_world(cell)
 	$World.add_child(bay)
 	var island := Node3D.new()
@@ -80,11 +78,11 @@ func _build_bay(cell: Vector2i, style: int) -> void:
 	_box(island,"UpperBox",Vector3(BASE_W,0.14,upper_depth),Vector3(0,1.42,upper_z),p[1])
 	_box(island,"DataCounter",Vector3(BASE_W*0.76,0.13,0.10),Vector3(0,1.35,upper_front_z+0.025),p[2])
 	_box(island,"CounterScreen",Vector3(BASE_W*0.60,0.075,0.028),Vector3(0,1.35,upper_front_z+0.104),p[4])
-	var machine_slot := Node3D.new()
-	machine_slot.name = "MachineSlot"
-	machine_slot.position = Vector3(MACHINE_X,BASE_H,FRONT_Z)
-	bay.add_child(machine_slot)
-	_build_machine(machine_slot,p,style)
+	var machine := Node3D.new()
+	machine.name = "MachineSlot"
+	machine.position = Vector3(MACHINE_X,BASE_H,FRONT_Z)
+	bay.add_child(machine)
+	_build_machine(machine,p,style)
 	var sand := Node3D.new()
 	sand.name = "Sand"
 	sand.position = Vector3(SAND_X,BASE_H,FRONT_Z)
@@ -95,80 +93,94 @@ func _build_bay(cell: Vector2i, style: int) -> void:
 	_box(sand,"Display",Vector3(SAND_W*0.54,SAND_H*0.18,0.028),Vector3(0,SAND_H*0.70,sf+0.003),p[4])
 	_box(sand,"Slot",Vector3(SAND_W*0.48,0.035,0.029),Vector3(0,SAND_H*0.32,sf+0.004),p[1])
 	_build_stool(island,Vector3(MACHINE_X,0,0.92),p,style)
-	_add_style_details(island,machine_slot,p,style)
+	_add_style_details(island,machine,p,style)
 
-func _build_machine(parent: Node3D, p: Array[Color], style: int) -> void:
-	_box(parent,"Cabinet",Vector3(MACHINE_W,MACHINE_H,MACHINE_D),Vector3(0,MACHINE_H*0.5,0),p[2])
+func _build_machine(parent: Node3D,p: Array[Color],style: int) -> void:
 	var face: float = MACHINE_D*0.5+0.013
-	var trim: float = 0.055 if style == 0 or style == 4 else 0.035
-	_box(parent,"TrimL",Vector3(trim,MACHINE_H*0.90,0.025),Vector3(-MACHINE_W*0.44,MACHINE_H*0.50,face),p[1])
-	_box(parent,"TrimR",Vector3(trim,MACHINE_H*0.90,0.025),Vector3(MACHINE_W*0.44,MACHINE_H*0.50,face),p[1])
-	_box(parent,"TopPanel",Vector3(MACHINE_W*0.76,MACHINE_H*0.15,0.027),Vector3(0,MACHINE_H*0.83,face+0.002),p[3])
-	_box(parent,"ReelFrame",Vector3(MACHINE_W*0.82,MACHINE_H*0.31,0.028),Vector3(0,MACHINE_H*0.57,face+0.003),p[1])
+	# Styles 7-12 deliberately alter silhouette as well as palette.
+	var width: float = MACHINE_W
+	var height: float = MACHINE_H
+	var depth: float = MACHINE_D
+	if style == 6: width = 0.70; height = 0.76
+	elif style == 7: width = 0.60; height = 0.78; depth = 0.28
+	elif style == 8: width = 0.66; height = 0.84
+	elif style == 9: width = 0.68; height = 0.76
+	elif style == 10: width = 0.72; height = 0.88
+	elif style == 11: width = 0.70; height = 0.86
+	_box(parent,"Cabinet",Vector3(width,height,depth),Vector3(0,height*0.5,0),p[2])
+	_box(parent,"TopPanel",Vector3(width*0.76,height*0.15,0.027),Vector3(0,height*0.83,face+0.002),p[3])
+	_box(parent,"ReelFrame",Vector3(width*0.82,height*0.31,0.028),Vector3(0,height*0.57,face+0.003),p[1])
 	for i in range(3):
-		var reel_x: float = (float(i)-1.0)*MACHINE_W*0.25
-		_box(parent,"Reel%d"%i,Vector3(MACHINE_W*0.20,MACHINE_H*0.22,0.030),Vector3(reel_x,MACHINE_H*0.57,face+0.020),p[5])
-	_box(parent,"Control",Vector3(MACHINE_W*0.86,MACHINE_H*0.12,0.11),Vector3(0,MACHINE_H*0.31,face+0.035),p[2])
-	_box(parent,"LowerPanel",Vector3(MACHINE_W*0.70,MACHINE_H*0.13,0.027),Vector3(0,MACHINE_H*0.13,face+0.002),p[3])
+		var rx: float = (float(i)-1.0)*width*0.25
+		_box(parent,"Reel%d"%i,Vector3(width*0.20,height*0.22,0.030),Vector3(rx,height*0.57,face+0.020),p[5])
+	_box(parent,"Control",Vector3(width*0.86,height*0.12,0.11),Vector3(0,height*0.31,face+0.035),p[2])
+	_box(parent,"LowerPanel",Vector3(width*0.70,height*0.13,0.027),Vector3(0,height*0.13,face+0.002),p[3])
 
-func _add_style_details(island: Node3D, machine: Node3D, p: Array[Color], style: int) -> void:
+func _add_style_details(island: Node3D,machine: Node3D,p: Array[Color],style: int) -> void:
 	var face: float = MACHINE_D*0.5+0.06
 	match style:
 		0:
 			_box(machine,"PixelMarquee",Vector3(0.42,0.055,0.045),Vector3(0,0.77,face),p[4])
 			for i in range(3): _box(machine,"PixelButton%d"%i,Vector3(0.075,0.035,0.045),Vector3((float(i)-1.0)*0.13,0.30,face+0.04),p[3])
-			_box(island,"PixelCap",Vector3(0.88,0.055,0.08),Vector3(0,1.51,0.10),p[5])
 		1:
-			_box(machine,"InnerBezel",Vector3(0.48,0.025,0.035),Vector3(0,0.69,face),p[4])
 			for i in range(5): _box(machine,"Lamp%d"%i,Vector3(0.035,0.035,0.035),Vector3(-0.18+float(i)*0.09,0.32,face+0.05),p[3] if i%2==0 else p[4])
-			_box(island,"CounterLip",Vector3(0.68,0.035,0.06),Vector3(0,1.28,0.30),p[1])
 		2:
 			_box(machine,"RetroBandA",Vector3(0.50,0.045,0.04),Vector3(0,0.73,face),p[5])
 			_box(machine,"RetroBandB",Vector3(0.42,0.045,0.04),Vector3(0,0.68,face),p[3])
-			_box(island,"RetroHeader",Vector3(0.72,0.08,0.08),Vector3(0,1.51,0.08),p[3])
 		3:
 			_box(island,"ToyPlinth",Vector3(1.08,0.06,0.78),Vector3(0,0.03,0),p[1])
-			_box(machine,"SoftFrameTop",Vector3(0.58,0.06,0.055),Vector3(0,0.88,0.01),p[1])
 		4:
 			_box(machine,"OutlineL",Vector3(0.065,0.88,0.045),Vector3(-0.325,0.43,0.01),Color("090b10"))
 			_box(machine,"OutlineR",Vector3(0.065,0.88,0.045),Vector3(0.325,0.43,0.01),Color("090b10"))
-			_box(machine,"OutlineTop",Vector3(0.69,0.06,0.045),Vector3(0,0.86,0.01),Color("090b10"))
 		5:
 			_emissive_box(machine,"NeonL",Vector3(0.035,0.72,0.035),Vector3(-0.29,0.48,face),p[4])
 			_emissive_box(machine,"NeonR",Vector3(0.035,0.72,0.035),Vector3(0.29,0.48,face),p[3])
-			_emissive_box(island,"NeonHeader",Vector3(0.68,0.055,0.06),Vector3(0,1.51,0.12),p[3])
 		6:
-			_box(machine,"CleanWhiteFace",Vector3(0.52,0.62,0.035),Vector3(0,0.49,face),p[1])
-			_box(machine,"CleanAccent",Vector3(0.44,0.045,0.04),Vector3(0,0.78,face+0.02),p[4])
-			_box(island,"SlimHeader",Vector3(0.76,0.045,0.07),Vector3(0,1.50,0.13),p[5])
+			# Box-garden pixel: chunky readable blocks, exaggerated controls and header.
+			_box(machine,"ChunkTop",Vector3(0.58,0.10,0.08),Vector3(0,0.78,face),p[4])
+			for i in range(3): _box(machine,"BigButton%d"%i,Vector3(0.10,0.055,0.055),Vector3((float(i)-1.0)*0.15,0.27,face+0.05),p[3])
+			_box(island,"GardenSign",Vector3(0.78,0.10,0.10),Vector3(0,1.51,0.10),p[5])
 		7:
-			_box(machine,"ArcadeHeader",Vector3(0.58,0.13,0.07),Vector3(0,0.87,0.02),p[3])
-			for i in range(4): _box(machine,"ArcadeLamp%d"%i,Vector3(0.055,0.055,0.045),Vector3(-0.15+float(i)*0.10,0.29,face+0.05),p[4])
-			_box(island,"GreenHeader",Vector3(0.82,0.08,0.09),Vector3(0,1.51,0.10),p[3])
+			# Pure pixel/sprite illusion: stepped silhouette made from coarse blocks.
+			_box(machine,"PixelStepL",Vector3(0.08,0.62,0.05),Vector3(-0.32,0.46,face),p[0])
+			_box(machine,"PixelStepR",Vector3(0.08,0.62,0.05),Vector3(0.32,0.46,face),p[0])
+			for y in range(3):
+				for x in range(3):
+					_box(machine,"Dot_%d_%d"%[x,y],Vector3(0.11,0.08,0.04),Vector3((float(x)-1.0)*0.13,0.47+(float(y)-1.0)*0.09,face+0.04),p[5] if (x+y)%2==0 else p[4])
 		8:
-			_box(machine,"MonoOuter",Vector3(0.58,0.72,0.035),Vector3(0,0.48,face),Color("050505"))
-			_box(machine,"MonoInner",Vector3(0.48,0.60,0.038),Vector3(0,0.49,face+0.02),p[1])
-			_box(machine,"GoldLine",Vector3(0.46,0.035,0.04),Vector3(0,0.77,face+0.04),p[4])
+			# Voxel miniature: visible block construction around the machine and island.
+			for y in range(5):
+				for x in range(4):
+					var c: Color = p[0] if (x+y)%2==0 else p[1]
+					_box(machine,"Voxel_%d_%d"%[x,y],Vector3(0.13,0.12,0.10),Vector3(-0.20+float(x)*0.135,0.20+float(y)*0.125,face+0.02),c)
+			_box(island,"VoxelHeaderL",Vector3(0.32,0.16,0.18),Vector3(-0.25,1.50,0.08),p[3])
+			_box(island,"VoxelHeaderR",Vector3(0.32,0.16,0.18),Vector3(0.25,1.50,0.08),p[4])
 		9:
-			_box(machine,"CandyTop",Vector3(0.58,0.09,0.07),Vector3(0,0.88,0.02),p[3])
-			_box(machine,"CandyPanel",Vector3(0.50,0.18,0.04),Vector3(0,0.70,face+0.02),p[4])
-			_box(island,"PastelHeader",Vector3(0.82,0.07,0.08),Vector3(0,1.51,0.11),p[5])
+			# Papercraft: very thin layered panels with offset folds.
+			_box(machine,"PaperFace",Vector3(0.58,0.64,0.018),Vector3(0,0.49,face+0.03),p[1])
+			_box(machine,"PaperFoldL",Vector3(0.07,0.66,0.018),Vector3(-0.31,0.49,face+0.04),p[3])
+			_box(machine,"PaperFoldR",Vector3(0.07,0.66,0.018),Vector3(0.31,0.49,face+0.04),p[4])
+			_box(island,"PaperAwning",Vector3(0.90,0.055,0.34),Vector3(0,1.49,0.05),p[5])
 		10:
-			_emissive_box(machine,"TechTop",Vector3(0.50,0.045,0.045),Vector3(0,0.80,face),p[4])
-			for i in range(3): _emissive_box(machine,"TechDot%d"%i,Vector3(0.045,0.045,0.04),Vector3((float(i)-1.0)*0.13,0.30,face+0.05),p[3])
-			_box(island,"TechHeader",Vector3(0.72,0.06,0.08),Vector3(0,1.51,0.11),p[4])
+			# Clay/toy: rounded cylinders dominate the silhouette.
+			_cylinder(machine,"ClayTop",0.30,0.13,Vector3(0,0.88,0),p[3])
+			_cylinder(machine,"ClayControl",0.27,0.10,Vector3(0,0.29,0.22),p[4])
+			for i in range(3): _cylinder(machine,"ClayButton%d"%i,0.055,0.045,Vector3((float(i)-1.0)*0.14,0.36,0.27),p[5])
+			_cylinder(island,"ClayHeader",0.43,0.12,Vector3(0,1.51,0.06),p[1])
 		11:
-			_box(machine,"FestivalTop",Vector3(0.62,0.11,0.08),Vector3(0,0.88,0.02),p[3])
-			_box(machine,"FestivalBand",Vector3(0.50,0.055,0.04),Vector3(0,0.73,face),p[5])
-			for i in range(3): _box(machine,"FestivalLamp%d"%i,Vector3(0.06,0.06,0.045),Vector3((float(i)-1.0)*0.14,0.30,face+0.05),p[4])
-			_box(island,"FestivalHeader",Vector3(0.86,0.09,0.09),Vector3(0,1.51,0.10),p[3])
+			# Comic/pop-art: heavy black frame, loud panels and oversized graphic dots.
+			_box(machine,"ComicL",Vector3(0.075,0.86,0.055),Vector3(-0.35,0.46,0.02),Color("101018"))
+			_box(machine,"ComicR",Vector3(0.075,0.86,0.055),Vector3(0.35,0.46,0.02),Color("101018"))
+			_box(machine,"ComicTop",Vector3(0.76,0.075,0.055),Vector3(0,0.90,0.02),Color("101018"))
+			for i in range(3): _cylinder(machine,"PopDot%d"%i,0.07,0.045,Vector3((float(i)-1.0)*0.17,0.31,0.27),p[3] if i%2==0 else p[4])
+			_box(island,"ComicHeader",Vector3(0.90,0.12,0.11),Vector3(0,1.52,0.10),p[3])
 
-func _build_stool(parent: Node3D, pos: Vector3, p: Array[Color], style: int) -> void:
+func _build_stool(parent: Node3D,pos: Vector3,p: Array[Color],style: int) -> void:
 	var stool := Node3D.new()
 	stool.name = "RoundStool"
 	stool.position = pos
 	parent.add_child(stool)
-	var seat_radius: float = 0.24 if style == 0 or style == 3 or style == 9 else 0.22
+	var seat_radius: float = 0.24 if style in [0,3,6,10] else 0.22
 	_cylinder(stool,"Base",0.22,0.055,Vector3(0,0.0275,0),p[0])
 	_cylinder(stool,"Post",0.035,0.42,Vector3(0,0.27,0),p[1])
 	_cylinder(stool,"Seat",seat_radius,0.11,Vector3(0,0.55,0),p[2])
@@ -176,7 +188,7 @@ func _build_stool(parent: Node3D, pos: Vector3, p: Array[Color], style: int) -> 
 func _material(color: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
-	material.roughness = 0.82
+	material.roughness = 0.88
 	return material
 
 func _emissive_material(color: Color) -> StandardMaterial3D:
@@ -187,7 +199,7 @@ func _emissive_material(color: Color) -> StandardMaterial3D:
 	material.emission_energy_multiplier = 2.5
 	return material
 
-func _box(parent: Node3D, node_name: String, size: Vector3, pos: Vector3, color: Color) -> void:
+func _box(parent: Node3D,node_name: String,size: Vector3,pos: Vector3,color: Color) -> void:
 	var node := MeshInstance3D.new()
 	node.name = node_name
 	var mesh := BoxMesh.new()
@@ -197,7 +209,7 @@ func _box(parent: Node3D, node_name: String, size: Vector3, pos: Vector3, color:
 	node.material_override = _material(color)
 	parent.add_child(node)
 
-func _emissive_box(parent: Node3D, node_name: String, size: Vector3, pos: Vector3, color: Color) -> void:
+func _emissive_box(parent: Node3D,node_name: String,size: Vector3,pos: Vector3,color: Color) -> void:
 	var node := MeshInstance3D.new()
 	node.name = node_name
 	var mesh := BoxMesh.new()
@@ -207,7 +219,7 @@ func _emissive_box(parent: Node3D, node_name: String, size: Vector3, pos: Vector
 	node.material_override = _emissive_material(color)
 	parent.add_child(node)
 
-func _cylinder(parent: Node3D, node_name: String, radius: float, height: float, pos: Vector3, color: Color) -> void:
+func _cylinder(parent: Node3D,node_name: String,radius: float,height: float,pos: Vector3,color: Color) -> void:
 	var node := MeshInstance3D.new()
 	node.name = node_name
 	var mesh := CylinderMesh.new()

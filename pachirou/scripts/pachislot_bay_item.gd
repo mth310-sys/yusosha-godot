@@ -25,6 +25,13 @@ var installed_machine: PachislotMachineItem
 @onready var machine_slot: Node2D = $MachineSlot
 @onready var stool: Node2D = $Stool
 
+# Temporary render target for the existing prototype renderer. This is the
+# installation slot, not a machine owned by the island set. It keeps the
+# current visual prototype runnable while machine instances remain separate.
+var machine: Node2D:
+	get:
+		return machine_slot
+
 func setup(p_grid: IsometricGrid, p_cell: Vector2i, p_direction: Direction, p_renderer: Callable) -> bool:
 	grid = p_grid
 	renderer = p_renderer
@@ -97,6 +104,8 @@ func clear_visuals() -> void:
 	_clear_visual_children(sand)
 	_clear_visual_children(data_counter)
 	_clear_visual_children(stool)
+	if installed_machine == null:
+		_clear_visual_children(machine_slot)
 
 func direction_name() -> String:
 	match direction:

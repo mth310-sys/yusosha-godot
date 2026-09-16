@@ -47,9 +47,9 @@ func _render_left_down_item(item: PachislotBayItem) -> void:
 	_create_stool_geometry(item.stool)
 
 func _render_left_up_item(item: PachislotBayItem) -> void:
-	# Stay in the same grid cell and move the base toward the visual rear
-	# (upper-right on the current isometric floor), not toward upper-left.
-	item.frame.position = DEPTH_AXIS * (1.0 - BASE_DEPTH_RATIO)
+	# Same one-cell seating rule as the canonical LEFT_DOWN item.
+	# Mirror only the canonical rear shift on X; do not add any extra tile/depth offset.
+	item.frame.position = Vector2(-UNIT_REAR_SHIFT.x, UNIT_REAR_SHIFT.y)
 	_create_left_up_island_base(item.island_base)
 
 func _create_left_up_island_base(parent: Node2D) -> void:

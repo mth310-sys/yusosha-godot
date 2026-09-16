@@ -8,6 +8,8 @@ enum Direction {
 	RIGHT_DOWN,
 }
 
+const SLOT_ANCHOR := Vector2(6.0, -3.0)
+
 var cell: Vector2i = Vector2i.ZERO
 var direction: Direction = Direction.LEFT_DOWN
 var footprint: Array[Vector2i] = [Vector2i.ZERO]
@@ -25,9 +27,6 @@ var installed_machine: PachislotMachineItem
 @onready var machine_slot: Node2D = $MachineSlot
 @onready var stool: Node2D = $Stool
 
-# Temporary render target for the existing prototype renderer. This is the
-# installation slot, not a machine owned by the island set. It keeps the
-# current visual prototype runnable while machine instances remain separate.
 var machine: Node2D:
 	get:
 		return machine_slot
@@ -132,7 +131,7 @@ func _grid_direction(p_direction: Direction) -> IsometricGrid.Direction:
 func _reset_component_transforms() -> void:
 	frame.position = Vector2.ZERO
 	equipment.position = Vector2.ZERO
-	machine_slot.position = Vector2.ZERO
+	machine_slot.position = SLOT_ANCHOR
 	stool.position = Vector2.ZERO
 	frame.rotation = 0.0
 	equipment.rotation = 0.0

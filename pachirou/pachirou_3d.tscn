@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource path="res://scripts/pachirou_3d.gd" type="Script" id="1_main"]
 [ext_resource path="res://scripts/pachirou_camera.gd" type="Script" id="2_camera"]
 [ext_resource path="res://scripts/pachirou_extra_six.gd" type="Script" id="3_extra"]
 [ext_resource path="res://scripts/pachirou_machine_effects.gd" type="Script" id="4_effects"]
 [ext_resource path="res://scripts/pachirou_3d_polish.gd" type="Script" id="5_polish"]
+[ext_resource path="res://scripts/pachirou_island_quality.gd" type="Script" id="6_island"]
 
 [node name="Pachirou3D" type="Node3D"]
 script = ExtResource("1_main")
@@ -16,6 +17,9 @@ script = ExtResource("3_extra")
 
 [node name="PresentationPolish" type="Node3D" parent="World"]
 script = ExtResource("5_polish")
+
+[node name="IslandQuality" type="Node3D" parent="."]
+script = ExtResource("6_island")
 
 [node name="MachineEffects" type="Node3D" parent="."]
 script = ExtResource("4_effects")

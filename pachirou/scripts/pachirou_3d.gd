@@ -18,7 +18,12 @@ const SAND_X := MACHINE_X + MACHINE_W * 0.5 + SAND_W * 0.5
 
 func _ready() -> void:
 	_build_floor()
-	var cells: Array[Vector2i] = [Vector2i(6,6), Vector2i(8,6), Vector2i(10,6), Vector2i(6,9), Vector2i(8,9), Vector2i(10,9)]
+	# Start at the selected upper tile and place all six variants in one straight row.
+	# One empty grid cell remains between neighboring bays.
+	var cells: Array[Vector2i] = [
+		Vector2i(8, 2), Vector2i(8, 4), Vector2i(8, 6),
+		Vector2i(8, 8), Vector2i(8, 10), Vector2i(8, 12)
+	]
 	for i in range(6):
 		_build_bay(cells[i], i)
 

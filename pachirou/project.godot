@@ -5,7 +5,7 @@ config_version=5
 
 [application]
 config/name="Pachirou"
-run/main_scene="res://pachirou.tscn"
+run/main_scene="res://pachirou_3d.tscn"
 
 [display]
 window/size/viewport_width=1152

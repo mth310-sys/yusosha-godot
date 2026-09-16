@@ -27,7 +27,6 @@ var installed_machine: PachislotMachineItem
 @onready var machine_slot: Node2D = $MachineSlot
 @onready var stool: Node2D = $Stool
 
-# This scene is a placeable item, not a map. Suppress PachirouMap's demo _ready().
 func _ready() -> void:
 	pass
 
@@ -40,6 +39,7 @@ func setup(p_grid: IsometricGrid, p_cell: Vector2i, p_direction: Direction) -> b
 	_apply_grid_position()
 	_update_name()
 	build()
+	_apply_item_rotation()
 	return true
 
 func move_to(p_cell: Vector2i) -> bool:
@@ -55,9 +55,12 @@ func rotate_to(p_direction: Direction) -> bool:
 		return false
 	direction = p_direction
 	_update_name()
-	# Visual rotation will be enabled only after the canonical item is frozen.
-	# Never rebuild a guessed direction here.
+	_apply_item_rotation()
 	return true
+
+func rotate_clockwise() -> bool:
+	var next_direction: Direction = ((int(direction) + 1) % 4) as Direction
+	return rotate_to(next_direction)
 
 func install_machine(machine_item: PachislotMachineItem) -> bool:
 	if machine_item == null or installed_machine != null:
@@ -93,7 +96,6 @@ func build() -> void:
 	_build_canonical_left_down()
 
 func _build_canonical_left_down() -> void:
-	# The already-approved LEFT_DOWN geometry is now owned by this item scene.
 	frame.position = ISLAND_LOCAL_SHIFT
 	equipment.position = ISLAND_LOCAL_SHIFT
 	machine_slot.position = ISLAND_LOCAL_SHIFT
@@ -105,14 +107,17 @@ func _build_canonical_left_down() -> void:
 	sand.z_index = 2
 	data_counter.z_index = 3
 	stool.z_index = 40
-
-	# Use the completed canonical frame geometry from PachirouMap unchanged.
 	_create_island_frame(frame)
 	var sand_lb: Vector2 = SAND_SLOT_LEFT
 	var sand_fb: Vector2 = sand_lb + SAND_FRONT_VECTOR
 	_create_sand(sand, sand_lb, sand_fb, SAND_DEPTH)
 	_create_data_counter(data_counter)
 	_create_stool_geometry(stool)
+
+func _apply_item_rotation() -> void:
+	# Rotation is applied to the completed item root. No direction-specific
+	# geometry is generated and no child component is repositioned.
+	rotation_degrees = float(int(direction) * 90)
 
 func _create_stool_geometry(parent: Node2D) -> void:
 	var seat_y: float = -38.4
@@ -137,8 +142,6 @@ func clear_visuals() -> void:
 	_clear_visual_children(sand)
 	_clear_visual_children(data_counter)
 	_clear_visual_children(stool)
-	# _create_island_frame() renders directly into Frame, so clear only runtime
-	# Polygon2D children while preserving the structural component nodes.
 	for child in frame.get_children():
 		if child is Polygon2D:
 			child.queue_free()

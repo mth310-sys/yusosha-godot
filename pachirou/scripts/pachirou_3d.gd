@@ -1,6 +1,6 @@
 extends Node3D
 
-const GRID_SIZE: int = 14
+const GRID_SIZE: int = 18
 const TILE_SIZE: float = 1.0
 const BASE_W := 1.00
 const BASE_D := 0.70
@@ -18,7 +18,7 @@ const SAND_X := MACHINE_X + MACHINE_W * 0.5 + SAND_W * 0.5
 
 func _ready() -> void:
 	_build_floor()
-	var cells: Array[Vector2i] = [Vector2i(4,4), Vector2i(6,4), Vector2i(8,4), Vector2i(4,7), Vector2i(6,7), Vector2i(8,7)]
+	var cells: Array[Vector2i] = [Vector2i(6,6), Vector2i(8,6), Vector2i(10,6), Vector2i(6,9), Vector2i(8,9), Vector2i(10,9)]
 	for i in range(6):
 		_build_bay(cells[i], i)
 
@@ -27,7 +27,7 @@ func _build_floor() -> void:
 		for x in range(GRID_SIZE):
 			var tile := MeshInstance3D.new()
 			var mesh := BoxMesh.new()
-			mesh.size = Vector3(TILE_SIZE, 0.04, TILE_SIZE)
+			mesh.size = Vector3(TILE_SIZE,0.04,TILE_SIZE)
 			tile.mesh = mesh
 			tile.position = _cell_to_world(Vector2i(x,z)) + Vector3(0,-0.02,0)
 			var shade: float = 0.72 if (x+z)%2 == 0 else 0.58
@@ -103,31 +103,29 @@ func _build_machine(parent: Node3D, p: Array[Color], style: int) -> void:
 func _add_style_details(bay: Node3D, island: Node3D, machine: Node3D, p: Array[Color], style: int) -> void:
 	var face: float = MACHINE_D*0.5+0.06
 	match style:
-		0: # Box-garden pixel: chunky readable blocks and oversized controls.
+		0:
 			_box(machine,"PixelMarquee",Vector3(0.42,0.055,0.045),Vector3(0,0.77,face),p[4])
-			for i in range(3):
-				_box(machine,"PixelButton%d"%i,Vector3(0.075,0.035,0.045),Vector3((float(i)-1.0)*0.13,0.30,face+0.04),p[3])
+			for i in range(3): _box(machine,"PixelButton%d"%i,Vector3(0.075,0.035,0.045),Vector3((float(i)-1.0)*0.13,0.30,face+0.04),p[3])
 			_box(island,"PixelCap",Vector3(0.88,0.055,0.08),Vector3(0,1.51,0.10),p[5])
-		1: # High-detail pixel 3D: layered bezels, lamps and control dots.
+		1:
 			_box(machine,"InnerBezel",Vector3(0.48,0.025,0.035),Vector3(0,0.69,face),p[4])
-			for i in range(5):
-				_box(machine,"Lamp%d"%i,Vector3(0.035,0.035,0.035),Vector3(-0.18+float(i)*0.09,0.32,face+0.05),p[3] if i%2==0 else p[4])
+			for i in range(5): _box(machine,"Lamp%d"%i,Vector3(0.035,0.035,0.035),Vector3(-0.18+float(i)*0.09,0.32,face+0.05),p[3] if i%2==0 else p[4])
 			_box(island,"CounterLip",Vector3(0.68,0.035,0.06),Vector3(0,1.28,0.30),p[1])
-		2: # Retro 16-bit: stepped bands and limited-color ornament.
+		2:
 			_box(machine,"RetroBandA",Vector3(0.50,0.045,0.04),Vector3(0,0.73,face),p[5])
 			_box(machine,"RetroBandB",Vector3(0.42,0.045,0.04),Vector3(0,0.68,face),p[3])
 			_box(island,"RetroHeader",Vector3(0.72,0.08,0.08),Vector3(0,1.51,0.08),p[3])
 			_box(island,"RetroHeaderInset",Vector3(0.48,0.035,0.09),Vector3(0,1.51,0.13),p[5])
-		3: # Miniature diorama: thicker trims and toy-like layered pedestal.
+		3:
 			_box(island,"ToyPlinth",Vector3(1.08,0.06,0.78),Vector3(0,0.03,0),p[1])
 			_box(machine,"SoftFrameTop",Vector3(0.58,0.06,0.055),Vector3(0,0.88,0.01),p[1])
 			_box(machine,"SoftControlLip",Vector3(0.60,0.055,0.16),Vector3(0,0.27,0.20),p[0])
-		4: # Cel/toon: strong dark silhouette rails and graphic highlights.
+		4:
 			_box(machine,"OutlineL",Vector3(0.065,0.88,0.045),Vector3(-0.325,0.43,0.01),Color("090b10"))
 			_box(machine,"OutlineR",Vector3(0.065,0.88,0.045),Vector3(0.325,0.43,0.01),Color("090b10"))
 			_box(machine,"OutlineTop",Vector3(0.69,0.06,0.045),Vector3(0,0.86,0.01),Color("090b10"))
 			_box(machine,"ToonHighlight",Vector3(0.38,0.035,0.04),Vector3(0,0.76,face),p[4])
-		5: # Neon modern: emissive cyan/magenta strips and illuminated header.
+		5:
 			_emissive_box(machine,"NeonL",Vector3(0.035,0.72,0.035),Vector3(-0.29,0.48,face),p[4])
 			_emissive_box(machine,"NeonR",Vector3(0.035,0.72,0.035),Vector3(0.29,0.48,face),p[3])
 			_emissive_box(machine,"NeonTop",Vector3(0.48,0.045,0.04),Vector3(0,0.78,face),p[4])

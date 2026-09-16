@@ -61,13 +61,15 @@ func _build_canonical_bay(cell: Vector2i) -> void:
 	_box(island, "BackRailL", Vector3(0.045, 0.92, 0.025), Vector3(-0.45, BASE_H + 0.50, BACK_Z + 0.052), Color("565d65"))
 	_box(island, "BackRailR", Vector3(0.045, 0.92, 0.025), Vector3(0.45, BASE_H + 0.50, BACK_Z + 0.052), Color("565d65"))
 	_box(island, "BackRailMid", Vector3(0.025, 0.92, 0.025), Vector3(0.0, BASE_H + 0.50, BACK_Z + 0.052), Color("515860"))
-	_box(island, "UpperBox", Vector3(BASE_W, 0.14, 0.26), Vector3(0.0, 1.42, -0.17), Color("8d9399"))
 
-	# Data counter belongs to the island upper equipment, not to the machine.
-	# The accepted 2D unit derives it from the upper-box front span (12%-88%).
+	# Upper equipment projects forward from the backboard.
+	var upper_box_z: float = -0.08
+	_box(island, "UpperBox", Vector3(BASE_W, 0.14, 0.26), Vector3(0.0, 1.42, upper_box_z), Color("8d9399"))
+
+	# Data counter stays attached to the island upper equipment and follows it forward.
 	var counter_x: float = 0.0
 	var counter_y: float = 1.35
-	var counter_z: float = -0.015
+	var counter_z: float = upper_box_z + 0.155
 	_box(island, "DataCounter", Vector3(BASE_W * 0.76, 0.13, 0.10), Vector3(counter_x, counter_y, counter_z), Color("242a31"))
 	_box(island, "CounterInset", Vector3(BASE_W * 0.70, 0.105, 0.025), Vector3(counter_x, counter_y, counter_z + 0.063), Color("4d5964"))
 	_box(island, "CounterScreen", Vector3(BASE_W * 0.60, 0.075, 0.028), Vector3(counter_x, counter_y, counter_z + 0.079), Color("79b6d8"))

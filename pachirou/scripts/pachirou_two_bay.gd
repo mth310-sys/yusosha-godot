@@ -7,6 +7,9 @@ enum BayDirection {
 	RIGHT_DOWN,
 }
 
+# Direction renderer reset:
+# Never transform finished Polygon2D geometry again. Each direction is rendered
+# from the same physical dimensions at creation time.
 func _ready() -> void:
 	world = Node2D.new()
 	world.name = "World"
@@ -22,96 +25,148 @@ func _create_complete_bay(cell: Vector2i, direction: BayDirection) -> void:
 	unit.position = grid_to_world(cell)
 	unit.z_index = int(unit.position.y)
 	world.add_child(unit)
+	match direction:
+		BayDirection.LEFT_DOWN:
+			_render_left_down(unit)
+		BayDirection.LEFT_UP:
+			_render_left_up(unit)
+		_:
+			pass
 
+func _render_left_down(unit: Node2D) -> void:
 	var bay := Node2D.new()
 	bay.name = "SolidBay"
 	bay.position = UNIT_REAR_SHIFT
 	unit.add_child(bay)
 	_create_complete_frame(bay)
 	_create_complete_equipment(bay)
+	_create_bay_stool(unit, UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET)
 
+func _render_left_up(unit: Node2D) -> void:
+	# LEFT_UP is a dedicated 2D isometric renderer. It does not touch or transform
+	# the approved LEFT_DOWN polygons. The logical quarter-turn maps the two ground
+	# axes as WIDTH -> LEFT_UP_WIDTH and DEPTH -> LEFT_UP_DEPTH; Z remains vertical.
+	var bay := Node2D.new()
+	bay.name = "SolidBayLeftUp"
+	bay.position = _lu_ground(UNIT_REAR_SHIFT)
+	unit.add_child(bay)
+	_render_left_up_base_and_board(bay)
+	_render_left_up_machine_and_sand(bay)
+	_render_left_up_counter(bay)
+	_create_bay_stool(unit, _lu_ground(UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET))
+
+# Exact 90-degree-left ground basis from the existing 64x32 diamond.
+const LU_WIDTH := Vector2(-32.0, 16.0)
+const LU_DEPTH := Vector2(-32.0, -16.0)
+
+func _lu_ground(p: Vector2) -> Vector2:
+	# Convert a ground-only screen vector back to approved WIDTH/DEPTH coefficients,
+	# then project those same coefficients through the left-up basis.
+	var u: float = p.x / 64.0 + p.y / 32.0
+	var v: float = p.x / 64.0 - p.y / 32.0
+	return LU_WIDTH * u + LU_DEPTH * v
+
+func _render_left_up_base_and_board(parent: Node2D) -> void:
+	var a := Vector2(32.0, 0.0)
+	var b := Vector2(0.0, 16.0)
+	var depth: Vector2 = LU_DEPTH * BASE_DEPTH_RATIO
+	var ra: Vector2 = a + depth
+	var rb: Vector2 = b + depth
+	var up := Vector2(0.0, -BASE_HEIGHT)
+	# Closed base: front, both sides, rear and top.
+	_add_poly(parent, PackedVector2Array([a, b, b + up, a + up]), BASE_FRONT, 0)
+	_add_poly(parent, PackedVector2Array([b, rb, rb + up, b + up]), BASE_SIDE, 0)
+	_add_poly(parent, PackedVector2Array([ra, a, a + up, ra + up]), Color("454b52"), -1)
+	_add_poly(parent, PackedVector2Array([rb, ra, ra + up, rb + up]), Color("353b41"), -1)
+	_add_poly(parent, PackedVector2Array([a + up, b + up, rb + up, ra + up]), BASE_TOP, 0)
+
+	var board_left: Vector2 = ra + up
+	var board_right: Vector2 = rb + up
+	var board_up := Vector2(0.0, -BACKBOARD_HEIGHT)
+	var thick: Vector2 = LU_DEPTH * BACKBOARD_THICKNESS_RATIO
+	var board_rear_left: Vector2 = board_left + thick
+	var board_rear_right: Vector2 = board_right + thick
+	_add_poly(parent, PackedVector2Array([board_left, board_right, board_right + board_up, board_left + board_up]), BACKBOARD, 1)
+	_add_poly(parent, PackedVector2Array([board_rear_left, board_left, board_left + board_up, board_rear_left + board_up]), BACKBOARD_SIDE, 1)
+	_add_poly(parent, PackedVector2Array([board_rear_left, board_rear_right, board_rear_right + board_up, board_rear_left + board_up]), Color("4d545c"), 0)
+	_add_poly(parent, PackedVector2Array([board_left + board_up, board_right + board_up, board_rear_right + board_up, board_rear_left + board_up]), Color("747b82"), 2)
+
+	# Upper equipment box uses the same existing height and forward ratio.
+	var box_bl: Vector2 = board_left + Vector2(0.0, -MACHINE_HEIGHT + 2.0)
+	var box_br: Vector2 = board_right + Vector2(0.0, -MACHINE_HEIGHT + 2.0)
+	var push: Vector2 = -LU_DEPTH * UPPER_BOX_FORWARD_RATIO
+	var box_fl: Vector2 = box_bl + push
+	var box_fr: Vector2 = box_br + push
+	var box_up := Vector2(0.0, -UPPER_BOX_HEIGHT)
+	_add_poly(parent, PackedVector2Array([box_fl, box_fr, box_fr + box_up, box_fl + box_up]), SHELF_EDGE, 20)
+	_add_poly(parent, PackedVector2Array([box_bl, box_fl, box_fl + box_up, box_bl + box_up]), Color("5c636b"), 19)
+	_add_poly(parent, PackedVector2Array([box_bl + box_up, box_br + box_up, box_fr + box_up, box_fl + box_up]), SHELF_TOP, 20)
+	_add_poly(parent, PackedVector2Array([box_bl, box_br, box_br + box_up, box_bl + box_up]), Color("4b525a"), 18)
+
+func _render_left_up_machine_and_sand(parent: Node2D) -> void:
+	# Same approved widths/depths/heights; only the ground axes change direction.
+	var base_left: Vector2 = Vector2(32.0, 0.0) + LU_DEPTH * BASE_DEPTH_RATIO + Vector2(0.0, -BASE_HEIGHT)
+	var base_right: Vector2 = Vector2(0.0, 16.0) + LU_DEPTH * BASE_DEPTH_RATIO + Vector2(0.0, -BASE_HEIGHT)
+	var front_push: Vector2 = -LU_DEPTH * (BACKBOARD_THICKNESS_RATIO + 0.02)
+	var equipment_left: Vector2 = base_left + (base_right - base_left) * 0.08 + front_push
+	var machine_width: Vector2 = LU_WIDTH * (MACHINE_FRONT_VECTOR.length() / WIDTH_AXIS.length())
+	var sand_width: Vector2 = LU_WIDTH * (SAND_FRONT_VECTOR.length() / WIDTH_AXIS.length())
+	var machine_depth: Vector2 = LU_DEPTH * (MACHINE_DEPTH.length() / DEPTH_AXIS.length())
+	var sand_depth: Vector2 = LU_DEPTH * (SAND_DEPTH.length() / DEPTH_AXIS.length())
+	_create_lu_box(parent, equipment_left, machine_width, machine_depth, MACHINE_HEIGHT, Color("3f464d"), Color("4b525a"), 8)
+	_create_lu_machine_front(parent, equipment_left, machine_width, MACHINE_HEIGHT)
+	var sand_left: Vector2 = equipment_left + machine_width
+	_create_lu_box(parent, sand_left, sand_width, sand_depth, SAND_HEIGHT, Color("59616a"), Color("676e76"), 8)
+	_create_lu_sand_front(parent, sand_left, sand_width, SAND_HEIGHT)
+
+func _create_lu_box(parent: Node2D, fl: Vector2, width: Vector2, depth: Vector2, height: float, front_color: Color, side_color: Color, z: int) -> void:
+	var fr: Vector2 = fl + width
+	var rl: Vector2 = fl + depth
+	var rr: Vector2 = fr + depth
+	var up := Vector2(0.0, -height)
+	_add_poly(parent, PackedVector2Array([fl, fr, fr + up, fl + up]), front_color, z)
+	_add_poly(parent, PackedVector2Array([fr, rr, rr + up, fr + up]), side_color, z)
+	_add_poly(parent, PackedVector2Array([rl, fl, fl + up, rl + up]), side_color.darkened(0.12), z - 1)
+	_add_poly(parent, PackedVector2Array([rl, rr, rr + up, rl + up]), front_color.darkened(0.15), z - 1)
+	_add_poly(parent, PackedVector2Array([fl + up, fr + up, rr + up, rl + up]), side_color.lightened(0.08), z + 1)
+
+func _create_lu_machine_front(parent: Node2D, fl: Vector2, width: Vector2, height: float) -> void:
+	var fr: Vector2 = fl + width
+	var up := Vector2(0.0, -height)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.10, 0.90, 0.10, 0.32), Color("20262c"), 12)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.17, 0.83, 0.35, 0.64), Color("f2f0df"), 13)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.20, 0.80, 0.39, 0.60), Color("ffffff"), 14)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.13, 0.87, 0.69, 0.80), Color("161b20"), 13)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.24, 0.76, 0.72, 0.77), Color("e53935"), 14)
+
+func _create_lu_sand_front(parent: Node2D, fl: Vector2, width: Vector2, height: float) -> void:
+	var fr: Vector2 = fl + width
+	var up := Vector2(0.0, -height)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.12, 0.88, 0.12, 0.28), Color("11161b"), 13)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.20, 0.80, 0.36, 0.43), Color("d7dde1"), 14)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.20, 0.80, 0.54, 0.61), Color("1d2329"), 14)
+
+func _render_left_up_counter(parent: Node2D) -> void:
+	var base_left: Vector2 = Vector2(32.0, 0.0) + LU_DEPTH * BASE_DEPTH_RATIO + Vector2(0.0, -BASE_HEIGHT)
+	var base_right: Vector2 = Vector2(0.0, 16.0) + LU_DEPTH * BASE_DEPTH_RATIO + Vector2(0.0, -BASE_HEIGHT)
+	var span: Vector2 = base_right - base_left
+	var fl: Vector2 = base_left + span * 0.18 + Vector2(0.0, -MACHINE_HEIGHT - 7.0)
+	var fr: Vector2 = base_left + span * 0.82 + Vector2(0.0, -MACHINE_HEIGHT - 7.0)
+	var up := Vector2(0.0, -8.0)
+	var depth: Vector2 = LU_DEPTH * 0.055
+	var rl: Vector2 = fl + depth
+	var rr: Vector2 = fr + depth
+	_add_poly(parent, PackedVector2Array([fl, fr, fr + up, fl + up]), Color("20262d"), 28)
+	_add_poly(parent, PackedVector2Array([fr, rr, rr + up, fr + up]), Color("353c44"), 28)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.12, 0.88, 0.24, 0.72), Color("67d7e5"), 29)
+
+func _create_bay_stool(unit: Node2D, position: Vector2) -> void:
 	var stool := Node2D.new()
 	stool.name = "Stool"
-	stool.position = UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
+	stool.position = position
 	stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 	unit.add_child(stool)
 	_create_stool_geometry(stool)
-
-	_apply_direction(unit, direction)
-
-func _apply_direction(unit: Node2D, direction: BayDirection) -> void:
-	match direction:
-		BayDirection.LEFT_DOWN:
-			pass
-		BayDirection.LEFT_UP:
-			_apply_left_up_quarter_turn(unit)
-		BayDirection.RIGHT_UP:
-			pass
-		BayDirection.RIGHT_DOWN:
-			pass
-
-func _apply_left_up_quarter_turn(unit: Node2D) -> void:
-	# Rotate the completed bay one real quarter-turn on the logical ground plane.
-	# For a local ground vector projected as:
-	#   screen_x = 32 * (u + v)
-	#   screen_y = 16 * (u - v) + vertical_y
-	# a LEFT turn is (u,v) -> (-v,u).  After projection this maps the horizontal
-	# ground contribution (x,y_ground) to (-2*y_ground, x/2), while Z stays vertical.
-	# We apply the transform edge-by-edge so true vertical edges remain vertical.
-	_rotate_complete_tree_left(unit)
-
-func _rotate_complete_tree_left(node: Node) -> void:
-	for child in node.get_children():
-		if child is Polygon2D:
-			_rotate_polygon_left(child as Polygon2D)
-		elif child is Node2D:
-			var child_2d := child as Node2D
-			child_2d.position = _rotate_ground_point_left(child_2d.position)
-			_rotate_complete_tree_left(child_2d)
-
-func _rotate_polygon_left(poly: Polygon2D) -> void:
-	var source: PackedVector2Array = poly.polygon
-	if source.is_empty():
-		return
-	var result := PackedVector2Array()
-	# The first point is an anchor on the component's projected ground/face system.
-	# Rotate its ground location; subsequent vectors are transformed as either
-	# vertical or one of the two exact isometric ground-axis contributions.
-	var cursor: Vector2 = _rotate_ground_point_left(source[0])
-	result.append(cursor)
-	for i in range(1, source.size()):
-		var edge: Vector2 = source[i] - source[i - 1]
-		cursor += _rotate_edge_left(edge)
-		result.append(cursor)
-	poly.polygon = result
-
-func _rotate_edge_left(edge: Vector2) -> Vector2:
-	# Height never rotates on screen.
-	if abs(edge.x) < 0.0001:
-		return edge
-
-	# Exact 2:1 ground edges used by the approved geometry.
-	if abs(edge.y - edge.x * 0.5) < 0.001:
-		# WIDTH_AXIS (32,16) -> (-32,16)
-		return Vector2(-edge.x, edge.y)
-	if abs(edge.y + edge.x * 0.5) < 0.001:
-		# DEPTH_AXIS (32,-16) -> WIDTH_AXIS (32,16)
-		return Vector2(edge.x, -edge.y)
-
-	# Detail edges live on an already-defined physical face. Decompose their
-	# horizontal contribution by the face's dominant 2:1 axis and preserve the
-	# remaining vertical component exactly.
-	var ground_y: float
-	if edge.y >= 0.0:
-		ground_y = edge.x * 0.5
-	else:
-		ground_y = -edge.x * 0.5
-	var vertical_y: float = edge.y - ground_y
-	var rotated_ground := Vector2(-2.0 * ground_y, edge.x * 0.5)
-	return rotated_ground + Vector2(0.0, vertical_y)
-
-func _rotate_ground_point_left(point: Vector2) -> Vector2:
-	return Vector2(-2.0 * point.y, point.x * 0.5)
 
 func _direction_name(direction: BayDirection) -> String:
 	match direction:

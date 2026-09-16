@@ -1,18 +1,25 @@
 extends "res://scripts/pachirou_map.gd"
 
-# One complete physical bay. Direction variants will use this single definition.
-# The approved LEFT_DOWN visible calls remain untouched; hidden faces close each solid.
+enum BayDirection {
+	LEFT_DOWN,
+	LEFT_UP,
+	RIGHT_UP,
+	RIGHT_DOWN,
+}
+
+# Direction is now part of the bay API. This commit intentionally renders only
+# the approved LEFT_DOWN orientation; no guessed rotated geometry is introduced.
 func _ready() -> void:
 	world = Node2D.new()
 	world.name = "World"
 	world.y_sort_enabled = true
 	add_child(world)
 	_create_floor()
-	_create_complete_bay(Vector2i(7, 6))
+	_create_complete_bay(Vector2i(7, 6), BayDirection.LEFT_DOWN)
 
-func _create_complete_bay(cell: Vector2i) -> void:
+func _create_complete_bay(cell: Vector2i, direction: BayDirection) -> void:
 	var unit := Node2D.new()
-	unit.name = "COMPLETE_BAY"
+	unit.name = "COMPLETE_BAY_%s" % _direction_name(direction)
 	unit.position = grid_to_world(cell)
 	unit.z_index = int(unit.position.y)
 	world.add_child(unit)
@@ -22,6 +29,8 @@ func _create_complete_bay(cell: Vector2i) -> void:
 	bay.position = UNIT_REAR_SHIFT
 	unit.add_child(bay)
 
+	# One complete physical definition. Direction-specific projection will be
+	# applied at this boundary, never by rebuilding individual equipment pieces.
 	_create_complete_frame(bay)
 	_create_complete_equipment(bay)
 
@@ -32,19 +41,42 @@ func _create_complete_bay(cell: Vector2i) -> void:
 	unit.add_child(stool)
 	_create_stool_geometry(stool)
 
+	_apply_direction(unit, direction)
+
+func _apply_direction(unit: Node2D, direction: BayDirection) -> void:
+	match direction:
+		BayDirection.LEFT_DOWN:
+			# Approved source orientation: exact existing render, no transform.
+			pass
+		BayDirection.LEFT_UP:
+			# Reserved for the first verified quarter-turn projection.
+			pass
+		BayDirection.RIGHT_UP:
+			pass
+		BayDirection.RIGHT_DOWN:
+			pass
+
+func _direction_name(direction: BayDirection) -> String:
+	match direction:
+		BayDirection.LEFT_DOWN:
+			return "LEFT_DOWN"
+		BayDirection.LEFT_UP:
+			return "LEFT_UP"
+		BayDirection.RIGHT_UP:
+			return "RIGHT_UP"
+		BayDirection.RIGHT_DOWN:
+			return "RIGHT_DOWN"
+	return "UNKNOWN"
+
 func _create_complete_frame(parent: Node2D) -> void:
-	# Approved front/visible faces.
 	_create_island_frame(parent)
-	# Hidden faces close the same base and backboard solids.
 	_create_base_hidden_faces(parent)
 	_create_backboard_hidden_faces(parent)
 	_create_upper_box_hidden_faces(parent)
 
 func _create_complete_equipment(parent: Node2D) -> void:
-	# Approved front/visible faces.
 	_create_machine_and_sand(parent)
 	_create_data_counter(parent)
-	# Hidden faces close the same equipment solids.
 	_create_machine_hidden_faces(parent)
 	_create_sand_hidden_faces(parent)
 	_create_counter_hidden_faces(parent)
@@ -115,8 +147,6 @@ func _create_base_hidden_faces(parent: Node2D) -> void:
 	_add_poly(parent, PackedVector2Array([floor_left, rear_left, rear_left + up, floor_left + up]), Color("454b52"), -1)
 
 func _create_upper_box_hidden_faces(parent: Node2D) -> void:
-	# The visible island frame already draws front, right, top and underside.
-	# Close the rear and opposite side from those exact existing box endpoints.
 	var bl: Vector2 = _upper_box_back_left()
 	var br: Vector2 = _upper_box_back_right()
 	var push: Vector2 = _upper_box_front_vector()

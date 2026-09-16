@@ -8,8 +8,6 @@ enum Direction {
 	RIGHT_DOWN,
 }
 
-const SLOT_ANCHOR := Vector2(6.0, -3.0)
-
 var cell: Vector2i = Vector2i.ZERO
 var direction: Direction = Direction.LEFT_DOWN
 var footprint: Array[Vector2i] = [Vector2i.ZERO]
@@ -26,10 +24,6 @@ var installed_machine: PachislotMachineItem
 @onready var data_counter: Node2D = $Equipment/DataCounter
 @onready var machine_slot: Node2D = $MachineSlot
 @onready var stool: Node2D = $Stool
-
-var machine: Node2D:
-	get:
-		return machine_slot
 
 func setup(p_grid: IsometricGrid, p_cell: Vector2i, p_direction: Direction, p_renderer: Callable) -> bool:
 	grid = p_grid
@@ -103,8 +97,6 @@ func clear_visuals() -> void:
 	_clear_visual_children(sand)
 	_clear_visual_children(data_counter)
 	_clear_visual_children(stool)
-	if installed_machine == null:
-		_clear_visual_children(machine_slot)
 
 func direction_name() -> String:
 	match direction:
@@ -131,7 +123,7 @@ func _grid_direction(p_direction: Direction) -> IsometricGrid.Direction:
 func _reset_component_transforms() -> void:
 	frame.position = Vector2.ZERO
 	equipment.position = Vector2.ZERO
-	machine_slot.position = SLOT_ANCHOR
+	machine_slot.position = Vector2.ZERO
 	stool.position = Vector2.ZERO
 	frame.rotation = 0.0
 	equipment.rotation = 0.0

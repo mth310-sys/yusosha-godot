@@ -10,11 +10,14 @@ const UNIT_DEPTH: float = 0.70
 const REAR_EDGE_OFFSET: float = (TILE_SIZE-UNIT_DEPTH)*0.5
 
 func _ready() -> void:
-	# Source machines are already created by the World children before this sibling's
-	# _ready runs. Arrange immediately so the temporary source layout is never rendered.
-	_arrange_showcase()
+	var world := get_parent().get_node_or_null("World") as Node3D
+	if world != null:
+		world.visible = false
+	call_deferred("_arrange_showcase")
 
 func _arrange_showcase() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
 	var world := get_parent().get_node_or_null("World") as Node3D
 	if world == null: return
 	_remove_layout_duplicates(world)
@@ -23,9 +26,12 @@ func _arrange_showcase() -> void:
 	_collect_style_roots(world,by_style)
 	if by_style.size() < EXPECTED_STYLE_COUNT:
 		push_warning("ShowcaseLayout: expected 18 source styles, found %d" % by_style.size())
+		world.visible = true
 		return
 	for style_number in range(1,EXPECTED_STYLE_COUNT+1):
-		if not by_style.has(style_number): return
+		if not by_style.has(style_number):
+			world.visible = true
+			return
 		var source := by_style[style_number] as Node3D
 		var row: int = (style_number-1)/6
 		var index_in_row: int = (style_number-1)%6
@@ -51,6 +57,7 @@ func _arrange_showcase() -> void:
 		world.add_child(back_b)
 		_remove_clay_discs(back_b)
 		_rotate_then_snap_back(back_b,Vector2i(first_cell_x+1,back_z),row)
+	world.visible = true
 
 func _remove_clay_discs(node: Node) -> void:
 	for child in node.get_children():

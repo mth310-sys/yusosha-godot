@@ -9,7 +9,7 @@ func _ready() -> void:
 	add_child(world)
 	_create_floor()
 	_create_bay_item(Vector2i(6, 7), PachislotBayItem.Direction.LEFT_DOWN)
-	_create_bay_item(Vector2i(8, 6), PachislotBayItem.Direction.LEFT_UP)
+	_create_bay_item(Vector2i(8, 7), PachislotBayItem.Direction.LEFT_UP)
 
 func _create_bay_item(cell: Vector2i, direction: PachislotBayItem.Direction) -> void:
 	var item := PACHISLOT_BAY_SCENE.instantiate() as PachislotBayItem
@@ -47,14 +47,14 @@ func _render_left_down_item(item: PachislotBayItem) -> void:
 	_create_stool_geometry(item.stool)
 
 func _render_left_up_item(item: PachislotBayItem) -> void:
-	# Build LEFT_UP from explicit component geometry. No transform is applied to
-	# the finished LEFT_DOWN polygons.
-	item.frame.position = Vector2(-UNIT_REAR_SHIFT.x, UNIT_REAR_SHIFT.y)
+	# Keep the item in its assigned grid cell. The frame itself is seated against
+	# the rear of that same 64x32 diamond: the base uses 70% of tile depth, so
+	# the remaining 30% is the local rear offset.
+	var left_up_depth_axis := Vector2(-DEPTH_AXIS.x, DEPTH_AXIS.y)
+	item.frame.position = left_up_depth_axis * (1.0 - BASE_DEPTH_RATIO)
 	_create_left_up_island_base(item.island_base)
 
 func _create_left_up_island_base(parent: Node2D) -> void:
-	# Same physical 64x32 footprint, BASE_DEPTH_RATIO and BASE_HEIGHT as the
-	# canonical item. The width axis is explicitly reversed for LEFT_UP.
 	var floor_left := Vector2(32.0, 0.0)
 	var floor_front := Vector2(0.0, 16.0)
 	var depth := Vector2(-DEPTH_AXIS.x, DEPTH_AXIS.y) * BASE_DEPTH_RATIO

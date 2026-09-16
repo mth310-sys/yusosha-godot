@@ -7,15 +7,15 @@ enum BayDirection {
 	RIGHT_DOWN,
 }
 
-# Direction is now part of the bay API. This commit intentionally renders only
-# the approved LEFT_DOWN orientation; no guessed rotated geometry is introduced.
 func _ready() -> void:
 	world = Node2D.new()
 	world.name = "World"
 	world.y_sort_enabled = true
 	add_child(world)
 	_create_floor()
-	_create_complete_bay(Vector2i(7, 6), BayDirection.LEFT_DOWN)
+	# Keep the approved source untouched and add one isolated quarter-turn test.
+	_create_complete_bay(Vector2i(5, 6), BayDirection.LEFT_DOWN)
+	_create_complete_bay(Vector2i(9, 7), BayDirection.LEFT_UP)
 
 func _create_complete_bay(cell: Vector2i, direction: BayDirection) -> void:
 	var unit := Node2D.new()
@@ -28,9 +28,6 @@ func _create_complete_bay(cell: Vector2i, direction: BayDirection) -> void:
 	bay.name = "SolidBay"
 	bay.position = UNIT_REAR_SHIFT
 	unit.add_child(bay)
-
-	# One complete physical definition. Direction-specific projection will be
-	# applied at this boundary, never by rebuilding individual equipment pieces.
 	_create_complete_frame(bay)
 	_create_complete_equipment(bay)
 
@@ -46,15 +43,35 @@ func _create_complete_bay(cell: Vector2i, direction: BayDirection) -> void:
 func _apply_direction(unit: Node2D, direction: BayDirection) -> void:
 	match direction:
 		BayDirection.LEFT_DOWN:
-			# Approved source orientation: exact existing render, no transform.
 			pass
 		BayDirection.LEFT_UP:
-			# Reserved for the first verified quarter-turn projection.
-			pass
+			_apply_left_up_quarter_turn(unit)
 		BayDirection.RIGHT_UP:
 			pass
 		BayDirection.RIGHT_DOWN:
 			pass
+
+func _apply_left_up_quarter_turn(unit: Node2D) -> void:
+	# LEFT_DOWN -> LEFT_UP is a ground-plane quarter turn. In this fixed 2:1
+	# isometric projection that quarter turn is an exact horizontal mirror:
+	# vertical height is unchanged, while both diamond ground axes exchange roles.
+	# Because every physical face is now present, the whole completed object can
+	# be transformed as one unit instead of rebuilding any face.
+	_mirror_complete_tree_x(unit)
+
+func _mirror_complete_tree_x(node: Node) -> void:
+	for child in node.get_children():
+		if child is Polygon2D:
+			var poly := child as Polygon2D
+			var points: PackedVector2Array = poly.polygon
+			var mirrored := PackedVector2Array()
+			for point in points:
+				mirrored.append(Vector2(-point.x, point.y))
+			poly.polygon = mirrored
+		elif child is Node2D:
+			var child_2d := child as Node2D
+			child_2d.position.x = -child_2d.position.x
+			_mirror_complete_tree_x(child_2d)
 
 func _direction_name(direction: BayDirection) -> String:
 	match direction:

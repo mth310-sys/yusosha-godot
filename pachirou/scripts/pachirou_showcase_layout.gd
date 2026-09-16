@@ -4,8 +4,9 @@ const GRID_SIZE: int = 18
 const TILE_SIZE: float = 1.0
 const GROUP_GAP_CELLS: int = 1
 const EXPECTED_STYLE_COUNT: int = 18
-const START_CELL_X: int = 2
-const ISLAND_FRONT_ROWS: Array[int] = [2,7,12]
+# Shift the complete showcase one grid cell down-left, preserving all spacing.
+const START_CELL_X: int = 1
+const ISLAND_FRONT_ROWS: Array[int] = [3,8,13]
 # Island base depth is 0.70 in a 1.00-deep map cell. Every unit is aligned to
 # the BACK edge of its own cell according to the direction it faces.
 const UNIT_DEPTH: float = 0.70
@@ -93,7 +94,6 @@ func _place_front(node: Node3D,cell: Vector2i,row: int) -> void:
 	if not _cell_is_valid(cell): return
 	node.global_rotation_degrees = Vector3.ZERO
 	var snapped_position := _cell_to_world(cell)
-	# 0-degree units face +Z, so their rear is -Z: align them to the -Z edge.
 	snapped_position.z -= REAR_EDGE_OFFSET
 	node.global_position = snapped_position
 	_set_grid_meta(node,cell,row,"front")
@@ -102,7 +102,6 @@ func _rotate_then_snap_back(node: Node3D,cell: Vector2i,row: int) -> void:
 	if not _cell_is_valid(cell): return
 	node.global_rotation_degrees = Vector3(0.0,180.0,0.0)
 	var snapped_position := _cell_to_world(cell)
-	# 180-degree units face -Z, so their rear is +Z: align them to the +Z edge.
 	snapped_position.z += REAR_EDGE_OFFSET
 	node.global_position = snapped_position
 	_set_grid_meta(node,cell,row,"back")

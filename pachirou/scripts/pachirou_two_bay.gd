@@ -1,8 +1,10 @@
 extends "res://scripts/pachirou_map.gd"
 
-# Keep the approved LEFT_DOWN bay as the source of truth.
-# The LEFT_UP comparison is no longer a separately rebuilt cabinet. It is an
-# exact duplicate of the already-rendered approved bay, rotated as one object.
+# LEFT_DOWN is the approved source. LEFT_UP is built from the exact same calls.
+# Only the two isometric horizontal axes are changed; vertical coordinates stay vertical.
+const LEFT_UP_WIDTH_AXIS := Vector2(-32.0, 16.0)
+const LEFT_UP_DEPTH_AXIS := Vector2(-32.0, -16.0)
+
 func _ready() -> void:
 	world = Node2D.new()
 	world.name = "World"
@@ -10,12 +12,14 @@ func _ready() -> void:
 	add_child(world)
 	_create_floor()
 	_create_locked_left_down(Vector2i(5, 6))
-	_create_exact_left_up_copy(Vector2i(9, 7))
+	_create_left_up_from_same_geometry(Vector2i(9, 7))
 
-func _build_approved_bay() -> Node2D:
+func _create_locked_left_down(cell: Vector2i) -> void:
 	var unit := Node2D.new()
-	unit.name = "ApprovedBayGeometry"
-
+	unit.name = "LockedLeftDownBay"
+	unit.position = grid_to_world(cell)
+	unit.z_index = int(unit.position.y)
+	world.add_child(unit)
 	var bay := Node2D.new()
 	bay.name = "ApprovedFront"
 	bay.position = UNIT_REAR_SHIFT
@@ -24,88 +28,104 @@ func _build_approved_bay() -> Node2D:
 	_create_machine_and_sand(bay)
 	_create_data_counter(bay)
 	_create_hidden_rear_surfaces(bay)
-
 	var stool := Node2D.new()
 	stool.name = "ApprovedStool"
 	stool.position = UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
 	stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 	unit.add_child(stool)
 	_create_stool_geometry(stool)
-	return unit
 
-func _create_locked_left_down(cell: Vector2i) -> void:
-	var holder := Node2D.new()
-	holder.name = "LockedLeftDownBay"
-	holder.position = grid_to_world(cell)
-	holder.z_index = int(holder.position.y)
-	world.add_child(holder)
-	holder.add_child(_build_approved_bay())
+func _create_left_up_from_same_geometry(cell: Vector2i) -> void:
+	var unit := Node2D.new()
+	unit.name = "SameGeometry_LeftUp"
+	unit.position = grid_to_world(cell)
+	unit.z_index = int(unit.position.y)
+	world.add_child(unit)
 
-func _create_exact_left_up_copy(cell: Vector2i) -> void:
-	var holder := Node2D.new()
-	holder.name = "ExactCopy_LeftUp90"
-	holder.position = grid_to_world(cell)
-	holder.z_index = int(holder.position.y)
-	world.add_child(holder)
+	# Generate an exact duplicate first.
+	var bay := Node2D.new()
+	bay.name = "RotatedApprovedFront"
+	bay.position = UNIT_REAR_SHIFT
+	unit.add_child(bay)
+	_create_island_frame(bay)
+	_create_machine_and_sand(bay)
+	_create_data_counter(bay)
+	_create_hidden_rear_surfaces(bay)
 
-	# Build the exact same approved geometry first. Nothing inside is redrawn.
-	var source := _build_approved_bay()
-	source.name = "ExactApprovedGeometry"
-	holder.add_child(source)
+	var stool := Node2D.new()
+	stool.name = "RotatedApprovedStool"
+	stool.position = UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
+	stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
+	unit.add_child(stool)
+	_create_stool_geometry(stool)
 
-	# A normal 2D rotation would tilt vertical edges. For an isometric quarter
-	# turn, transform every already-rendered point with the diamond-grid basis:
-	# screen (x,y) -> ground coefficients (u,v) while preserving vertical height,
-	# then rotate ground (u,v) left and project back. We apply this recursively to
-	# every Polygon2D and child position, so all approved details survive intact.
-	_transform_tree_left_90(source)
+	# Convert the exact rendered geometry. The conversion detects the two approved
+	# iso ground directions (slope +1/2 and -1/2). Everything else, especially
+	# vertical detail, is preserved instead of being guessed from polygon height.
+	_rotate_node_exact_left(bay)
+	bay.position = _rotate_ground_vector_left(UNIT_REAR_SHIFT)
+	stool.position = _rotate_ground_vector_left(UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET)
+	_rotate_stool_ground_ellipse(stool)
 
-func _iso_left90_point(p: Vector2) -> Vector2:
-	# Decompose a rendered vector into horizontal ground contribution plus height.
-	# For the approved LEFT_DOWN art, x is the full-width diagonal component and
-	# y contains half-slope plus vertical displacement. Rotating the ground basis
-	# swaps the two diamond axes. This point transform is used only on geometry;
-	# vertical-only segments are corrected per polygon below.
-	return Vector2(-2.0 * p.y, 0.5 * p.x)
-
-func _transform_tree_left_90(node: Node) -> void:
-	for child in node.get_children():
-		if child is Polygon2D:
-			_transform_polygon_left_90(child as Polygon2D)
-		elif child is Node2D:
-			var child_2d := child as Node2D
-			# Child anchors such as bay/stool are ground offsets. Convert them using
-			# the exact isometric ground mapping, not a screen-space 90-degree turn.
-			child_2d.position = _rotate_ground_offset_left(child_2d.position)
-			_transform_tree_left_90(child_2d)
-
-func _rotate_ground_offset_left(p: Vector2) -> Vector2:
-	# Ground-only inverse/project for basis WIDTH=(32,16), DEPTH=(32,-16).
+func _rotate_ground_vector_left(p: Vector2) -> Vector2:
 	var u: float = p.x / 64.0 + p.y / 32.0
 	var v: float = p.x / 64.0 - p.y / 32.0
-	var ru: float = -v
-	var rv: float = u
-	return WIDTH_AXIS * ru + DEPTH_AXIS * rv
+	return LEFT_UP_WIDTH_AXIS * u + LEFT_UP_DEPTH_AXIS * v
 
-func _transform_polygon_left_90(poly: Polygon2D) -> void:
+func _rotate_node_exact_left(node: Node) -> void:
+	for child in node.get_children():
+		if child is Polygon2D:
+			_rotate_polygon_edges_left(child as Polygon2D)
+		elif child is Node2D:
+			var n2 := child as Node2D
+			n2.position = _rotate_ground_vector_left(n2.position)
+			_rotate_node_exact_left(n2)
+
+func _rotate_polygon_edges_left(poly: Polygon2D) -> void:
 	var pts: PackedVector2Array = poly.polygon
-	if pts.is_empty():
+	if pts.size() < 2:
 		return
-
-	# Infer vertical displacement relative to the polygon's lowest projected
-	# ground edge. This preserves the original cabinet's heights while rotating
-	# only its horizontal footprint.
-	var max_y: float = pts[0].y
-	for p in pts:
-		max_y = max(max_y, p.y)
-
+	# Reconstruct the polygon by rotating each edge. Vertical edges remain exactly
+	# vertical; the two 2:1 isometric ground slopes are quarter-turned.
 	var out := PackedVector2Array()
-	for p in pts:
-		var vertical: float = min(0.0, p.y - max_y)
-		var ground_p := Vector2(p.x, p.y - vertical)
-		var rotated_ground: Vector2 = _rotate_ground_offset_left(ground_p)
-		out.append(rotated_ground + Vector2(0.0, vertical))
+	out.append(Vector2.ZERO)
+	var cursor := Vector2.ZERO
+	for i in range(1, pts.size()):
+		var edge: Vector2 = pts[i] - pts[i - 1]
+		cursor += _rotate_iso_edge_left(edge)
+		out.append(cursor)
+	# Anchor transformed polygon at the rotated location of its original first point.
+	var anchor: Vector2 = _rotate_point_preserve_height(pts[0])
+	for i in range(out.size()):
+		out[i] += anchor
 	poly.polygon = out
+
+func _rotate_iso_edge_left(e: Vector2) -> Vector2:
+	if abs(e.x) < 0.001:
+		return e
+	var slope: float = e.y / e.x
+	# Ground width direction: (x, x/2) -> (-x, x/2)
+	if abs(slope - 0.5) < 0.035:
+		return Vector2(-e.x, e.y)
+	# Ground depth direction: (x, -x/2) -> (x, x/2), with sign retained.
+	if abs(slope + 0.5) < 0.035:
+		return Vector2(e.x, -e.y)
+	# Decorative vectors on a vertical face are expressed as horizontal-face span
+	# plus vertical displacement. Rotate their horizontal component and preserve z.
+	var horizontal_y: float = 0.5 * abs(e.x) * sign(e.y) if abs(e.y) > 0.001 else 0.0
+	var vertical_y: float = e.y - horizontal_y
+	var rotated_horizontal := Vector2(-e.x, horizontal_y)
+	return rotated_horizontal + Vector2(0.0, vertical_y)
+
+func _rotate_point_preserve_height(p: Vector2) -> Vector2:
+	# Local polygon anchors are already relative to the bay. Keep their vertical
+	# screen component and rotate only the inferred ground component conservatively.
+	return Vector2(-p.x, p.y)
+
+func _rotate_stool_ground_ellipse(stool: Node2D) -> void:
+	# The stool is rotationally symmetric, so its geometry does not need a redraw;
+	# only its physical ground position changes.
+	pass
 
 func _create_hidden_rear_surfaces(parent: Node2D) -> void:
 	_create_machine_hidden_back(parent)

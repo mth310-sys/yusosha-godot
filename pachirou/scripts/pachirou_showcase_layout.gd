@@ -4,20 +4,17 @@ const GRID_SIZE: int = 18
 const TILE_SIZE: float = 1.0
 const GROUP_GAP_CELLS: int = 1
 const EXPECTED_STYLE_COUNT: int = 18
-# Shift the complete showcase one grid cell down-left, preserving all spacing.
 const START_CELL_X: int = 1
 const ISLAND_FRONT_ROWS: Array[int] = [3,8,13]
-# Island base depth is 0.70 in a 1.00-deep map cell. Every unit is aligned to
-# the BACK edge of its own cell according to the direction it faces.
 const UNIT_DEPTH: float = 0.70
 const REAR_EDGE_OFFSET: float = (TILE_SIZE-UNIT_DEPTH)*0.5
 
 func _ready() -> void:
-	call_deferred("_arrange_showcase")
+	# Source machines are already created by the World children before this sibling's
+	# _ready runs. Arrange immediately so the temporary source layout is never rendered.
+	_arrange_showcase()
 
 func _arrange_showcase() -> void:
-	await get_tree().process_frame
-	await get_tree().process_frame
 	var world := get_parent().get_node_or_null("World") as Node3D
 	if world == null: return
 	_remove_layout_duplicates(world)

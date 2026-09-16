@@ -33,7 +33,6 @@ func _arrange_showcase() -> void:
 		var index_in_group: int = index_in_row%3
 		var first_cell_x: int = START_CELL_X+group*(6+GROUP_GAP_CELLS)+index_in_group*2
 		var front_cell_z: int = START_CELL_Z+row*ROW_STEP_CELLS
-		# Front side: two identical machines per style, fully grid snapped.
 		_remove_clay_discs(source)
 		_place_on_cell(source,Vector2i(first_cell_x,front_cell_z),row,0)
 		var front_pair := source.duplicate() as Node3D
@@ -41,8 +40,6 @@ func _arrange_showcase() -> void:
 		world.add_child(front_pair)
 		_remove_clay_discs(front_pair)
 		_place_on_cell(front_pair,Vector2i(first_cell_x+1,front_cell_z),row,0)
-		# Reverse side: same two machines occupy the immediately adjacent rear grid row,
-		# rotated 180 degrees so the backs face the front-side backs.
 		var reverse_a := source.duplicate() as Node3D
 		reverse_a.name = "ShowcaseReverse_%02d_A" % style_number
 		world.add_child(reverse_a)
@@ -73,7 +70,7 @@ func _style_number(node: Node3D) -> int:
 	if node_name.begins_with("Style_") and not node_name.contains("_Pair"):
 		var suffix := node_name.trim_prefix("Style_")
 		if suffix.is_valid_int(): return int(suffix)
-	if node_name.begins_with("ExtraStyle_\") and not node_name.contains("_Pair"):
+	if node_name.begins_with("ExtraStyle_") and not node_name.contains("_Pair"):
 		var suffix := node_name.trim_prefix("ExtraStyle_")
 		if suffix.is_valid_int(): return 12+int(suffix)
 	return -1
@@ -83,8 +80,7 @@ func _remove_layout_duplicates(node: Node) -> void:
 		var child_name := String(child.name)
 		if child_name.begins_with("ShowcasePair_") or child_name.begins_with("ShowcaseReverse_"):
 			child.queue_free()
-		else:
-			_remove_layout_duplicates(child)
+		else: _remove_layout_duplicates(child)
 
 func _cell_to_world(cell: Vector2i) -> Vector3:
 	var half: float = float(GRID_SIZE-1)*0.5

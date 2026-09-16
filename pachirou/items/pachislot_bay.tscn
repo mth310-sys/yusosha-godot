@@ -7,6 +7,18 @@ script = ExtResource("1_bay")
 
 [node name="Frame" type="Node2D" parent="."]
 
+[node name="IslandBase" type="Node2D" parent="Frame"]
+
+[node name="BackBoard" type="Node2D" parent="Frame"]
+
+[node name="UpperBox" type="Node2D" parent="Frame"]
+
 [node name="Equipment" type="Node2D" parent="."]
+
+[node name="Machine" type="Node2D" parent="Equipment"]
+
+[node name="Sand" type="Node2D" parent="Equipment"]
+
+[node name="DataCounter" type="Node2D" parent="Equipment"]
 
 [node name="Stool" type="Node2D" parent="."]

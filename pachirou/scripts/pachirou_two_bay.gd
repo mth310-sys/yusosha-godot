@@ -1,109 +1,173 @@
 extends "res://scripts/pachirou_map.gd"
 
-# Direction test: the approved LEFT_DOWN model is preserved as the source.
-# This file now displays its 90-degree-left floor orientation (RIGHT_DOWN).
-# Vertical height is never rotated or inverted.
+# Keep the approved LEFT_DOWN bay unchanged and show a separate LEFT_UP bay.
 func _ready() -> void:
 	world = Node2D.new()
 	world.name = "World"
 	world.y_sort_enabled = true
 	add_child(world)
 	_create_floor()
-	_create_right_down_from_approved(Vector2i(7, 6))
+	_create_locked_left_down(Vector2i(5, 6))
+	_create_left_up_test(Vector2i(9, 7))
 
-func _rx(p: Vector2) -> Vector2:
-	return Vector2(-p.x, p.y)
-
-func _create_right_down_from_approved(cell: Vector2i) -> void:
+func _create_locked_left_down(cell: Vector2i) -> void:
 	var unit := Node2D.new()
-	unit.name = "RightDown90Left"
+	unit.name = "LockedLeftDownBay"
 	unit.position = grid_to_world(cell)
 	unit.z_index = int(unit.position.y)
 	world.add_child(unit)
-
 	var bay := Node2D.new()
-	bay.name = "RotatedBay"
-	bay.position = _rx(UNIT_REAR_SHIFT)
+	bay.name = "ApprovedFront"
+	bay.position = UNIT_REAR_SHIFT
 	unit.add_child(bay)
-	_create_rotated_frame(bay)
-	_create_rotated_machine_and_sand(bay)
-	_create_rotated_counter(bay)
-	_create_rotated_hidden_rear(bay)
-
+	_create_island_frame(bay)
+	_create_machine_and_sand(bay)
+	_create_data_counter(bay)
+	_create_hidden_rear_surfaces(bay)
 	var stool := Node2D.new()
-	stool.name = "RotatedStool"
-	stool.position = _rx(UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET)
+	stool.name = "ApprovedStool"
+	stool.position = UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
 	stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 	unit.add_child(stool)
 	_create_stool_geometry(stool)
 
-func _create_rotated_frame(parent: Node2D) -> void:
-	var floor_left := _rx(Vector2(-32.0, 0.0))
-	var floor_front := _rx(Vector2(0.0, 16.0))
-	var floor_back_right := _rx(Vector2(0.0, 16.0) + DEPTH_AXIS * BASE_DEPTH_RATIO)
-	var top_left := _rx(_base_top_left())
-	var top_front := _rx(_base_top_front())
-	var top_back_left := _rx(_base_back_left())
-	var top_back_right := _rx(_base_back_right())
+# LEFT_DOWN -> 90 degrees left -> LEFT_UP.
+# This is deliberately a separate model; the approved source above is untouched.
+func _create_left_up_test(cell: Vector2i) -> void:
+	var unit := Node2D.new()
+	unit.name = "LeftUp90"
+	unit.position = grid_to_world(cell)
+	unit.z_index = int(unit.position.y)
+	world.add_child(unit)
+	var bay := Node2D.new()
+	bay.name = "LeftUpBay"
+	bay.position = Vector2(-UNIT_REAR_SHIFT.x, -UNIT_REAR_SHIFT.y)
+	unit.add_child(bay)
+	_create_left_up_frame(bay)
+	_create_left_up_equipment(bay)
+	_create_left_up_counter(bay)
+	var stool := Node2D.new()
+	stool.name = "LeftUpStool"
+	stool.position = bay.position + Vector2(-STOOL_FRONT_OFFSET.x, -STOOL_FRONT_OFFSET.y)
+	stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
+	unit.add_child(stool)
+	_create_stool_geometry(stool)
+
+func _create_left_up_frame(parent: Node2D) -> void:
+	var floor_left := Vector2(32.0, 0.0)
+	var floor_front := Vector2(0.0, -16.0)
+	var rear_depth := Vector2(-DEPTH_AXIS.x, DEPTH_AXIS.y) * BASE_DEPTH_RATIO
+	var floor_back := floor_front + rear_depth
 	var up := Vector2(0.0, -BASE_HEIGHT)
+	var top_left := floor_left + up
+	var top_front := floor_front + up
+	var top_back_left := floor_left + rear_depth + up
+	var top_back_right := floor_back + up
 	_add_poly(parent, PackedVector2Array([floor_left, floor_front, top_front, top_left]), BASE_FRONT, 0)
-	_add_poly(parent, PackedVector2Array([floor_front, floor_back_right, top_back_right, top_front]), BASE_SIDE, 0)
+	_add_poly(parent, PackedVector2Array([floor_front, floor_back, top_back_right, top_front]), BASE_SIDE, 0)
 	_add_poly(parent, PackedVector2Array([top_back_left, top_back_right, top_front, top_left]), BASE_TOP, 0)
 	var board_up := Vector2(0.0, -BACKBOARD_HEIGHT)
 	_add_poly(parent, PackedVector2Array([top_back_left, top_back_right, top_back_right + board_up, top_back_left + board_up]), BACKBOARD, 1)
-	var thickness := _rx(_board_thickness())
-	_add_poly(parent, PackedVector2Array([top_back_right, top_back_right + thickness, top_back_right + thickness + board_up, top_back_right + board_up]), BACKBOARD_SIDE, 2)
-	var box_bl := _rx(_upper_box_back_left())
-	var box_br := _rx(_upper_box_back_right())
-	var box_push := _rx(_upper_box_front_vector())
-	var box_fl := box_bl + box_push
-	var box_fr := box_br + box_push
+	_add_poly(parent, _face_quad(top_back_left, top_back_right, board_up, 0.07, 0.11, 0.06, 0.94), Color("565d65"), 2)
+	_add_poly(parent, _face_quad(top_back_left, top_back_right, board_up, 0.89, 0.93, 0.06, 0.94), Color("565d65"), 2)
+	var box_left := top_back_left + Vector2(0.0, -MACHINE_HEIGHT + 2.0)
+	var box_right := top_back_right + Vector2(0.0, -MACHINE_HEIGHT + 2.0)
+	var box_push := -rear_depth * 0.48
 	var box_up := Vector2(0.0, -UPPER_BOX_HEIGHT)
-	_add_poly(parent, PackedVector2Array([box_fl, box_fr, box_fr + box_up, box_fl + box_up]), SHELF_EDGE, 20)
-	_add_poly(parent, PackedVector2Array([box_bl + box_up, box_br + box_up, box_fr + box_up, box_fl + box_up]), SHELF_TOP, 20)
+	_add_poly(parent, PackedVector2Array([box_left + box_push, box_right + box_push, box_right + box_push + box_up, box_left + box_push + box_up]), SHELF_EDGE, 20)
+	_add_poly(parent, PackedVector2Array([box_left + box_up, box_right + box_up, box_right + box_push + box_up, box_left + box_push + box_up]), SHELF_TOP, 20)
 
-func _create_rotated_machine_and_sand(parent: Node2D) -> void:
-	# Rotate each physical footprint from the approved source. Do not swap or
-	# reconstruct the pair; their relationship is preserved exactly.
-	var machine_lb := _rx(_equipment_front_left())
-	var machine_fb := _rx(_equipment_front_left() + MACHINE_FRONT_VECTOR)
+func _create_left_up_equipment(parent: Node2D) -> void:
+	# LEFT_UP shows the physical rear of the same machine/sand pair.
+	var machine_lb := Vector2(24.0, -BASE_HEIGHT - 4.0)
+	var machine_width := Vector2(-MACHINE_FRONT_VECTOR.x, MACHINE_FRONT_VECTOR.y)
+	var sand_width := Vector2(-SAND_FRONT_VECTOR.x, SAND_FRONT_VECTOR.y)
+	var depth := Vector2(-MACHINE_DEPTH.x, -MACHINE_DEPTH.y)
+	var sand_depth := Vector2(-SAND_DEPTH.x, -SAND_DEPTH.y)
+	var machine_fb := machine_lb + machine_width
 	var sand_lb := machine_fb
-	var sand_fb := _rx(_equipment_front_left() + MACHINE_FRONT_VECTOR + SAND_FRONT_VECTOR)
-	_create_machine(parent, machine_lb, machine_fb, _rx(MACHINE_DEPTH))
-	_create_sand(parent, sand_lb, sand_fb, _rx(SAND_DEPTH))
+	var sand_fb := sand_lb + sand_width
+	_create_machine_back(parent, machine_lb, machine_fb, depth)
+	_create_sand_back(parent, sand_lb, sand_fb, sand_depth)
 
-func _create_rotated_counter(parent: Node2D) -> void:
-	var box_fl := _rx(_upper_box_back_left() + _upper_box_front_vector())
-	var box_fr := _rx(_upper_box_back_right() + _upper_box_front_vector())
-	var span := box_fr - box_fl
-	var left := box_fl + span * 0.12 + Vector2(0.0, -2.0)
-	var right := box_fl + span * 0.88 + Vector2(0.0, -2.0)
+func _create_machine_back(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> void:
+	var up := Vector2(0.0, -MACHINE_HEIGHT)
+	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), Color("343b43"), 10)
+	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), Color("242a31"), 10)
+	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), Color("626972"), 10)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.12, 0.88, 0.56, 0.88), Color("272d34"), 11)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.20, 0.80, 0.67, 0.72), Color("11161b"), 12)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.20, 0.80, 0.77, 0.82), Color("11161b"), 12)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.17, 0.83, 0.12, 0.38), Color("2a3037"), 11)
+
+func _create_sand_back(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> void:
+	var up := Vector2(0.0, -SAND_HEIGHT)
+	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), Color("59616a"), 10)
+	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), Color("3d444c"), 10)
+	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), Color("858b92"), 10)
+	_add_poly(parent, _face_quad(lb, fb, up, 0.18, 0.82, 0.58, 0.83), Color("3a4149"), 11)
+
+func _create_left_up_counter(parent: Node2D) -> void:
+	var left := Vector2(22.0, -BASE_HEIGHT - MACHINE_HEIGHT - 6.0)
+	var right := Vector2(0.0, -BASE_HEIGHT - MACHINE_HEIGHT - 17.0)
 	var up := Vector2(0.0, -8.0)
-	var push := _rx(-DEPTH_AXIS * 0.055)
-	_create_front_box(parent, left, right, up, push, COUNTER_FRONT, COUNTER_SIDE, SHELF_EDGE, 30)
-	_add_poly(parent, _face_quad(left + push, right + push, up, 0.12, 0.88, 0.24, 0.72), COUNTER_SCREEN, 31)
+	var push := Vector2(-5.0, 2.5)
+	_create_front_box(parent, left, right, up, push, Color("353c44"), Color("242a30"), SHELF_EDGE, 30)
+	_add_poly(parent, _face_quad(left + push, right + push, up, 0.12, 0.88, 0.24, 0.72), Color("20262d"), 31)
 
-func _create_rotated_hidden_rear(parent: Node2D) -> void:
-	var machine_front_left := _rx(_equipment_front_left())
-	var machine_front_right := _rx(_equipment_front_left() + MACHINE_FRONT_VECTOR)
-	var machine_back_left := machine_front_left + _rx(MACHINE_DEPTH)
-	var machine_back_right := machine_front_right + _rx(MACHINE_DEPTH)
-	var machine_up := Vector2(0.0, -MACHINE_HEIGHT)
-	_add_poly(parent, PackedVector2Array([machine_back_left, machine_back_right, machine_back_right + machine_up, machine_back_left + machine_up]), Color("343b43"), 8)
-	_add_poly(parent, _face_quad(machine_back_left, machine_back_right, machine_up, 0.10, 0.90, 0.12, 0.88), Color("292f36"), 9)
+func _create_hidden_rear_surfaces(parent: Node2D) -> void:
+	_create_machine_hidden_back(parent)
+	_create_sand_hidden_back(parent)
+	_create_counter_hidden_back(parent)
+	_create_island_hidden_back(parent)
 
-	var sand_front_left := machine_front_right
-	var sand_front_right := _rx(_equipment_front_left() + MACHINE_FRONT_VECTOR + SAND_FRONT_VECTOR)
-	var sand_back_left := sand_front_left + _rx(SAND_DEPTH)
-	var sand_back_right := sand_front_right + _rx(SAND_DEPTH)
-	var sand_up := Vector2(0.0, -SAND_HEIGHT)
-	_add_poly(parent, PackedVector2Array([sand_back_left, sand_back_right, sand_back_right + sand_up, sand_back_left + sand_up]), Color("59616a"), 8)
-	_add_poly(parent, _face_quad(sand_back_left, sand_back_right, sand_up, 0.14, 0.86, 0.14, 0.86), Color("444b53"), 9)
+func _create_machine_hidden_back(parent: Node2D) -> void:
+	var front_left: Vector2 = _equipment_front_left()
+	var front_right: Vector2 = front_left + MACHINE_FRONT_VECTOR
+	var back_left: Vector2 = front_left + MACHINE_DEPTH
+	var back_right: Vector2 = front_right + MACHINE_DEPTH
+	var up := Vector2(0.0, -MACHINE_HEIGHT)
+	_add_poly(parent, PackedVector2Array([back_left, back_right, back_right + up, back_left + up]), Color("343b43"), 8)
+	_add_poly(parent, _face_quad(back_left, back_right, up, 0.10, 0.90, 0.12, 0.88), Color("292f36"), 9)
+	_add_poly(parent, _face_quad(back_left, back_right, up, 0.18, 0.82, 0.20, 0.40), Color("3e454d"), 9)
+	_add_poly(parent, _face_quad(back_left, back_right, up, 0.22, 0.78, 0.60, 0.66), Color("151a20"), 10)
+	_add_poly(parent, _face_quad(back_left, back_right, up, 0.22, 0.78, 0.72, 0.78), Color("151a20"), 10)
+	_add_poly(parent, _face_quad(back_left, back_right, up, 0.43, 0.57, 0.84, 0.89), Color("777f87"), 10)
 
-	var board_left := _rx(_base_back_left() + _board_thickness())
-	var board_right := _rx(_base_back_right() + _board_thickness())
+func _create_sand_hidden_back(parent: Node2D) -> void:
+	var machine_front_right: Vector2 = _equipment_front_left() + MACHINE_FRONT_VECTOR
+	var front_left: Vector2 = machine_front_right
+	var front_right: Vector2 = front_left + SAND_FRONT_VECTOR
+	var back_left: Vector2 = front_left + SAND_DEPTH
+	var back_right: Vector2 = front_right + SAND_DEPTH
+	var up := Vector2(0.0, -SAND_HEIGHT)
+	_add_poly(parent, PackedVector2Array([back_left, back_right, back_right + up, back_left + up]), Color("59616a"), 8)
+	_add_poly(parent, _face_quad(back_left, back_right, up, 0.14, 0.86, 0.14, 0.86), Color("444b53"), 9)
+	_add_poly(parent, _face_quad(back_left, back_right, up, 0.24, 0.76, 0.60, 0.66), Color("171c21"), 10)
+	_add_poly(parent, _face_quad(back_left, back_right, up, 0.24, 0.76, 0.72, 0.78), Color("171c21"), 10)
+
+func _create_counter_hidden_back(parent: Node2D) -> void:
+	var box_fl: Vector2 = _upper_box_back_left() + _upper_box_front_vector()
+	var box_fr: Vector2 = _upper_box_back_right() + _upper_box_front_vector()
+	var span: Vector2 = box_fr - box_fl
+	var front_left: Vector2 = box_fl + span * 0.12 + Vector2(0.0, -2.0)
+	var front_right: Vector2 = box_fl + span * 0.88 + Vector2(0.0, -2.0)
+	var rear_push: Vector2 = DEPTH_AXIS * 0.055
+	var back_left: Vector2 = front_left + rear_push
+	var back_right: Vector2 = front_right + rear_push
+	var up := Vector2(0.0, -8.0)
+	_add_poly(parent, PackedVector2Array([back_left, back_right, back_right + up, back_left + up]), Color("353c44"), 28)
+	_add_poly(parent, _face_quad(back_left, back_right, up, 0.12, 0.88, 0.24, 0.72), Color("20262d"), 29)
+
+func _create_island_hidden_back(parent: Node2D) -> void:
+	var board_left: Vector2 = _base_back_left() + _board_thickness()
+	var board_right: Vector2 = _base_back_right() + _board_thickness()
 	var board_up := Vector2(0.0, -BACKBOARD_HEIGHT)
 	_add_poly(parent, PackedVector2Array([board_left, board_right, board_right + board_up, board_left + board_up]), Color("4d545c"), 0)
+	_add_poly(parent, _face_quad(board_left, board_right, board_up, 0.07, 0.11, 0.06, 0.94), Color("60676f"), 1)
+	_add_poly(parent, _face_quad(board_left, board_right, board_up, 0.89, 0.93, 0.06, 0.94), Color("60676f"), 1)
+	_add_poly(parent, _face_quad(board_left, board_right, board_up, 0.16, 0.84, 0.18, 0.22), Color("3f464e"), 1)
+	_add_poly(parent, _face_quad(board_left, board_right, board_up, 0.16, 0.84, 0.76, 0.80), Color("3f464e"), 1)
 
 func _create_stool_geometry(stool: Node2D) -> void:
 	var seat_y: float = -38.4

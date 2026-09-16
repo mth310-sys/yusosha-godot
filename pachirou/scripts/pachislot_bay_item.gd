@@ -39,7 +39,6 @@ func setup(p_grid: IsometricGrid, p_cell: Vector2i, p_direction: Direction) -> b
 	_apply_grid_position()
 	_update_name()
 	build()
-	_apply_item_rotation()
 	return true
 
 func move_to(p_cell: Vector2i) -> bool:
@@ -55,7 +54,7 @@ func rotate_to(p_direction: Direction) -> bool:
 		return false
 	direction = p_direction
 	_update_name()
-	_apply_item_rotation()
+	build()
 	return true
 
 func rotate_clockwise() -> bool:
@@ -94,6 +93,8 @@ func build() -> void:
 	clear_visuals()
 	_reset_component_transforms()
 	_build_canonical_left_down()
+	if direction != Direction.LEFT_DOWN:
+		_apply_isometric_direction()
 
 func _build_canonical_left_down() -> void:
 	frame.position = ISLAND_LOCAL_SHIFT
@@ -114,10 +115,47 @@ func _build_canonical_left_down() -> void:
 	_create_data_counter(data_counter)
 	_create_stool_geometry(stool)
 
-func _apply_item_rotation() -> void:
-	# Rotation is applied to the completed item root. No direction-specific
-	# geometry is generated and no child component is repositioned.
-	rotation_degrees = float(int(direction) * 90)
+func _apply_isometric_direction() -> void:
+	# Keep every vertical screen-space height vertical. Only the ground/contact
+	# coordinate of each completed polygon point is quarter-turned in grid space.
+	# For each Polygon2D we use its lowest screen point as the local ground line;
+	# the vertical delta above that line is preserved exactly.
+	_transform_node_ground(frame)
+	_transform_node_ground(equipment)
+	_transform_node_ground(stool)
+	machine_slot.position = _turn_ground(machine_slot.position)
+
+func _transform_node_ground(node: Node2D) -> void:
+	node.position = _turn_ground(node.position)
+	_transform_polygon_descendants(node)
+
+func _transform_polygon_descendants(node: Node) -> void:
+	for child in node.get_children():
+		if child is Polygon2D:
+			var poly := child as Polygon2D
+			poly.polygon = _turn_polygon_preserve_vertical(poly.polygon)
+		else:
+			_transform_polygon_descendants(child)
+
+func _turn_polygon_preserve_vertical(points: PackedVector2Array) -> PackedVector2Array:
+	if points.is_empty():
+		return points
+	var ground_y: float = points[0].y
+	for point in points:
+		ground_y = maxf(ground_y, point.y)
+	var turned := PackedVector2Array()
+	for point in points:
+		var vertical_height: float = ground_y - point.y
+		var ground_point := Vector2(point.x, ground_y)
+		var turned_ground: Vector2 = _turn_ground(ground_point)
+		turned.append(turned_ground + Vector2(0.0, -vertical_height))
+	return turned
+
+func _turn_ground(point: Vector2) -> Vector2:
+	var result: Vector2 = point
+	for i in range(int(direction)):
+		result = Vector2(-2.0 * result.y, result.x * 0.5)
+	return result
 
 func _create_stool_geometry(parent: Node2D) -> void:
 	var seat_y: float = -38.4
@@ -165,6 +203,7 @@ func _grid_direction(p_direction: Direction) -> IsometricGrid.Direction:
 	return p_direction as IsometricGrid.Direction
 
 func _reset_component_transforms() -> void:
+	rotation = 0.0
 	frame.position = Vector2.ZERO
 	equipment.position = Vector2.ZERO
 	machine_slot.position = Vector2.ZERO

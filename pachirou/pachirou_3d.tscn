@@ -29,4 +29,9 @@ script = ExtResource("2_camera")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-55, -35, 0)
 shadow_enabled = true
-light_energy = 1.2
+light_energy = 1.05
+
+[node name="FillLight" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-42, 135, 0)
+light_energy = 0.32
+shadow_enabled = false

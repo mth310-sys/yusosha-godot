@@ -32,11 +32,20 @@ func _arrange_showcase() -> void:
 		var index_in_group: int = index_in_row%3
 		var first_cell_x: int = START_CELL_X+group*(6+GROUP_GAP_CELLS)+index_in_group*2
 		var cell_z: int = START_CELL_Z+row*ROW_STEP_CELLS
+		_remove_top_discs(source)
 		_place_on_cell(source,Vector2i(first_cell_x,cell_z),row)
 		var pair := source.duplicate() as Node3D
 		pair.name = "ShowcasePair_%02d" % style_number
 		world.add_child(pair)
+		_remove_top_discs(pair)
 		_place_on_cell(pair,Vector2i(first_cell_x+1,cell_z),row)
+
+func _remove_top_discs(node: Node) -> void:
+	for child in node.get_children():
+		if String(child.name) == "ClayHeader":
+			child.free()
+		else:
+			_remove_top_discs(child)
 
 func _collect_style_roots(node: Node,by_style: Dictionary) -> void:
 	for child in node.get_children():

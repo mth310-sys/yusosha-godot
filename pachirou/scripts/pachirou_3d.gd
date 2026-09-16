@@ -62,11 +62,11 @@ func _build_canonical_bay(cell: Vector2i) -> void:
 	_box(island, "BackRailR", Vector3(0.045, 0.92, 0.025), Vector3(0.45, BASE_H + 0.50, BACK_Z + 0.052), Color("565d65"))
 	_box(island, "BackRailMid", Vector3(0.025, 0.92, 0.025), Vector3(0.0, BASE_H + 0.50, BACK_Z + 0.052), Color("515860"))
 
-	# Upper equipment projects forward from the backboard.
-	var upper_box_z: float = -0.08
+	# Upper equipment projects clearly forward over the front equipment.
+	var upper_box_z: float = 0.04
 	_box(island, "UpperBox", Vector3(BASE_W, 0.14, 0.26), Vector3(0.0, 1.42, upper_box_z), Color("8d9399"))
 
-	# Data counter stays attached to the island upper equipment and follows it forward.
+	# Data counter remains part of and moves with the upper island equipment.
 	var counter_x: float = 0.0
 	var counter_y: float = 1.35
 	var counter_z: float = upper_box_z + 0.155

@@ -17,17 +17,17 @@ func _build_outer_ring() -> void:
 			# The original 18x18 floor remains untouched. Add only the two-cell perimeter.
 			if absf(world_x) <= old_half and absf(world_z) <= old_half:
 				continue
-			var tile := MeshInstance3D.new()
-			var mesh := BoxMesh.new()
+			var tile: MeshInstance3D = MeshInstance3D.new()
+			var mesh: BoxMesh = BoxMesh.new()
 			mesh.size = Vector3(TILE_SIZE, 0.04, TILE_SIZE)
 			tile.mesh = mesh
 			tile.position = Vector3(world_x, -0.02, world_z)
 			var shade: float = 0.72 if (x + z) % 2 == 0 else 0.58
 			tile.material_override = _material(Color(shade, shade, shade))
-		add_child(tile)
+			add_child(tile)
 
 func _material(color: Color) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
+	var material: StandardMaterial3D = StandardMaterial3D.new()
 	material.albedo_color = color
 	material.roughness = 0.92
 	return material

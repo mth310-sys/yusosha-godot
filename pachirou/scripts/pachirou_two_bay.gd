@@ -19,17 +19,15 @@ func _create_bay_item(cell: Vector2i) -> void:
 	item.build()
 
 func _render_bay_item(item: PachislotBayItem) -> void:
-	# All physical component roots share the approved bay origin.
 	item.frame.position = UNIT_REAR_SHIFT
 	item.equipment.position = UNIT_REAR_SHIFT
 	item.stool.position = UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
 	item.stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 
-	# Frame appearance is kept exactly as the approved source for now.
-	_create_island_frame(item.frame)
+	_create_island_base_item(item.island_base)
+	_create_backboard_item(item.back_board)
+	_create_upper_box_item(item.upper_box)
 
-	# Equipment is no longer one anonymous polygon group: each physical item owns
-	# its own geometry while using the exact same approved dimensions/coordinates.
 	var machine_lb: Vector2 = _equipment_front_left()
 	var machine_fb: Vector2 = machine_lb + MACHINE_FRONT_VECTOR
 	var sand_lb: Vector2 = machine_fb
@@ -38,6 +36,47 @@ func _render_bay_item(item: PachislotBayItem) -> void:
 	_create_sand(item.sand, sand_lb, sand_fb, SAND_DEPTH)
 	_create_data_counter(item.data_counter)
 	_create_stool_geometry(item.stool)
+
+func _create_island_base_item(parent: Node2D) -> void:
+	var floor_left := Vector2(-32.0, 0.0)
+	var floor_front := Vector2(0.0, 16.0)
+	var floor_back_right: Vector2 = floor_front + DEPTH_AXIS * BASE_DEPTH_RATIO
+	var top_left: Vector2 = _base_top_left()
+	var top_front: Vector2 = _base_top_front()
+	var top_back_left: Vector2 = _base_back_left()
+	var top_back_right: Vector2 = _base_back_right()
+	var base_up := Vector2(0.0, -BASE_HEIGHT)
+	_add_poly(parent, PackedVector2Array([floor_left, floor_front, top_front, top_left]), BASE_FRONT, 0)
+	_add_poly(parent, PackedVector2Array([floor_front, floor_back_right, top_back_right, top_front]), BASE_SIDE, 0)
+	_add_poly(parent, PackedVector2Array([top_back_left, top_back_right, top_front, top_left]), BASE_TOP, 0)
+	_add_poly(parent, _face_quad(floor_left, floor_front, base_up, 0.04, 0.96, 0.05, 0.14), Color("3d4349"), 1)
+	_add_poly(parent, _face_quad(floor_left, floor_front, base_up, 0.49, 0.51, 0.16, 0.94), Color("464c53"), 1)
+	_add_poly(parent, _face_quad(floor_left, floor_front, base_up, 0.05, 0.95, 0.91, 0.955), Color("70767d"), 1)
+	_add_poly(parent, _face_quad(floor_front, floor_back_right, base_up, 0.04, 0.96, 0.05, 0.13), Color("30363c"), 1)
+
+func _create_backboard_item(parent: Node2D) -> void:
+	var left: Vector2 = _base_back_left()
+	var right: Vector2 = _base_back_right()
+	var up := Vector2(0.0, -BACKBOARD_HEIGHT)
+	var thickness: Vector2 = _board_thickness()
+	_add_poly(parent, PackedVector2Array([left, right, right + up, left + up]), BACKBOARD, 1)
+	_add_poly(parent, PackedVector2Array([right, right + thickness, right + thickness + up, right + up]), BACKBOARD_SIDE, 2)
+	_add_poly(parent, _face_quad(left, right, up, 0.035, 0.075, 0.04, 0.96), Color("565d65"), 2)
+	_add_poly(parent, _face_quad(left, right, up, 0.925, 0.965, 0.04, 0.96), Color("565d65"), 2)
+	_add_poly(parent, _face_quad(left, right, up, 0.495, 0.505, 0.04, 0.96), Color("515860"), 2)
+	_add_poly(parent, _face_quad(left, right, up, 0.08, 0.92, 0.915, 0.95), Color("7b8289"), 2)
+
+func _create_upper_box_item(parent: Node2D) -> void:
+	var bl: Vector2 = _upper_box_back_left()
+	var br: Vector2 = _upper_box_back_right()
+	var push: Vector2 = _upper_box_front_vector()
+	var fl: Vector2 = bl + push
+	var fr: Vector2 = br + push
+	var up := Vector2(0.0, -UPPER_BOX_HEIGHT)
+	_add_poly(parent, PackedVector2Array([fl, fr, fr + up, fl + up]), SHELF_EDGE, 20)
+	_add_poly(parent, PackedVector2Array([fr, br, br + up, fr + up]), BACKBOARD_SIDE, 19)
+	_add_poly(parent, PackedVector2Array([bl + up, br + up, fr + up, fl + up]), SHELF_TOP, 20)
+	_add_poly(parent, PackedVector2Array([bl, br, fr, fl]), Color("555c64"), 19)
 
 func _create_stool_geometry(stool: Node2D) -> void:
 	var seat_y: float = -38.4

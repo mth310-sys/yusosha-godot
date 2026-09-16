@@ -3,7 +3,8 @@ extends Node3D
 const GRID_SIZE: int = 18
 const TILE_SIZE: float = 1.0
 const GROUP_GAP_CELLS: int = 1
-const ROW_STEP_CELLS: int = 3
+const EMPTY_ROWS_BETWEEN: int = 2
+const ROW_STEP_CELLS: int = EMPTY_ROWS_BETWEEN + 1
 const EXPECTED_STYLE_COUNT: int = 18
 const START_CELL_X: int = 2
 const START_CELL_Z: int = 5
@@ -15,21 +16,15 @@ func _arrange_showcase() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var world := get_parent().get_node_or_null("World") as Node3D
-	if world == null:
-		return
+	if world == null: return
 	_remove_old_pairs(world)
 	var by_style: Dictionary = {}
 	_collect_style_roots(world,by_style)
 	if by_style.size() < EXPECTED_STYLE_COUNT:
 		push_warning("ShowcaseLayout: expected 18 source styles, found %d" % by_style.size())
 		return
-	# Every position below is an integer map cell. No free-form world spacing is used.
-	# Each row: 3 styles x 2 machines, 1 empty cell, 3 styles x 2 machines.
-	# Row origins advance by 3 cells, leaving two empty grid rows between machine rows.
 	for style_number in range(1,EXPECTED_STYLE_COUNT+1):
-		if not by_style.has(style_number):
-			push_warning("ShowcaseLayout: missing style %d" % style_number)
-			return
+		if not by_style.has(style_number): return
 		var source := by_style[style_number] as Node3D
 		var row: int = (style_number-1)/6
 		var index_in_row: int = (style_number-1)%6
@@ -48,10 +43,8 @@ func _collect_style_roots(node: Node,by_style: Dictionary) -> void:
 		if child is Node3D:
 			var child_3d := child as Node3D
 			var number: int = _style_number(child_3d)
-			if number > 0 and not by_style.has(number):
-				by_style[number] = child_3d
-			else:
-				_collect_style_roots(child_3d,by_style)
+			if number > 0 and not by_style.has(number): by_style[number] = child_3d
+			else: _collect_style_roots(child_3d,by_style)
 
 func _style_number(node: Node3D) -> int:
 	var node_name := String(node.name)
@@ -65,10 +58,8 @@ func _style_number(node: Node3D) -> int:
 
 func _remove_old_pairs(node: Node) -> void:
 	for child in node.get_children():
-		if String(child.name).begins_with("ShowcasePair_"):
-			child.queue_free()
-		else:
-			_remove_old_pairs(child)
+		if String(child.name).begins_with("ShowcasePair_"): child.queue_free()
+		else: _remove_old_pairs(child)
 
 func _cell_to_world(cell: Vector2i) -> Vector3:
 	var half: float = float(GRID_SIZE-1)*0.5

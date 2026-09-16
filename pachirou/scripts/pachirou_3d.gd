@@ -5,18 +5,22 @@ const TILE_SIZE: float = 1.0
 
 enum Direction { FRONT, RIGHT, BACK, LEFT }
 
-# Accepted 2D reference proportions (commit 386f229):
-# machine front span 20.5, sand front span 7.0 -> sand is ~34% of machine width.
-const MACHINE_WIDTH: float = 0.68
-const MACHINE_DEPTH: float = 0.40
-const MACHINE_HEIGHT: float = 0.92
-const SAND_WIDTH: float = MACHINE_WIDTH * (7.0 / 20.5)
-const SAND_DEPTH: float = 0.40
-const SAND_HEIGHT: float = MACHINE_HEIGHT * (48.0 / 54.0)
-const GAP: float = 0.025
-const MACHINE_CENTER_X: float = -0.12
-const FRONT_Z: float = -0.13
-const SAND_CENTER_X: float = MACHINE_CENTER_X + MACHINE_WIDTH * 0.5 + GAP + SAND_WIDTH * 0.5
+# Accepted one-unit proportions from 386f229.
+# 2D: WIDTH_AXIS=32, machine=20.5, sand=7.0. They are contiguous on the same front plane.
+const UNIT_WIDTH: float = 1.0
+const UNIT_DEPTH: float = 0.70
+const BASE_HEIGHT: float = 0.56
+const MACHINE_WIDTH: float = 20.5 / 32.0
+const SAND_WIDTH: float = 7.0 / 32.0
+const EQUIPMENT_WIDTH: float = MACHINE_WIDTH + SAND_WIDTH
+const SIDE_MARGIN: float = (UNIT_WIDTH - EQUIPMENT_WIDTH) * 0.5
+const MACHINE_X: float = -UNIT_WIDTH * 0.5 + SIDE_MARGIN + MACHINE_WIDTH * 0.5
+const SAND_X: float = -UNIT_WIDTH * 0.5 + SIDE_MARGIN + MACHINE_WIDTH + SAND_WIDTH * 0.5
+const EQUIPMENT_Z: float = -0.20
+const MACHINE_DEPTH: float = 0.42
+const SAND_DEPTH: float = 0.42
+const MACHINE_HEIGHT: float = 0.86
+const SAND_HEIGHT: float = MACHINE_HEIGHT * 48.0 / 54.0
 
 var occupied: Dictionary = {}
 
@@ -91,40 +95,49 @@ func _remove_bay(bay: Node3D) -> void:
 func _build_bay_item(with_machine: bool) -> Node3D:
 	var bay := Node3D.new()
 	bay.name = "PachislotBay3D"
-
 	var island := Node3D.new()
 	island.name = "IslandEquipment"
 	bay.add_child(island)
 
-	# One-seat island body. Front opening contains machine + sand side by side.
-	_add_box(island, "IslandBase", Vector3(1.0, 0.55, 0.72), Vector3(0.0, 0.275, 0.0), Color("555b62"))
-	_add_box(island, "BackBoard", Vector3(1.0, 1.05, 0.10), Vector3(0.0, 1.05, 0.31), Color("666d75"))
-	_add_box(island, "UpperBox", Vector3(1.0, 0.16, 0.30), Vector3(0.0, 1.55, 0.20), Color("8d9399"))
+	# Island frame from the accepted unit: low base, rear board, upper equipment.
+	_add_box(island, "IslandBase", Vector3(UNIT_WIDTH, BASE_HEIGHT, UNIT_DEPTH), Vector3(0.0, BASE_HEIGHT * 0.5, 0.0), Color("555b62"))
+	_add_box(island, "BackBoard", Vector3(UNIT_WIDTH, 1.02, 0.09), Vector3(0.0, BASE_HEIGHT + 0.51, 0.30), Color("666d75"))
+	_add_box(island, "UpperBox", Vector3(UNIT_WIDTH, 0.16, 0.30), Vector3(0.0, 1.52, 0.19), Color("8d9399"))
 
-	# Sand is the narrow vertical equipment immediately beside the machine,
-	# matching the accepted 2D composition. It is NOT behind the machine.
-	_add_box(island, "Sand", Vector3(SAND_WIDTH, SAND_HEIGHT, SAND_DEPTH), Vector3(SAND_CENTER_X, 0.55 + SAND_HEIGHT * 0.5, FRONT_Z), Color("727982"))
-	_add_box(island, "SandInset", Vector3(SAND_WIDTH * 0.56, SAND_HEIGHT * 0.20, 0.025), Vector3(SAND_CENTER_X, 0.55 + SAND_HEIGHT * 0.56, FRONT_Z - SAND_DEPTH * 0.5 - 0.013), Color("242a31"))
-
-	# Counter spans above the machine opening, as in the accepted 2D item.
-	_add_box(island, "DataCounter", Vector3(MACHINE_WIDTH * 0.76, 0.13, 0.16), Vector3(MACHINE_CENTER_X, 1.47, -0.25), Color("242a31"))
-	_create_stool(island, Vector3(MACHINE_CENTER_X, 0.0, -0.90))
-
+	# Exact accepted front composition: [machine][sand], no gap, same front/depth plane.
 	var machine_slot := Node3D.new()
 	machine_slot.name = "MachineSlot"
-	machine_slot.position = Vector3(MACHINE_CENTER_X, 0.0, FRONT_Z)
+	machine_slot.position = Vector3(MACHINE_X, 0.0, EQUIPMENT_Z)
 	bay.add_child(machine_slot)
 	if with_machine:
 		_create_machine(machine_slot)
+
+	_add_box(island, "SandCabinet", Vector3(SAND_WIDTH, SAND_HEIGHT, SAND_DEPTH), Vector3(SAND_X, BASE_HEIGHT + SAND_HEIGHT * 0.5, EQUIPMENT_Z), Color("727982"))
+	# Sand face details make the narrow cabinet unambiguous in every direction.
+	var sand_front_z: float = EQUIPMENT_Z - SAND_DEPTH * 0.5 - 0.013
+	_add_box(island, "SandScreen", Vector3(SAND_WIDTH * 0.62, SAND_HEIGHT * 0.17, 0.025), Vector3(SAND_X, BASE_HEIGHT + SAND_HEIGHT * 0.73, sand_front_z), Color("202a31"))
+	_add_box(island, "SandSlotA", Vector3(SAND_WIDTH * 0.52, 0.035, 0.026), Vector3(SAND_X, BASE_HEIGHT + SAND_HEIGHT * 0.43, sand_front_z - 0.001), Color("171c21"))
+	_add_box(island, "SandSlotB", Vector3(SAND_WIDTH * 0.52, 0.035, 0.026), Vector3(SAND_X, BASE_HEIGHT + SAND_HEIGHT * 0.31, sand_front_z - 0.001), Color("171c21"))
+
+	# Counter belongs to the island and sits above the machine area.
+	_add_box(island, "DataCounter", Vector3(MACHINE_WIDTH * 0.76, 0.13, 0.16), Vector3(MACHINE_X, 1.43, -0.25), Color("242a31"))
+	_add_box(island, "CounterScreen", Vector3(MACHINE_WIDTH * 0.55, 0.065, 0.025), Vector3(MACHINE_X, 1.43, -0.343), Color("79b6d8"))
+	_create_stool(island, Vector3(MACHINE_X, 0.0, -0.90))
 	return bay
 
 func _create_machine(parent: Node3D) -> void:
 	var machine := Node3D.new()
 	machine.name = "PachislotMachine3D"
 	parent.add_child(machine)
-	_add_box(machine, "Cabinet", Vector3(MACHINE_WIDTH, MACHINE_HEIGHT, MACHINE_DEPTH), Vector3(0.0, 0.55 + MACHINE_HEIGHT * 0.5, 0.0), Color("242932"))
-	_add_box(machine, "ReelPanel", Vector3(MACHINE_WIDTH * 0.76, MACHINE_HEIGHT * 0.29, 0.025), Vector3(0.0, 1.12, -MACHINE_DEPTH * 0.5 - 0.013), Color("f2eee3"))
-	_add_box(machine, "ControlDeck", Vector3(MACHINE_WIDTH * 0.82, 0.13, 0.12), Vector3(0.0, 0.82, -MACHINE_DEPTH * 0.5 - 0.04), Color("11151b"))
+	_add_box(machine, "Cabinet", Vector3(MACHINE_WIDTH, MACHINE_HEIGHT, MACHINE_DEPTH), Vector3(0.0, BASE_HEIGHT + MACHINE_HEIGHT * 0.5, 0.0), Color("242932"))
+	var front_z: float = -MACHINE_DEPTH * 0.5 - 0.013
+	_add_box(machine, "UpperPanel", Vector3(MACHINE_WIDTH * 0.78, MACHINE_HEIGHT * 0.16, 0.025), Vector3(0.0, BASE_HEIGHT + MACHINE_HEIGHT * 0.84, front_z), Color("c45139"))
+	_add_box(machine, "ReelFrame", Vector3(MACHINE_WIDTH * 0.86, MACHINE_HEIGHT * 0.32, 0.026), Vector3(0.0, BASE_HEIGHT + MACHINE_HEIGHT * 0.57, front_z - 0.002), Color("a7adb5"))
+	for i in range(3):
+		var reel_x: float = (float(i) - 1.0) * MACHINE_WIDTH * 0.25
+		_add_box(machine, "Reel%d" % i, Vector3(MACHINE_WIDTH * 0.20, MACHINE_HEIGHT * 0.23, 0.028), Vector3(reel_x, BASE_HEIGHT + MACHINE_HEIGHT * 0.57, front_z - 0.018), Color("f2eee3"))
+	_add_box(machine, "ControlDeck", Vector3(MACHINE_WIDTH * 0.88, MACHINE_HEIGHT * 0.13, 0.10), Vector3(0.0, BASE_HEIGHT + MACHINE_HEIGHT * 0.31, -MACHINE_DEPTH * 0.5 - 0.04), Color("11151b"))
+	_add_box(machine, "LowerPanel", Vector3(MACHINE_WIDTH * 0.72, MACHINE_HEIGHT * 0.13, 0.026), Vector3(0.0, BASE_HEIGHT + MACHINE_HEIGHT * 0.13, front_z), Color("c45139"))
 
 func _create_stool(parent: Node3D, pos: Vector3) -> void:
 	var stool := Node3D.new()

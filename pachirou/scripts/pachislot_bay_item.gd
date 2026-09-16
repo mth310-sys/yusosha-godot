@@ -3,6 +3,7 @@ extends Node2D
 
 enum Direction {
 	LEFT_DOWN,
+	LEFT_UP,
 }
 
 var direction: Direction = Direction.LEFT_DOWN
@@ -18,14 +19,15 @@ var renderer: Callable
 @onready var data_counter: Node2D = $Equipment/DataCounter
 @onready var stool: Node2D = $Stool
 
-func setup(p_renderer: Callable) -> void:
+func setup(p_direction: Direction, p_renderer: Callable) -> void:
+	direction = p_direction
 	renderer = p_renderer
-	name = "PachislotBay"
+	name = "PachislotBay_%s" % direction_name()
 
 func build() -> void:
 	clear_visuals()
 	if renderer.is_valid():
-		renderer.call(self)
+		renderer.call(self, direction)
 
 func clear_visuals() -> void:
 	_clear_visual_children(island_base)
@@ -35,6 +37,14 @@ func clear_visuals() -> void:
 	_clear_visual_children(sand)
 	_clear_visual_children(data_counter)
 	_clear_visual_children(stool)
+
+func direction_name() -> String:
+	match direction:
+		Direction.LEFT_DOWN:
+			return "LEFT_DOWN"
+		Direction.LEFT_UP:
+			return "LEFT_UP"
+	return "UNKNOWN"
 
 func _clear_visual_children(parent: Node2D) -> void:
 	for child in parent.get_children():

@@ -6,6 +6,11 @@ const GROUP_GAP_CELLS: int = 1
 const EXPECTED_STYLE_COUNT: int = 18
 const START_CELL_X: int = 2
 const ISLAND_FRONT_ROWS: Array[int] = [2,7,12]
+# Existing island base depth is 0.70 while the map cell pitch is 1.00.
+# The back row remains assigned to the adjacent snapped cell, then its unchanged
+# unit is aligned inside that cell so both 0.70-deep rear edges meet exactly.
+const UNIT_DEPTH: float = 0.70
+const BACK_CELL_ALIGNMENT: float = TILE_SIZE-UNIT_DEPTH
 
 func _ready() -> void:
 	call_deferred("_arrange_showcase")
@@ -31,8 +36,6 @@ func _arrange_showcase() -> void:
 		var index_in_group: int = index_in_row%3
 		var first_cell_x: int = START_CELL_X+group*(6+GROUP_GAP_CELLS)+index_in_group*2
 		var front_z: int = ISLAND_FRONT_ROWS[row]
-		# The physical rear of the current 0-degree unit is toward -Z.
-		# Therefore the back-to-back copy belongs on the preceding grid row, not +Z.
 		var back_z: int = front_z-1
 		_remove_clay_discs(source)
 		_place_front(source,Vector2i(first_cell_x,front_z),row)
@@ -96,7 +99,11 @@ func _place_front(node: Node3D,cell: Vector2i,row: int) -> void:
 func _rotate_then_snap_back(node: Node3D,cell: Vector2i,row: int) -> void:
 	if not _cell_is_valid(cell): return
 	node.global_rotation_degrees = Vector3(0.0,180.0,0.0)
-	node.global_position = _cell_to_world(cell)
+	var snapped_position := _cell_to_world(cell)
+	# Back cell is -Z from the front row. Move only within that snapped cell by the
+	# exact unused depth (1.00 - 0.70 = 0.30) so the two rear edges meet, no gap.
+	snapped_position.z += BACK_CELL_ALIGNMENT
+	node.global_position = snapped_position
 	_set_grid_meta(node,cell,row,"back")
 
 func _cell_is_valid(cell: Vector2i) -> bool:

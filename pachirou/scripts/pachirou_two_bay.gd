@@ -47,18 +47,14 @@ func _render_left_down_item(item: PachislotBayItem) -> void:
 	_create_stool_geometry(item.stool)
 
 func _render_left_up_item(item: PachislotBayItem) -> void:
-	# LEFT_DOWN uses the south-west tile edge as its front and shifts toward
-	# its rear (north-east) by UNIT_REAR_SHIFT = (6, -3).
-	# LEFT_UP uses the north-west tile edge as its front, so its rear is
-	# south-east. Preserve the same one-cell inset: (6, 3).
-	item.frame.position = Vector2(UNIT_REAR_SHIFT.x, -UNIT_REAR_SHIFT.y)
+	# Keep the exact same one-cell anchor/inset as the approved LEFT_DOWN item.
+	# Direction changes the footprint geometry only; it must not move the item.
+	item.frame.position = UNIT_REAR_SHIFT
 	_create_left_up_island_base(item.island_base)
 
 func _create_left_up_island_base(parent: Node2D) -> void:
-	# Canonical tile vertices are left(-32,0), top(0,-16), right(32,0),
-	# bottom(0,16). LEFT_UP's front is the left->top edge; depth runs toward
-	# the opposite south-east edge. This is the same 64x32 cell occupancy,
-	# BASE_DEPTH_RATIO and BASE_HEIGHT as LEFT_DOWN.
+	# Same physical dimensions and occupancy as LEFT_DOWN, with only the
+	# ground-plane facing changed from the left-bottom edge to left-top edge.
 	var floor_left := Vector2(-32.0, 0.0)
 	var floor_front := Vector2(0.0, -16.0)
 	var depth := Vector2(DEPTH_AXIS.x, -DEPTH_AXIS.y) * BASE_DEPTH_RATIO

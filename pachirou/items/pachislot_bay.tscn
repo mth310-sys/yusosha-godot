@@ -15,10 +15,10 @@ script = ExtResource("1_bay")
 
 [node name="Equipment" type="Node2D" parent="."]
 
-[node name="Machine" type="Node2D" parent="Equipment"]
-
 [node name="Sand" type="Node2D" parent="Equipment"]
 
 [node name="DataCounter" type="Node2D" parent="Equipment"]
+
+[node name="MachineSlot" type="Node2D" parent="."]
 
 [node name="Stool" type="Node2D" parent="."]

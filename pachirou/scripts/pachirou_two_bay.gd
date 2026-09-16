@@ -3,6 +3,12 @@ extends "res://scripts/pachirou_map.gd"
 const PACHISLOT_BAY_SCENE := preload("res://items/pachislot_bay.tscn")
 const PACHISLOT_MACHINE_SCENE := preload("res://items/pachislot_machine.tscn")
 
+# Fixed local anchors inside one LEFT_DOWN island-set item.
+# These are owned by the island set and do not depend on an installed machine.
+const ISLAND_LOCAL_SHIFT := Vector2(6.0, -3.0)
+const MACHINE_SLOT_LEFT := Vector2(-22.0, -36.15)
+const SAND_SLOT_LEFT := Vector2(-1.5, -25.9)
+
 var placement_grid: IsometricGrid
 
 func _ready() -> void:
@@ -37,20 +43,19 @@ func _render_bay_item(item: PachislotBayItem, direction: PachislotBayItem.Direct
 			_render_left_down_island_set(item)
 
 func _render_left_down_island_set(item: PachislotBayItem) -> void:
-	# The island set owns its own fixed local geometry. The machine slot is a
-	# separate child and receives an independent machine item afterwards.
-	item.frame.position = UNIT_REAR_SHIFT
-	item.equipment.position = UNIT_REAR_SHIFT
-	item.machine_slot.position = UNIT_REAR_SHIFT
-	item.stool.position = UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
+	item.frame.position = ISLAND_LOCAL_SHIFT
+	item.equipment.position = ISLAND_LOCAL_SHIFT
+	item.machine_slot.position = ISLAND_LOCAL_SHIFT
+	item.stool.position = ISLAND_LOCAL_SHIFT + STOOL_FRONT_OFFSET
 	item.stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
+
 	_create_island_base_item(item.island_base)
 	_create_backboard_item(item.back_board)
 	_create_upper_box_item(item.upper_box)
 
-	var machine_slot_lb: Vector2 = _equipment_front_left()
-	var machine_slot_fb: Vector2 = machine_slot_lb + MACHINE_FRONT_VECTOR
-	var sand_lb: Vector2 = machine_slot_fb
+	# Sand is part of the island set. Its local slot is fixed whether the
+	# machine slot is empty, installed, replaced or removed.
+	var sand_lb: Vector2 = SAND_SLOT_LEFT
 	var sand_fb: Vector2 = sand_lb + SAND_FRONT_VECTOR
 	_create_sand(item.sand, sand_lb, sand_fb, SAND_DEPTH)
 	_create_sand_hidden_faces(item.sand, sand_lb, sand_fb)
@@ -59,7 +64,8 @@ func _render_left_down_island_set(item: PachislotBayItem) -> void:
 	_create_stool_geometry(item.stool)
 
 func _render_standard_machine(machine_item: PachislotMachineItem) -> void:
-	var machine_lb: Vector2 = _equipment_front_left()
+	# The machine owns only its own geometry and is rendered into MachineSlot.
+	var machine_lb: Vector2 = MACHINE_SLOT_LEFT
 	var machine_fb: Vector2 = machine_lb + MACHINE_FRONT_VECTOR
 	_create_machine(machine_item, machine_lb, machine_fb, MACHINE_DEPTH)
 	_create_machine_hidden_faces(machine_item, machine_lb, machine_fb)

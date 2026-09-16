@@ -14,9 +14,13 @@ func _ready() -> void:
 	placement_grid = IsometricGrid.new(map_width, map_height, tile_width, tile_height)
 	_create_floor()
 
+	# Same completed placeable item in each logical 90-degree direction.
+	# LEFT_DOWN keeps the installed-machine reference; the other three stay
+	# empty so the island + stool geometry can be checked without obstruction.
 	_create_bay_item(Vector2i(5, 7), PachislotBayItem.Direction.LEFT_DOWN, true)
-	_create_bay_item(Vector2i(6, 7), PachislotBayItem.Direction.LEFT_DOWN, false)
-	_create_bay_item(Vector2i(8, 7), PachislotBayItem.Direction.LEFT_UP, false)
+	_create_bay_item(Vector2i(7, 6), PachislotBayItem.Direction.LEFT_UP, false)
+	_create_bay_item(Vector2i(8, 8), PachislotBayItem.Direction.RIGHT_UP, false)
+	_create_bay_item(Vector2i(6, 9), PachislotBayItem.Direction.RIGHT_DOWN, false)
 
 func _create_bay_item(cell: Vector2i, direction: PachislotBayItem.Direction, with_machine: bool) -> void:
 	var item := PACHISLOT_BAY_SCENE.instantiate() as PachislotBayItem

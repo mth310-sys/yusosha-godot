@@ -14,14 +14,14 @@ func _ready() -> void:
 	placement_grid = IsometricGrid.new(map_width, map_height, tile_width, tile_height)
 	_create_floor()
 
-	# The map only places completed items. It no longer builds island geometry.
-	_create_bay_item(Vector2i(6, 7), true)
-	_create_bay_item(Vector2i(7, 7), false)
+	_create_bay_item(Vector2i(5, 7), PachislotBayItem.Direction.LEFT_DOWN, true)
+	_create_bay_item(Vector2i(6, 7), PachislotBayItem.Direction.LEFT_DOWN, false)
+	_create_bay_item(Vector2i(8, 7), PachislotBayItem.Direction.LEFT_UP, false)
 
-func _create_bay_item(cell: Vector2i, with_machine: bool) -> void:
+func _create_bay_item(cell: Vector2i, direction: PachislotBayItem.Direction, with_machine: bool) -> void:
 	var item := PACHISLOT_BAY_SCENE.instantiate() as PachislotBayItem
 	world.add_child(item)
-	if not item.setup(placement_grid, cell, PachislotBayItem.Direction.LEFT_DOWN):
+	if not item.setup(placement_grid, cell, direction):
 		item.queue_free()
 		return
 	if with_machine:

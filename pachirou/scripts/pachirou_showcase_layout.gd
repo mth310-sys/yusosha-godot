@@ -3,11 +3,11 @@ extends Node3D
 const GRID_SIZE: int = 18
 const TILE_SIZE: float = 1.0
 const GROUP_GAP_CELLS: int = 1
-const EMPTY_ROWS_BETWEEN: int = 2
+const EMPTY_ROWS_BETWEEN: int = 3
 const ROW_STEP_CELLS: int = EMPTY_ROWS_BETWEEN + 1
 const EXPECTED_STYLE_COUNT: int = 18
 const START_CELL_X: int = 2
-const START_CELL_Z: int = 5
+const START_CELL_Z: int = 4
 
 func _ready() -> void:
 	call_deferred("_arrange_showcase")

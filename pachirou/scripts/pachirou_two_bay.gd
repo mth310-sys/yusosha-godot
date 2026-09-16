@@ -8,17 +8,24 @@ func _ready() -> void:
 	world.y_sort_enabled = true
 	add_child(world)
 	_create_floor()
-	_create_bay_item(Vector2i(7, 6))
+	_create_bay_item(Vector2i(7, 6), PachislotBayItem.Direction.LEFT_DOWN)
 
-func _create_bay_item(cell: Vector2i) -> void:
+func _create_bay_item(cell: Vector2i, direction: PachislotBayItem.Direction) -> void:
 	var item := PACHISLOT_BAY_SCENE.instantiate() as PachislotBayItem
 	item.position = grid_to_world(cell)
 	item.z_index = int(item.position.y)
 	world.add_child(item)
-	item.setup(_render_bay_item)
+	item.setup(direction, _render_bay_item)
 	item.build()
 
-func _render_bay_item(item: PachislotBayItem) -> void:
+func _render_bay_item(item: PachislotBayItem, direction: PachislotBayItem.Direction) -> void:
+	match direction:
+		PachislotBayItem.Direction.LEFT_DOWN:
+			_render_left_down_item(item)
+		PachislotBayItem.Direction.LEFT_UP:
+			_render_left_up_item(item)
+
+func _render_left_down_item(item: PachislotBayItem) -> void:
 	item.frame.position = UNIT_REAR_SHIFT
 	item.equipment.position = UNIT_REAR_SHIFT
 	item.stool.position = UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
@@ -37,6 +44,11 @@ func _render_bay_item(item: PachislotBayItem) -> void:
 	_create_data_counter(item.data_counter)
 	_create_counter_hidden_faces(item.data_counter)
 	_create_stool_geometry(item.stool)
+
+func _render_left_up_item(_item: PachislotBayItem) -> void:
+	# Direction slot only. No provisional geometry is displayed until the
+	# component-by-component LEFT_UP assembly is complete.
+	pass
 
 func _create_island_base_item(parent: Node2D) -> void:
 	var floor_left := Vector2(-32.0, 0.0)

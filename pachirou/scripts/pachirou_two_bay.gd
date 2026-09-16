@@ -13,7 +13,6 @@ func _ready() -> void:
 	world.y_sort_enabled = true
 	add_child(world)
 	_create_floor()
-	# Keep the approved source untouched and add one isolated quarter-turn test.
 	_create_complete_bay(Vector2i(5, 6), BayDirection.LEFT_DOWN)
 	_create_complete_bay(Vector2i(9, 7), BayDirection.LEFT_UP)
 
@@ -52,26 +51,67 @@ func _apply_direction(unit: Node2D, direction: BayDirection) -> void:
 			pass
 
 func _apply_left_up_quarter_turn(unit: Node2D) -> void:
-	# LEFT_DOWN -> LEFT_UP is a ground-plane quarter turn. In this fixed 2:1
-	# isometric projection that quarter turn is an exact horizontal mirror:
-	# vertical height is unchanged, while both diamond ground axes exchange roles.
-	# Because every physical face is now present, the whole completed object can
-	# be transformed as one unit instead of rebuilding any face.
-	_mirror_complete_tree_x(unit)
+	# Rotate the completed bay one real quarter-turn on the logical ground plane.
+	# For a local ground vector projected as:
+	#   screen_x = 32 * (u + v)
+	#   screen_y = 16 * (u - v) + vertical_y
+	# a LEFT turn is (u,v) -> (-v,u).  After projection this maps the horizontal
+	# ground contribution (x,y_ground) to (-2*y_ground, x/2), while Z stays vertical.
+	# We apply the transform edge-by-edge so true vertical edges remain vertical.
+	_rotate_complete_tree_left(unit)
 
-func _mirror_complete_tree_x(node: Node) -> void:
+func _rotate_complete_tree_left(node: Node) -> void:
 	for child in node.get_children():
 		if child is Polygon2D:
-			var poly := child as Polygon2D
-			var points: PackedVector2Array = poly.polygon
-			var mirrored := PackedVector2Array()
-			for point in points:
-				mirrored.append(Vector2(-point.x, point.y))
-			poly.polygon = mirrored
+			_rotate_polygon_left(child as Polygon2D)
 		elif child is Node2D:
 			var child_2d := child as Node2D
-			child_2d.position.x = -child_2d.position.x
-			_mirror_complete_tree_x(child_2d)
+			child_2d.position = _rotate_ground_point_left(child_2d.position)
+			_rotate_complete_tree_left(child_2d)
+
+func _rotate_polygon_left(poly: Polygon2D) -> void:
+	var source: PackedVector2Array = poly.polygon
+	if source.is_empty():
+		return
+	var result := PackedVector2Array()
+	# The first point is an anchor on the component's projected ground/face system.
+	# Rotate its ground location; subsequent vectors are transformed as either
+	# vertical or one of the two exact isometric ground-axis contributions.
+	var cursor: Vector2 = _rotate_ground_point_left(source[0])
+	result.append(cursor)
+	for i in range(1, source.size()):
+		var edge: Vector2 = source[i] - source[i - 1]
+		cursor += _rotate_edge_left(edge)
+		result.append(cursor)
+	poly.polygon = result
+
+func _rotate_edge_left(edge: Vector2) -> Vector2:
+	# Height never rotates on screen.
+	if abs(edge.x) < 0.0001:
+		return edge
+
+	# Exact 2:1 ground edges used by the approved geometry.
+	if abs(edge.y - edge.x * 0.5) < 0.001:
+		# WIDTH_AXIS (32,16) -> (-32,16)
+		return Vector2(-edge.x, edge.y)
+	if abs(edge.y + edge.x * 0.5) < 0.001:
+		# DEPTH_AXIS (32,-16) -> WIDTH_AXIS (32,16)
+		return Vector2(edge.x, -edge.y)
+
+	# Detail edges live on an already-defined physical face. Decompose their
+	# horizontal contribution by the face's dominant 2:1 axis and preserve the
+	# remaining vertical component exactly.
+	var ground_y: float
+	if edge.y >= 0.0:
+		ground_y = edge.x * 0.5
+	else:
+		ground_y = -edge.x * 0.5
+	var vertical_y: float = edge.y - ground_y
+	var rotated_ground := Vector2(-2.0 * ground_y, edge.x * 0.5)
+	return rotated_ground + Vector2(0.0, vertical_y)
+
+func _rotate_ground_point_left(point: Vector2) -> Vector2:
+	return Vector2(-2.0 * point.y, point.x * 0.5)
 
 func _direction_name(direction: BayDirection) -> String:
 	match direction:

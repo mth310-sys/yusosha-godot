@@ -3,8 +3,6 @@ extends "res://scripts/pachirou_map.gd"
 const PACHISLOT_BAY_SCENE := preload("res://items/pachislot_bay.tscn")
 const PACHISLOT_MACHINE_SCENE := preload("res://items/pachislot_machine.tscn")
 
-# Fixed local anchors inside one LEFT_DOWN island-set item.
-# These are owned by the island set and do not depend on an installed machine.
 const ISLAND_LOCAL_SHIFT := Vector2(6.0, -3.0)
 const MACHINE_SLOT_LEFT := Vector2(-22.0, -36.15)
 const SAND_SLOT_LEFT := Vector2(-1.5, -25.9)
@@ -18,9 +16,11 @@ func _ready() -> void:
 	add_child(world)
 	placement_grid = IsometricGrid.new(map_width, map_height, tile_width, tile_height)
 	_create_floor()
-	# Same placeable island-set item in two states: machine installed / empty slot.
-	_create_bay_item(Vector2i(6, 7), PachislotBayItem.Direction.LEFT_DOWN, true)
-	_create_bay_item(Vector2i(7, 7), PachislotBayItem.Direction.LEFT_DOWN, false)
+	# Reference, empty reference, then the same empty island set turned one
+	# logical quarter-turn without changing the item's cell-origin contract.
+	_create_bay_item(Vector2i(5, 7), PachislotBayItem.Direction.LEFT_DOWN, true)
+	_create_bay_item(Vector2i(6, 7), PachislotBayItem.Direction.LEFT_DOWN, false)
+	_create_bay_item(Vector2i(8, 7), PachislotBayItem.Direction.LEFT_UP, false)
 
 func _create_bay_item(cell: Vector2i, direction: PachislotBayItem.Direction, with_machine: bool = false) -> void:
 	var item := PACHISLOT_BAY_SCENE.instantiate() as PachislotBayItem
@@ -43,29 +43,27 @@ func _render_bay_item(item: PachislotBayItem, direction: PachislotBayItem.Direct
 	match direction:
 		PachislotBayItem.Direction.LEFT_DOWN:
 			_render_left_down_island_set(item)
+		PachislotBayItem.Direction.LEFT_UP:
+			_render_left_up_island_set(item)
 
-func _render_left_down_island_set(item: PachislotBayItem) -> void:
-	item.frame.position = ISLAND_LOCAL_SHIFT
-	item.equipment.position = ISLAND_LOCAL_SHIFT
-	item.machine_slot.position = ISLAND_LOCAL_SHIFT
-	item.stool.position = ISLAND_LOCAL_SHIFT + STOOL_FRONT_OFFSET
-	item.stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
-
-	# Explicit component depth order: island frame behind equipment, machine in
-	# its own slot, sand/counter in the island equipment layer, stool in front.
+func _prepare_item_layers(item: PachislotBayItem) -> void:
 	item.frame.z_index = 0
 	item.machine_slot.z_index = 20
 	item.equipment.z_index = 30
 	item.sand.z_index = 2
 	item.data_counter.z_index = 3
 	item.stool.z_index = 40
+	item.stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 
+func _render_left_down_island_set(item: PachislotBayItem) -> void:
+	item.frame.position = ISLAND_LOCAL_SHIFT
+	item.equipment.position = ISLAND_LOCAL_SHIFT
+	item.machine_slot.position = ISLAND_LOCAL_SHIFT
+	item.stool.position = ISLAND_LOCAL_SHIFT + STOOL_FRONT_OFFSET
+	_prepare_item_layers(item)
 	_create_island_base_item(item.island_base)
 	_create_backboard_item(item.back_board)
 	_create_upper_box_item(item.upper_box)
-
-	# Sand is part of the island set. Its local slot is fixed whether the
-	# machine slot is empty, installed, replaced or removed.
 	var sand_lb: Vector2 = SAND_SLOT_LEFT
 	var sand_fb: Vector2 = sand_lb + SAND_FRONT_VECTOR
 	_create_sand(item.sand, sand_lb, sand_fb, SAND_DEPTH)
@@ -74,8 +72,122 @@ func _render_left_down_island_set(item: PachislotBayItem) -> void:
 	_create_counter_hidden_faces(item.data_counter)
 	_create_stool_geometry(item.stool)
 
+func _render_left_up_island_set(item: PachislotBayItem) -> void:
+	# LEFT_UP is a logical 90-degree turn. Ground vectors rotate in grid space;
+	# vertical height stays screen-vertical. No Polygon2D screen rotation is used.
+	var shift: Vector2 = _quarter_turn_ccw_ground(ISLAND_LOCAL_SHIFT)
+	item.frame.position = shift
+	item.equipment.position = shift
+	item.machine_slot.position = shift
+	item.stool.position = shift + _quarter_turn_ccw_ground(STOOL_FRONT_OFFSET)
+	_prepare_item_layers(item)
+
+	var front_axis := DEPTH_AXIS
+	var depth_axis := -WIDTH_AXIS
+	_create_directional_base(item.island_base, front_axis, depth_axis)
+	_create_directional_backboard(item.back_board, front_axis, depth_axis)
+	_create_directional_upper_box(item.upper_box, front_axis, depth_axis)
+	_create_directional_sand(item.sand, front_axis, depth_axis)
+	_create_directional_counter(item.data_counter, front_axis, depth_axis)
+	_create_stool_geometry(item.stool)
+
+func _quarter_turn_ccw_ground(p: Vector2) -> Vector2:
+	return Vector2(-2.0 * p.y, p.x * 0.5)
+
+func _directional_base_points(front_axis: Vector2, depth_axis: Vector2) -> Array[Vector2]:
+	var left: Vector2 = -front_axis * 0.5
+	var front: Vector2 = front_axis * 0.5
+	var depth: Vector2 = depth_axis * BASE_DEPTH_RATIO
+	return [left, front, left + depth, front + depth]
+
+func _create_directional_base(parent: Node2D, front_axis: Vector2, depth_axis: Vector2) -> void:
+	var p := _directional_base_points(front_axis, depth_axis)
+	var fl: Vector2 = p[0]
+	var fr: Vector2 = p[1]
+	var rl: Vector2 = p[2]
+	var rr: Vector2 = p[3]
+	var up := Vector2(0.0, -BASE_HEIGHT)
+	_add_poly(parent, PackedVector2Array([fl, fr, fr + up, fl + up]), BASE_FRONT, 0)
+	_add_poly(parent, PackedVector2Array([fr, rr, rr + up, fr + up]), BASE_SIDE, 0)
+	_add_poly(parent, PackedVector2Array([rl + up, rr + up, fr + up, fl + up]), BASE_TOP, 0)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.04, 0.96, 0.05, 0.14), Color("3d4349"), 1)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.49, 0.51, 0.16, 0.94), Color("464c53"), 1)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.05, 0.95, 0.91, 0.955), Color("70767d"), 1)
+	_add_poly(parent, PackedVector2Array([rl, rr, rr + up, rl + up]), Color("353b41"), -2)
+	_add_poly(parent, PackedVector2Array([fl, rl, rl + up, fl + up]), Color("454b52"), -2)
+
+func _directional_board_front(front_axis: Vector2, depth_axis: Vector2) -> Array[Vector2]:
+	var p := _directional_base_points(front_axis, depth_axis)
+	var up_base := Vector2(0.0, -BASE_HEIGHT)
+	var board_push: Vector2 = -depth_axis * BACKBOARD_THICKNESS_RATIO
+	return [p[2] + up_base + board_push, p[3] + up_base + board_push]
+
+func _create_directional_backboard(parent: Node2D, front_axis: Vector2, depth_axis: Vector2) -> void:
+	var b := _directional_board_front(front_axis, depth_axis)
+	var fl: Vector2 = b[0]
+	var fr: Vector2 = b[1]
+	var thickness: Vector2 = -depth_axis * BACKBOARD_THICKNESS_RATIO
+	var up := Vector2(0.0, -BACKBOARD_HEIGHT)
+	_add_poly(parent, PackedVector2Array([fl, fr, fr + up, fl + up]), BACKBOARD, 1)
+	_add_poly(parent, PackedVector2Array([fr, fr + thickness, fr + thickness + up, fr + up]), BACKBOARD_SIDE, 2)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.035, 0.075, 0.04, 0.96), Color("565d65"), 2)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.925, 0.965, 0.04, 0.96), Color("565d65"), 2)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.495, 0.505, 0.04, 0.96), Color("515860"), 2)
+	_add_poly(parent, _face_quad(fl, fr, up, 0.08, 0.92, 0.915, 0.95), Color("7b8289"), 2)
+
+func _directional_upper_box_points(front_axis: Vector2, depth_axis: Vector2) -> Array[Vector2]:
+	var b := _directional_board_front(front_axis, depth_axis)
+	var rise := Vector2(0.0, -MACHINE_HEIGHT + 2.0)
+	var bl: Vector2 = b[0] + rise
+	var br: Vector2 = b[1] + rise
+	var push: Vector2 = -depth_axis * UPPER_BOX_FORWARD_RATIO
+	return [bl, br, bl + push, br + push]
+
+func _create_directional_upper_box(parent: Node2D, front_axis: Vector2, depth_axis: Vector2) -> void:
+	var p := _directional_upper_box_points(front_axis, depth_axis)
+	var bl: Vector2 = p[0]
+	var br: Vector2 = p[1]
+	var fl: Vector2 = p[2]
+	var fr: Vector2 = p[3]
+	var up := Vector2(0.0, -UPPER_BOX_HEIGHT)
+	_add_poly(parent, PackedVector2Array([fl, fr, fr + up, fl + up]), SHELF_EDGE, 20)
+	_add_poly(parent, PackedVector2Array([fr, br, br + up, fr + up]), BACKBOARD_SIDE, 19)
+	_add_poly(parent, PackedVector2Array([bl + up, br + up, fr + up, fl + up]), SHELF_TOP, 20)
+
+func _directional_equipment_left(front_axis: Vector2, depth_axis: Vector2) -> Vector2:
+	var ratio: float = (MACHINE_FRONT_VECTOR.x + SAND_FRONT_VECTOR.x) / WIDTH_AXIS.x
+	var margin: float = (1.0 - ratio) * 0.5
+	var base_left: Vector2 = -front_axis * 0.5 + Vector2(0.0, -BASE_HEIGHT)
+	return base_left + front_axis * margin + depth_axis * 0.08
+
+func _create_directional_sand(parent: Node2D, front_axis: Vector2, depth_axis: Vector2) -> void:
+	var unit_front: Vector2 = front_axis.normalized() * SAND_FRONT_VECTOR.length()
+	var machine_front: Vector2 = front_axis.normalized() * MACHINE_FRONT_VECTOR.length()
+	var lb: Vector2 = _directional_equipment_left(front_axis, depth_axis) + machine_front
+	var fb: Vector2 = lb + unit_front
+	var depth: Vector2 = depth_axis.normalized() * SAND_DEPTH.length()
+	_create_sand(parent, lb, fb, depth)
+	var rl: Vector2 = lb + depth
+	var rr: Vector2 = fb + depth
+	var up := Vector2(0.0, -SAND_HEIGHT)
+	_add_poly(parent, PackedVector2Array([rl, rr, rr + up, rl + up]), Color("59616a"), 8)
+
+func _create_directional_counter(parent: Node2D, front_axis: Vector2, depth_axis: Vector2) -> void:
+	var p := _directional_upper_box_points(front_axis, depth_axis)
+	var fl: Vector2 = p[2]
+	var fr: Vector2 = p[3]
+	var span: Vector2 = fr - fl
+	var left: Vector2 = fl + span * 0.12 + Vector2(0.0, -2.0)
+	var right: Vector2 = fl + span * 0.88 + Vector2(0.0, -2.0)
+	var up := Vector2(0.0, -8.0)
+	var push: Vector2 = -depth_axis * 0.055
+	_create_front_box(parent, left, right, up, push, COUNTER_FRONT, COUNTER_SIDE, SHELF_EDGE, 30)
+	var face_left: Vector2 = left + push
+	var face_right: Vector2 = right + push
+	_add_poly(parent, _face_quad(face_left, face_right, up, 0.075, 0.925, 0.12, 0.86), Color("4d5964"), 32)
+	_add_poly(parent, _face_quad(face_left, face_right, up, 0.105, 0.895, 0.18, 0.78), COUNTER_SCREEN, 33)
+
 func _render_standard_machine(machine_item: PachislotMachineItem) -> void:
-	# The machine owns only its own geometry and is rendered into MachineSlot.
 	var machine_lb: Vector2 = MACHINE_SLOT_LEFT
 	var machine_fb: Vector2 = machine_lb + MACHINE_FRONT_VECTOR
 	_create_machine(machine_item, machine_lb, machine_fb, MACHINE_DEPTH)

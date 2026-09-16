@@ -1,6 +1,13 @@
 extends "res://scripts/pachirou_map.gd"
 
-const REAR_SIDE_OFFSET := DEPTH_AXIS * 1.35
+# Four player-facing directions for one approved bay model.
+# The current finished artwork is the LEFT_DOWN reference orientation.
+enum BayDirection {
+	LEFT_DOWN,
+	RIGHT_DOWN,
+	RIGHT_UP,
+	LEFT_UP,
+}
 
 func _ready() -> void:
 	world = Node2D.new()
@@ -9,99 +16,71 @@ func _ready() -> void:
 	add_child(world)
 	_create_floor()
 
-	# Front side: nine finished player-facing bays.
-	var bay_cells: Array[Vector2i] = []
-	for x in range(2, 11):
-		bay_cells.append(Vector2i(x, 5))
+	# Validate all four directions before rebuilding a long double-sided island.
+	_create_oriented_bay(Vector2i(4, 4), BayDirection.LEFT_DOWN)
+	_create_oriented_bay(Vector2i(9, 4), BayDirection.RIGHT_DOWN)
+	_create_oriented_bay(Vector2i(9, 9), BayDirection.RIGHT_UP)
+	_create_oriented_bay(Vector2i(4, 9), BayDirection.LEFT_UP)
 
-	for cell: Vector2i in bay_cells:
-		_create_island_bay(cell)
-		_create_stool(cell)
+func _create_oriented_bay(cell: Vector2i, direction: BayDirection) -> void:
+	var unit := Node2D.new()
+	unit.name = "OrientedBay_%s" % BayDirection.keys()[direction]
+	unit.position = grid_to_world(cell)
+	unit.z_index = int(unit.position.y)
+	world.add_child(unit)
 
-	for i in range(bay_cells.size() - 1):
-		_mask_inner_right_frame(bay_cells[i], Vector2.ZERO)
+	# Build the already-approved bay at local origin, then transform the complete
+	# unit. This keeps machine/sand/counter/stool relationships identical in all
+	# directions instead of maintaining four separate copies of the artwork.
+	var content := Node2D.new()
+	content.name = "BayContent"
+	unit.add_child(content)
 
-	# Rear side: the opposite nine machines are viewed from behind from this camera.
-	# This keeps the fixed isometric viewpoint physically coherent instead of showing
-	# a second row of front panels facing the same direction.
-	for cell: Vector2i in bay_cells:
-		_create_rear_island_bay(cell)
-		_create_rear_stool(cell)
+	_create_local_bay(content)
 
-	for i in range(bay_cells.size() - 1):
-		_mask_inner_right_frame(bay_cells[i], REAR_SIDE_OFFSET)
+	match direction:
+		BayDirection.LEFT_DOWN:
+			pass
+		BayDirection.RIGHT_DOWN:
+			# Mirror across screen Y: swaps the two lower isometric directions.
+			content.scale = Vector2(-1.0, 1.0)
+		BayDirection.RIGHT_UP:
+			# Opposite player direction.
+			content.scale = Vector2(-1.0, -1.0)
+		BayDirection.LEFT_UP:
+			# Mirror across screen X: swaps the two upper isometric directions.
+			content.scale = Vector2(1.0, -1.0)
 
-func _create_rear_island_bay(cell: Vector2i) -> void:
+func _create_local_bay(parent: Node2D) -> void:
 	var bay := Node2D.new()
-	bay.name = "RearIslandBay"
-	bay.position = grid_to_world(cell) + UNIT_REAR_SHIFT + REAR_SIDE_OFFSET
-	bay.z_index = int(bay.position.y)
-	world.add_child(bay)
+	bay.name = "IslandBay"
+	bay.position = UNIT_REAR_SHIFT
+	parent.add_child(bay)
 	_create_island_frame(bay)
-	_create_rear_machine_and_sand(bay)
-	_create_rear_data_counter(bay)
+	_create_machine_and_sand(bay)
+	_create_data_counter(bay)
 
-func _create_rear_machine_and_sand(parent: Node2D) -> void:
-	var machine_lb: Vector2 = _equipment_front_left()
-	var machine_fb: Vector2 = machine_lb + MACHINE_FRONT_VECTOR
-	var sand_lb: Vector2 = machine_fb
-	var sand_fb: Vector2 = sand_lb + SAND_FRONT_VECTOR
-	_create_machine_back(parent, machine_lb, machine_fb, MACHINE_DEPTH)
-	_create_sand_back(parent, sand_lb, sand_fb, SAND_DEPTH)
+	# Build the approved stool directly under the same transform so its player
+	# position rotates/mirrors together with the cabinet and sand.
+	var stool := Node2D.new()
+	stool.name = "Stool"
+	stool.position = UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
+	stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
+	parent.add_child(stool)
+	_create_stool_geometry(stool)
 
-func _create_machine_back(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> void:
-	var up := Vector2(0, -MACHINE_HEIGHT)
-	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), Color("343b43"), 10)
-	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), Color("242a31"), 10)
-	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), Color("626972"), 10)
-	# Rear service panel, vents and lower access cover.
-	_add_poly(parent, _face_quad(lb, fb, up, 0.12, 0.88, 0.57, 0.88), Color("272d34"), 11)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.20, 0.80, 0.68, 0.72), Color("11161b"), 12)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.20, 0.80, 0.77, 0.81), Color("11161b"), 12)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.17, 0.83, 0.12, 0.38), Color("2a3037"), 11)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.43, 0.57, 0.19, 0.24), Color("798089"), 12)
-
-func _create_sand_back(parent: Node2D, lb: Vector2, fb: Vector2, depth: Vector2) -> void:
-	var up := Vector2(0, -SAND_HEIGHT)
-	_add_poly(parent, PackedVector2Array([lb, fb, fb + up, lb + up]), Color("59616a"), 10)
-	_add_poly(parent, PackedVector2Array([fb, fb + depth, fb + depth + up, fb + up]), Color("3d444c"), 10)
-	_add_poly(parent, PackedVector2Array([lb + depth + up, fb + depth + up, fb + up, lb + up]), Color("858b92"), 10)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.18, 0.82, 0.58, 0.83), Color("3a4149"), 11)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.25, 0.75, 0.66, 0.70), Color("151a20"), 12)
-	_add_poly(parent, _face_quad(lb, fb, up, 0.20, 0.80, 0.16, 0.36), Color("454c54"), 11)
-
-func _create_rear_data_counter(parent: Node2D) -> void:
-	var box_fl: Vector2 = _upper_box_back_left() + _upper_box_front_vector()
-	var box_fr: Vector2 = _upper_box_back_right() + _upper_box_front_vector()
-	var box_front_vector: Vector2 = box_fr - box_fl
-	var counter_left: Vector2 = box_fl + box_front_vector * 0.12 + Vector2(0, -2.0)
-	var counter_right: Vector2 = box_fl + box_front_vector * 0.88 + Vector2(0, -2.0)
-	var counter_up := Vector2(0, -8.0)
-	var counter_push: Vector2 = -DEPTH_AXIS * 0.055
-	_create_front_box(parent, counter_left, counter_right, counter_up, counter_push, Color("353c44"), Color("242a30"), SHELF_EDGE, 30)
-	var face_left: Vector2 = counter_left + counter_push
-	var face_right: Vector2 = counter_right + counter_push
-	_add_poly(parent, _face_quad(face_left, face_right, counter_up, 0.12, 0.88, 0.24, 0.72), Color("20262d"), 31)
-
-func _create_rear_stool(cell: Vector2i) -> void:
-	# Reuse the approved stool model, then place it on the opposite player side.
-	_create_stool(cell)
-	var stool: Node2D = world.get_child(world.get_child_count() - 1) as Node2D
-	stool.name = "RearStool"
-	stool.position = grid_to_world(cell) + UNIT_REAR_SHIFT + REAR_SIDE_OFFSET - STOOL_FRONT_OFFSET
-	stool.z_index = int(stool.position.y)
-
-func _mask_inner_right_frame(cell: Vector2i, row_offset: Vector2) -> void:
-	var mask := Node2D.new()
-	mask.name = "SharedCenterFrameMask"
-	mask.position = grid_to_world(cell) + UNIT_REAR_SHIFT + row_offset
-	mask.z_index = int(mask.position.y)
-	world.add_child(mask)
-
-	var board_up := Vector2(0, -BACKBOARD_HEIGHT)
-	_add_poly(
-		mask,
-		_face_quad(_base_back_left(), _base_back_right(), board_up, 0.90, 0.995, 0.03, 0.97),
-		BACKBOARD,
-		3
-	)
+func _create_stool_geometry(stool: Node2D) -> void:
+	var seat_y: float = -38.4
+	_add_poly(stool, _ellipse(Vector2(0, 0.5), 15.2, 6.4, 32), Color("4b525a"), 0)
+	_add_poly(stool, _ellipse(Vector2(0, -0.8), 12.0, 4.8, 30), METAL_DARK, 1)
+	_add_poly(stool, _ellipse(Vector2(0, -1.8), 9.5, 3.4, 28), METAL, 2)
+	_add_poly(stool, _ellipse(Vector2(0, -2.2), 5.0, 1.9, 24), Color("d1d5d9"), 3)
+	_add_poly(stool, PackedVector2Array([Vector2(-2.6, seat_y + 7.0), Vector2(2.6, seat_y + 7.0), Vector2(2.2, -4.0), Vector2(-2.2, -4.0)]), METAL_DARK, 1)
+	_add_poly(stool, PackedVector2Array([Vector2(-1.5, seat_y + 6.0), Vector2(1.5, seat_y + 6.0), Vector2(1.5, -3.0), Vector2(-1.5, -3.0)]), METAL, 2)
+	_add_poly(stool, _ellipse(Vector2(0, seat_y + 6.0), 5.0, 2.0, 24), METAL_DARK, 3)
+	_add_poly(stool, _ellipse(Vector2(0, seat_y + 5.3), 3.7, 1.4, 22), METAL, 4)
+	_add_poly(stool, _ellipse_band(Vector2(0, seat_y + 0.6), 16.0, 6.7, 5.2, 32), Color("20262d"), 4)
+	_add_poly(stool, _ellipse(Vector2(0, seat_y), 16.0, 6.7, 34), SEAT_SIDE, 5)
+	_add_poly(stool, _ellipse(Vector2(0, seat_y - 0.8), 14.6, 5.8, 34), SEAT_TOP, 6)
+	_add_poly(stool, _ellipse(Vector2(0, seat_y - 1.2), 11.8, 4.3, 30), SEAT_INNER, 7)
+	_add_poly(stool, _ellipse(Vector2(-1.2, seat_y - 2.0), 7.8, 2.2, 26), Color("59616b"), 8)

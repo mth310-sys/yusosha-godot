@@ -3,23 +3,18 @@ extends Node3D
 const GRID_SIZE: int = 14
 const TILE_SIZE: float = 1.0
 
-enum Direction {
-	FRONT,
-	RIGHT,
-	BACK,
-	LEFT,
-}
+enum Direction { FRONT, RIGHT, BACK, LEFT }
 
 var occupied: Dictionary = {}
 
 func _ready() -> void:
 	_build_floor()
-	# Four instances of the same completed placeable 3D item.
-	# Their roots are snapped to integer grid cells; only Y rotation changes.
+	# One complete bay item, shown in all four directions.
+	# Every component uses the same local coordinates and rotates only with the root.
 	_place_bay(Vector2i(5, 6), Direction.FRONT, true)
-	_place_bay(Vector2i(8, 6), Direction.RIGHT, false)
-	_place_bay(Vector2i(8, 9), Direction.BACK, false)
-	_place_bay(Vector2i(5, 9), Direction.LEFT, false)
+	_place_bay(Vector2i(8, 6), Direction.RIGHT, true)
+	_place_bay(Vector2i(8, 9), Direction.BACK, true)
+	_place_bay(Vector2i(5, 9), Direction.LEFT, true)
 
 func _build_floor() -> void:
 	for z in range(GRID_SIZE):
@@ -86,21 +81,24 @@ func _build_bay_item(with_machine: bool) -> Node3D:
 	var bay := Node3D.new()
 	bay.name = "PachislotBay3D"
 
-	# Island equipment + round stool are one item hierarchy.
+	# The complete island/stool set is authored once in FRONT-local coordinates.
 	var island := Node3D.new()
 	island.name = "IslandEquipment"
 	bay.add_child(island)
 	_add_box(island, "IslandBase", Vector3(1.0, 0.55, 0.72), Vector3(0.0, 0.275, 0.0), Color("555b62"))
 	_add_box(island, "BackBoard", Vector3(1.0, 1.05, 0.10), Vector3(0.0, 1.05, 0.31), Color("666d75"))
 	_add_box(island, "UpperBox", Vector3(1.0, 0.16, 0.30), Vector3(0.0, 1.55, 0.20), Color("8d9399"))
-	_add_box(island, "Sand", Vector3(0.20, 0.76, 0.36), Vector3(0.38, 0.93, -0.08), Color("727982"))
-	_add_box(island, "DataCounter", Vector3(0.58, 0.13, 0.16), Vector3(0.0, 1.42, -0.02), Color("242a31"))
-	_create_stool(island, Vector3(0.0, 0.0, -0.88))
 
-	# Machine remains a separate child item mounted in a dedicated slot.
+	# Machine opening is centered; sand occupies the machine's local right side.
+	# Both are children of the same bay root, so their relationship cannot change by direction.
 	var machine_slot := Node3D.new()
 	machine_slot.name = "MachineSlot"
+	machine_slot.position = Vector3(-0.08, 0.0, -0.09)
 	bay.add_child(machine_slot)
+	_add_box(island, "Sand", Vector3(0.18, 0.76, 0.34), Vector3(0.39, 0.93, -0.09), Color("727982"))
+	_add_box(island, "DataCounter", Vector3(0.58, 0.13, 0.16), Vector3(-0.08, 1.42, -0.24), Color("242a31"))
+	_create_stool(island, Vector3(-0.08, 0.0, -0.90))
+
 	if with_machine:
 		_create_machine(machine_slot)
 	return bay
@@ -109,9 +107,9 @@ func _create_machine(parent: Node3D) -> void:
 	var machine := Node3D.new()
 	machine.name = "PachislotMachine3D"
 	parent.add_child(machine)
-	_add_box(machine, "Cabinet", Vector3(0.62, 0.92, 0.42), Vector3(-0.08, 1.01, -0.09), Color("242932"))
-	_add_box(machine, "ReelPanel", Vector3(0.48, 0.28, 0.025), Vector3(-0.08, 1.08, -0.312), Color("f2eee3"))
-	_add_box(machine, "ControlDeck", Vector3(0.52, 0.13, 0.12), Vector3(-0.08, 0.77, -0.30), Color("11151b"))
+	_add_box(machine, "Cabinet", Vector3(0.62, 0.92, 0.42), Vector3(0.0, 1.01, 0.0), Color("242932"))
+	_add_box(machine, "ReelPanel", Vector3(0.48, 0.28, 0.025), Vector3(0.0, 1.08, -0.222), Color("f2eee3"))
+	_add_box(machine, "ControlDeck", Vector3(0.52, 0.13, 0.12), Vector3(0.0, 0.77, -0.21), Color("11151b"))
 
 func _create_stool(parent: Node3D, pos: Vector3) -> void:
 	var stool := Node3D.new()

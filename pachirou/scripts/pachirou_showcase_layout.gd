@@ -5,7 +5,6 @@ const TILE_SIZE: float = 1.0
 const GROUP_GAP_CELLS: int = 1
 const EXPECTED_STYLE_COUNT: int = 18
 const START_CELL_X: int = 2
-# Each island is two snapped rows: front + back. Three empty rows remain between islands.
 const ISLAND_FRONT_ROWS: Array[int] = [2,7,12]
 
 func _ready() -> void:
@@ -33,24 +32,24 @@ func _arrange_showcase() -> void:
 		var first_cell_x: int = START_CELL_X+group*(6+GROUP_GAP_CELLS)+index_in_group*2
 		var front_z: int = ISLAND_FRONT_ROWS[row]
 		var back_z: int = front_z+1
-		# Keep every existing machine/equipment unit unchanged. Placement only.
 		_remove_clay_discs(source)
-		_place_on_cell(source,Vector2i(first_cell_x,front_z),row,0)
+		_place_on_cell(source,Vector2i(first_cell_x,front_z),row,"front")
 		var front_pair := source.duplicate() as Node3D
 		front_pair.name = "ShowcasePair_%02d" % style_number
 		world.add_child(front_pair)
 		_remove_clay_discs(front_pair)
-		_place_on_cell(front_pair,Vector2i(first_cell_x+1,front_z),row,0)
+		_place_on_cell(front_pair,Vector2i(first_cell_x+1,front_z),row,"front")
+		# Plain copies behind the existing row. No geometry edits and no rotation.
 		var back_a := source.duplicate() as Node3D
 		back_a.name = "ShowcaseBack_%02d_A" % style_number
 		world.add_child(back_a)
 		_remove_clay_discs(back_a)
-		_place_on_cell(back_a,Vector2i(first_cell_x,back_z),row,1)
+		_place_on_cell(back_a,Vector2i(first_cell_x,back_z),row,"back")
 		var back_b := source.duplicate() as Node3D
 		back_b.name = "ShowcaseBack_%02d_B" % style_number
 		world.add_child(back_b)
 		_remove_clay_discs(back_b)
-		_place_on_cell(back_b,Vector2i(first_cell_x+1,back_z),row,1)
+		_place_on_cell(back_b,Vector2i(first_cell_x+1,back_z),row,"back")
 
 func _remove_clay_discs(node: Node) -> void:
 	for child in node.get_children():
@@ -87,12 +86,12 @@ func _cell_to_world(cell: Vector2i) -> Vector3:
 	var half: float = float(GRID_SIZE-1)*0.5
 	return Vector3((float(cell.x)-half)*TILE_SIZE,0.0,(float(cell.y)-half)*TILE_SIZE)
 
-func _place_on_cell(node: Node3D,cell: Vector2i,row: int,side: int) -> void:
+func _place_on_cell(node: Node3D,cell: Vector2i,row: int,side: String) -> void:
 	if cell.x < 0 or cell.x >= GRID_SIZE or cell.y < 0 or cell.y >= GRID_SIZE:
 		push_warning("ShowcaseLayout: cell outside map: %s" % cell)
 		return
 	node.global_position = _cell_to_world(cell)
-	node.global_rotation_degrees = Vector3(0.0,180.0 if side == 1 else 0.0,0.0)
+	node.global_rotation_degrees = Vector3.ZERO
 	node.set_meta("grid_cell",cell)
 	node.set_meta("showcase_row",row)
 	node.set_meta("island_side",side)

@@ -2,6 +2,13 @@ extends Node3D
 
 const GRID_SIZE: int = 14
 const TILE_SIZE: float = 1.0
+const MACHINE_WIDTH: float = 0.62
+const SAND_WIDTH: float = 0.18
+const MACHINE_CENTER_X: float = -0.08
+# The completed 2D reference has the sand directly adjoining the machine's right edge.
+# Derive the 3D center from those widths instead of maintaining an independent offset.
+const SAND_CENTER_X: float = MACHINE_CENTER_X + MACHINE_WIDTH * 0.5 + SAND_WIDTH * 0.5
+const EQUIPMENT_Z: float = -0.09
 
 enum Direction { FRONT, RIGHT, BACK, LEFT }
 
@@ -9,8 +16,6 @@ var occupied: Dictionary = {}
 
 func _ready() -> void:
 	_build_floor()
-	# One complete bay item, shown in all four directions.
-	# Every component uses the same local coordinates and rotates only with the root.
 	_place_bay(Vector2i(5, 6), Direction.FRONT, true)
 	_place_bay(Vector2i(8, 6), Direction.RIGHT, true)
 	_place_bay(Vector2i(8, 9), Direction.BACK, true)
@@ -80,8 +85,6 @@ func _remove_bay(bay: Node3D) -> void:
 func _build_bay_item(with_machine: bool) -> Node3D:
 	var bay := Node3D.new()
 	bay.name = "PachislotBay3D"
-
-	# The complete island/stool set is authored once in FRONT-local coordinates.
 	var island := Node3D.new()
 	island.name = "IslandEquipment"
 	bay.add_child(island)
@@ -89,15 +92,16 @@ func _build_bay_item(with_machine: bool) -> Node3D:
 	_add_box(island, "BackBoard", Vector3(1.0, 1.05, 0.10), Vector3(0.0, 1.05, 0.31), Color("666d75"))
 	_add_box(island, "UpperBox", Vector3(1.0, 0.16, 0.30), Vector3(0.0, 1.55, 0.20), Color("8d9399"))
 
-	# Machine opening is centered; sand occupies the machine's local right side.
-	# Both are children of the same bay root, so their relationship cannot change by direction.
 	var machine_slot := Node3D.new()
 	machine_slot.name = "MachineSlot"
-	machine_slot.position = Vector3(-0.08, 0.0, -0.09)
+	machine_slot.position = Vector3(MACHINE_CENTER_X, 0.0, EQUIPMENT_Z)
 	bay.add_child(machine_slot)
-	_add_box(island, "Sand", Vector3(0.18, 0.76, 0.34), Vector3(0.39, 0.93, -0.09), Color("727982"))
-	_add_box(island, "DataCounter", Vector3(0.58, 0.13, 0.16), Vector3(-0.08, 1.42, -0.24), Color("242a31"))
-	_create_stool(island, Vector3(-0.08, 0.0, -0.90))
+
+	# Sand is no longer positioned independently. Its left face is exactly the
+	# machine's right face, and it shares the same front/back center line.
+	_add_box(island, "Sand", Vector3(SAND_WIDTH, 0.76, 0.34), Vector3(SAND_CENTER_X, 0.93, EQUIPMENT_Z), Color("727982"))
+	_add_box(island, "DataCounter", Vector3(0.58, 0.13, 0.16), Vector3(MACHINE_CENTER_X, 1.42, -0.24), Color("242a31"))
+	_create_stool(island, Vector3(MACHINE_CENTER_X, 0.0, -0.90))
 
 	if with_machine:
 		_create_machine(machine_slot)
@@ -107,7 +111,7 @@ func _create_machine(parent: Node3D) -> void:
 	var machine := Node3D.new()
 	machine.name = "PachislotMachine3D"
 	parent.add_child(machine)
-	_add_box(machine, "Cabinet", Vector3(0.62, 0.92, 0.42), Vector3(0.0, 1.01, 0.0), Color("242932"))
+	_add_box(machine, "Cabinet", Vector3(MACHINE_WIDTH, 0.92, 0.42), Vector3(0.0, 1.01, 0.0), Color("242932"))
 	_add_box(machine, "ReelPanel", Vector3(0.48, 0.28, 0.025), Vector3(0.0, 1.08, -0.222), Color("f2eee3"))
 	_add_box(machine, "ControlDeck", Vector3(0.52, 0.13, 0.12), Vector3(0.0, 0.77, -0.21), Color("11151b"))
 

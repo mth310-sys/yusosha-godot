@@ -18,7 +18,9 @@ func _ready() -> void:
 	add_child(world)
 	placement_grid = IsometricGrid.new(map_width, map_height, tile_width, tile_height)
 	_create_floor()
+	# Same placeable island-set item in two states: machine installed / empty slot.
 	_create_bay_item(Vector2i(6, 7), PachislotBayItem.Direction.LEFT_DOWN, true)
+	_create_bay_item(Vector2i(7, 7), PachislotBayItem.Direction.LEFT_DOWN, false)
 
 func _create_bay_item(cell: Vector2i, direction: PachislotBayItem.Direction, with_machine: bool = false) -> void:
 	var item := PACHISLOT_BAY_SCENE.instantiate() as PachislotBayItem
@@ -48,6 +50,15 @@ func _render_left_down_island_set(item: PachislotBayItem) -> void:
 	item.machine_slot.position = ISLAND_LOCAL_SHIFT
 	item.stool.position = ISLAND_LOCAL_SHIFT + STOOL_FRONT_OFFSET
 	item.stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
+
+	# Explicit component depth order: island frame behind equipment, machine in
+	# its own slot, sand/counter in the island equipment layer, stool in front.
+	item.frame.z_index = 0
+	item.machine_slot.z_index = 20
+	item.equipment.z_index = 30
+	item.sand.z_index = 2
+	item.data_counter.z_index = 3
+	item.stool.z_index = 40
 
 	_create_island_base_item(item.island_base)
 	_create_backboard_item(item.back_board)

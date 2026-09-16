@@ -47,11 +47,9 @@ func _render_left_down_item(item: PachislotBayItem) -> void:
 	_create_stool_geometry(item.stool)
 
 func _render_left_up_item(item: PachislotBayItem) -> void:
-	# Keep the item in its assigned grid cell. The frame itself is seated against
-	# the rear of that same 64x32 diamond: the base uses 70% of tile depth, so
-	# the remaining 30% is the local rear offset.
-	var left_up_depth_axis := Vector2(-DEPTH_AXIS.x, DEPTH_AXIS.y)
-	item.frame.position = left_up_depth_axis * (1.0 - BASE_DEPTH_RATIO)
+	# Stay in the same grid cell and move the base toward the visual rear
+	# (upper-right on the current isometric floor), not toward upper-left.
+	item.frame.position = DEPTH_AXIS * (1.0 - BASE_DEPTH_RATIO)
 	_create_left_up_island_base(item.island_base)
 
 func _create_left_up_island_base(parent: Node2D) -> void:

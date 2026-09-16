@@ -9,7 +9,7 @@ func _ready() -> void:
 	add_child(world)
 	_create_floor()
 	_create_bay_item(Vector2i(6, 7), PachislotBayItem.Direction.LEFT_DOWN)
-	_create_bay_item(Vector2i(8, 7), PachislotBayItem.Direction.LEFT_UP)
+	_create_bay_item(Vector2i(8, 6), PachislotBayItem.Direction.LEFT_UP)
 
 func _create_bay_item(cell: Vector2i, direction: PachislotBayItem.Direction) -> void:
 	var item := PACHISLOT_BAY_SCENE.instantiate() as PachislotBayItem

@@ -15,25 +15,20 @@ func _create_bay_item(cell: Vector2i) -> void:
 	item.position = grid_to_world(cell)
 	item.z_index = int(item.position.y)
 	world.add_child(item)
-	item.setup(PachislotBayItem.Direction.LEFT_DOWN, _render_bay_item)
+	item.setup(_render_bay_item)
 	item.build()
 
-func _render_bay_item(item: Node2D, direction: PachislotBayItem.Direction) -> void:
-	if direction != PachislotBayItem.Direction.LEFT_DOWN:
-		return
+func _render_bay_item(item: PachislotBayItem) -> void:
+	item.frame.position = UNIT_REAR_SHIFT
+	item.equipment.position = UNIT_REAR_SHIFT
+	item.stool.position = UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
+	item.stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
 
-	var frame := item.get_node("Frame") as Node2D
-	var equipment := item.get_node("Equipment") as Node2D
-	var stool := item.get_node("Stool") as Node2D
-	frame.position = UNIT_REAR_SHIFT
-	equipment.position = UNIT_REAR_SHIFT
-	stool.position = UNIT_REAR_SHIFT + STOOL_FRONT_OFFSET
-	stool.scale = Vector2(STOOL_SCALE, STOOL_SCALE)
-
-	_create_island_frame(frame)
-	_create_machine_and_sand(equipment)
-	_create_data_counter(equipment)
-	_create_stool_geometry(stool)
+	# LEFT_DOWN is the only canonical bay. No experimental direction code remains.
+	_create_island_frame(item.frame)
+	_create_machine_and_sand(item.equipment)
+	_create_data_counter(item.equipment)
+	_create_stool_geometry(item.stool)
 
 func _create_stool_geometry(stool: Node2D) -> void:
 	var seat_y: float = -38.4

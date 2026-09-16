@@ -18,13 +18,13 @@ const SAND_X := MACHINE_X + MACHINE_W * 0.5 + SAND_W * 0.5
 
 func _ready() -> void:
 	_build_floor()
-	# The selected upper tile is the first bay. Continue across that grid row,
-	# leaving exactly one empty cell between each bay.
+	# First six remain on the selected row. Six new styles are added two cells below,
+	# preserving the same one-empty-cell horizontal spacing.
 	var cells: Array[Vector2i] = [
-		Vector2i(3, 2), Vector2i(5, 2), Vector2i(7, 2),
-		Vector2i(9, 2), Vector2i(11, 2), Vector2i(13, 2)
+		Vector2i(3,2), Vector2i(5,2), Vector2i(7,2), Vector2i(9,2), Vector2i(11,2), Vector2i(13,2),
+		Vector2i(3,4), Vector2i(5,4), Vector2i(7,4), Vector2i(9,4), Vector2i(11,4), Vector2i(13,4)
 	]
-	for i in range(6):
+	for i in range(12):
 		_build_bay(cells[i], i)
 
 func _build_floor() -> void:
@@ -50,7 +50,13 @@ func _palette(style: int) -> Array[Color]:
 		2: return [Color("725f4d"),Color("c0a06d"),Color("33271e"),Color("d77a35"),Color("83a997"),Color("ead9aa")]
 		3: return [Color("92999a"),Color("d2d6d4"),Color("596061"),Color("ee9b75"),Color("9edbd5"),Color("f4eadc")]
 		4: return [Color("526078"),Color("bac5d8"),Color("121722"),Color("f15a69"),Color("79bdff"),Color("fffdf0")]
-		_: return [Color("202537"),Color("626b86"),Color("090d16"),Color("ff3f7d"),Color("36efff"),Color("f8f2ff")]
+		5: return [Color("202537"),Color("626b86"),Color("090d16"),Color("ff3f7d"),Color("36efff"),Color("f8f2ff")]
+		6: return [Color("d6d0c4"),Color("f0eadc"),Color("3b4147"),Color("d94f3d"),Color("4e9fb8"),Color("fff8e8")]
+		7: return [Color("315b4a"),Color("7fa68c"),Color("162b24"),Color("e6b64d"),Color("80d6c0"),Color("f4edcf")]
+		8: return [Color("3d3d43"),Color("8b8b91"),Color("141418"),Color("e8e8e8"),Color("ffcf4a"),Color("ffffff")]
+		9: return [Color("6a4f78"),Color("c6a9d3"),Color("2b2031"),Color("ff8ab3"),Color("82d8ff"),Color("fff1f7")]
+		10: return [Color("3d566e"),Color("8fb6cf"),Color("15222d"),Color("ffb347"),Color("65e0d5"),Color("edf8ff")]
+		_: return [Color("6b2f2f"),Color("c97a52"),Color("241313"),Color("ffd15c"),Color("ff765f"),Color("fff0c2")]
 
 func _build_bay(cell: Vector2i, style: int) -> void:
 	var p: Array[Color] = _palette(style)
@@ -89,7 +95,7 @@ func _build_bay(cell: Vector2i, style: int) -> void:
 	_box(sand,"Display",Vector3(SAND_W*0.54,SAND_H*0.18,0.028),Vector3(0,SAND_H*0.70,sf+0.003),p[4])
 	_box(sand,"Slot",Vector3(SAND_W*0.48,0.035,0.029),Vector3(0,SAND_H*0.32,sf+0.004),p[1])
 	_build_stool(island,Vector3(MACHINE_X,0,0.92),p,style)
-	_add_style_details(bay,island,machine_slot,p,style)
+	_add_style_details(island,machine_slot,p,style)
 
 func _build_machine(parent: Node3D, p: Array[Color], style: int) -> void:
 	_box(parent,"Cabinet",Vector3(MACHINE_W,MACHINE_H,MACHINE_D),Vector3(0,MACHINE_H*0.5,0),p[2])
@@ -105,7 +111,7 @@ func _build_machine(parent: Node3D, p: Array[Color], style: int) -> void:
 	_box(parent,"Control",Vector3(MACHINE_W*0.86,MACHINE_H*0.12,0.11),Vector3(0,MACHINE_H*0.31,face+0.035),p[2])
 	_box(parent,"LowerPanel",Vector3(MACHINE_W*0.70,MACHINE_H*0.13,0.027),Vector3(0,MACHINE_H*0.13,face+0.002),p[3])
 
-func _add_style_details(bay: Node3D, island: Node3D, machine: Node3D, p: Array[Color], style: int) -> void:
+func _add_style_details(island: Node3D, machine: Node3D, p: Array[Color], style: int) -> void:
 	var face: float = MACHINE_D*0.5+0.06
 	match style:
 		0:
@@ -120,28 +126,49 @@ func _add_style_details(bay: Node3D, island: Node3D, machine: Node3D, p: Array[C
 			_box(machine,"RetroBandA",Vector3(0.50,0.045,0.04),Vector3(0,0.73,face),p[5])
 			_box(machine,"RetroBandB",Vector3(0.42,0.045,0.04),Vector3(0,0.68,face),p[3])
 			_box(island,"RetroHeader",Vector3(0.72,0.08,0.08),Vector3(0,1.51,0.08),p[3])
-			_box(island,"RetroHeaderInset",Vector3(0.48,0.035,0.09),Vector3(0,1.51,0.13),p[5])
 		3:
 			_box(island,"ToyPlinth",Vector3(1.08,0.06,0.78),Vector3(0,0.03,0),p[1])
 			_box(machine,"SoftFrameTop",Vector3(0.58,0.06,0.055),Vector3(0,0.88,0.01),p[1])
-			_box(machine,"SoftControlLip",Vector3(0.60,0.055,0.16),Vector3(0,0.27,0.20),p[0])
 		4:
 			_box(machine,"OutlineL",Vector3(0.065,0.88,0.045),Vector3(-0.325,0.43,0.01),Color("090b10"))
 			_box(machine,"OutlineR",Vector3(0.065,0.88,0.045),Vector3(0.325,0.43,0.01),Color("090b10"))
 			_box(machine,"OutlineTop",Vector3(0.69,0.06,0.045),Vector3(0,0.86,0.01),Color("090b10"))
-			_box(machine,"ToonHighlight",Vector3(0.38,0.035,0.04),Vector3(0,0.76,face),p[4])
 		5:
 			_emissive_box(machine,"NeonL",Vector3(0.035,0.72,0.035),Vector3(-0.29,0.48,face),p[4])
 			_emissive_box(machine,"NeonR",Vector3(0.035,0.72,0.035),Vector3(0.29,0.48,face),p[3])
-			_emissive_box(machine,"NeonTop",Vector3(0.48,0.045,0.04),Vector3(0,0.78,face),p[4])
 			_emissive_box(island,"NeonHeader",Vector3(0.68,0.055,0.06),Vector3(0,1.51,0.12),p[3])
+		6:
+			_box(machine,"CleanWhiteFace",Vector3(0.52,0.62,0.035),Vector3(0,0.49,face),p[1])
+			_box(machine,"CleanAccent",Vector3(0.44,0.045,0.04),Vector3(0,0.78,face+0.02),p[4])
+			_box(island,"SlimHeader",Vector3(0.76,0.045,0.07),Vector3(0,1.50,0.13),p[5])
+		7:
+			_box(machine,"ArcadeHeader",Vector3(0.58,0.13,0.07),Vector3(0,0.87,0.02),p[3])
+			for i in range(4): _box(machine,"ArcadeLamp%d"%i,Vector3(0.055,0.055,0.045),Vector3(-0.15+float(i)*0.10,0.29,face+0.05),p[4])
+			_box(island,"GreenHeader",Vector3(0.82,0.08,0.09),Vector3(0,1.51,0.10),p[3])
+		8:
+			_box(machine,"MonoOuter",Vector3(0.58,0.72,0.035),Vector3(0,0.48,face),Color("050505"))
+			_box(machine,"MonoInner",Vector3(0.48,0.60,0.038),Vector3(0,0.49,face+0.02),p[1])
+			_box(machine,"GoldLine",Vector3(0.46,0.035,0.04),Vector3(0,0.77,face+0.04),p[4])
+		9:
+			_box(machine,"CandyTop",Vector3(0.58,0.09,0.07),Vector3(0,0.88,0.02),p[3])
+			_box(machine,"CandyPanel",Vector3(0.50,0.18,0.04),Vector3(0,0.70,face+0.02),p[4])
+			_box(island,"PastelHeader",Vector3(0.82,0.07,0.08),Vector3(0,1.51,0.11),p[5])
+		10:
+			_emissive_box(machine,"TechTop",Vector3(0.50,0.045,0.045),Vector3(0,0.80,face),p[4])
+			for i in range(3): _emissive_box(machine,"TechDot%d"%i,Vector3(0.045,0.045,0.04),Vector3((float(i)-1.0)*0.13,0.30,face+0.05),p[3])
+			_box(island,"TechHeader",Vector3(0.72,0.06,0.08),Vector3(0,1.51,0.11),p[4])
+		11:
+			_box(machine,"FestivalTop",Vector3(0.62,0.11,0.08),Vector3(0,0.88,0.02),p[3])
+			_box(machine,"FestivalBand",Vector3(0.50,0.055,0.04),Vector3(0,0.73,face),p[5])
+			for i in range(3): _box(machine,"FestivalLamp%d"%i,Vector3(0.06,0.06,0.045),Vector3((float(i)-1.0)*0.14,0.30,face+0.05),p[4])
+			_box(island,"FestivalHeader",Vector3(0.86,0.09,0.09),Vector3(0,1.51,0.10),p[3])
 
 func _build_stool(parent: Node3D, pos: Vector3, p: Array[Color], style: int) -> void:
 	var stool := Node3D.new()
 	stool.name = "RoundStool"
 	stool.position = pos
 	parent.add_child(stool)
-	var seat_radius: float = 0.24 if style == 0 or style == 3 else 0.22
+	var seat_radius: float = 0.24 if style == 0 or style == 3 or style == 9 else 0.22
 	_cylinder(stool,"Base",0.22,0.055,Vector3(0,0.0275,0),p[0])
 	_cylinder(stool,"Post",0.035,0.42,Vector3(0,0.27,0),p[1])
 	_cylinder(stool,"Seat",seat_radius,0.11,Vector3(0,0.55,0),p[2])

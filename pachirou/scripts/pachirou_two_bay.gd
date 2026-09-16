@@ -8,7 +8,8 @@ func _ready() -> void:
 	world.y_sort_enabled = true
 	add_child(world)
 	_create_floor()
-	_create_bay_item(Vector2i(7, 6), PachislotBayItem.Direction.LEFT_DOWN)
+	_create_bay_item(Vector2i(6, 7), PachislotBayItem.Direction.LEFT_DOWN)
+	_create_bay_item(Vector2i(8, 7), PachislotBayItem.Direction.LEFT_UP)
 
 func _create_bay_item(cell: Vector2i, direction: PachislotBayItem.Direction) -> void:
 	var item := PACHISLOT_BAY_SCENE.instantiate() as PachislotBayItem
@@ -45,10 +46,34 @@ func _render_left_down_item(item: PachislotBayItem) -> void:
 	_create_counter_hidden_faces(item.data_counter)
 	_create_stool_geometry(item.stool)
 
-func _render_left_up_item(_item: PachislotBayItem) -> void:
-	# Direction slot only. No provisional geometry is displayed until the
-	# component-by-component LEFT_UP assembly is complete.
-	pass
+func _render_left_up_item(item: PachislotBayItem) -> void:
+	# Build LEFT_UP from explicit component geometry. No transform is applied to
+	# the finished LEFT_DOWN polygons.
+	item.frame.position = Vector2(-UNIT_REAR_SHIFT.x, UNIT_REAR_SHIFT.y)
+	_create_left_up_island_base(item.island_base)
+
+func _create_left_up_island_base(parent: Node2D) -> void:
+	# Same physical 64x32 footprint, BASE_DEPTH_RATIO and BASE_HEIGHT as the
+	# canonical item. The width axis is explicitly reversed for LEFT_UP.
+	var floor_left := Vector2(32.0, 0.0)
+	var floor_front := Vector2(0.0, 16.0)
+	var depth := Vector2(-DEPTH_AXIS.x, DEPTH_AXIS.y) * BASE_DEPTH_RATIO
+	var rear_left: Vector2 = floor_left + depth
+	var rear_right: Vector2 = floor_front + depth
+	var up := Vector2(0.0, -BASE_HEIGHT)
+	var top_left: Vector2 = floor_left + up
+	var top_front: Vector2 = floor_front + up
+	var top_rear_left: Vector2 = rear_left + up
+	var top_rear_right: Vector2 = rear_right + up
+	_add_poly(parent, PackedVector2Array([floor_left, floor_front, top_front, top_left]), BASE_FRONT, 0)
+	_add_poly(parent, PackedVector2Array([rear_left, floor_left, top_left, top_rear_left]), BASE_SIDE, 0)
+	_add_poly(parent, PackedVector2Array([top_rear_right, top_rear_left, top_left, top_front]), BASE_TOP, 0)
+	_add_poly(parent, _face_quad(floor_left, floor_front, up, 0.04, 0.96, 0.05, 0.14), Color("3d4349"), 1)
+	_add_poly(parent, _face_quad(floor_left, floor_front, up, 0.49, 0.51, 0.16, 0.94), Color("464c53"), 1)
+	_add_poly(parent, _face_quad(floor_left, floor_front, up, 0.05, 0.95, 0.91, 0.955), Color("70767d"), 1)
+	_add_poly(parent, _face_quad(rear_left, floor_left, up, 0.04, 0.96, 0.05, 0.13), Color("30363c"), 1)
+	_add_poly(parent, PackedVector2Array([rear_right, rear_left, top_rear_left, top_rear_right]), Color("353b41"), -2)
+	_add_poly(parent, PackedVector2Array([floor_front, rear_right, top_rear_right, top_front]), Color("454b52"), -2)
 
 func _create_island_base_item(parent: Node2D) -> void:
 	var floor_left := Vector2(-32.0, 0.0)

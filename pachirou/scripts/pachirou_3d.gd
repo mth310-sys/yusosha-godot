@@ -2,15 +2,21 @@ extends Node3D
 
 const GRID_SIZE: int = 14
 const TILE_SIZE: float = 1.0
-const MACHINE_WIDTH: float = 0.62
-const SAND_WIDTH: float = 0.18
-const MACHINE_CENTER_X: float = -0.08
-# The completed 2D reference has the sand directly adjoining the machine's right edge.
-# Derive the 3D center from those widths instead of maintaining an independent offset.
-const SAND_CENTER_X: float = MACHINE_CENTER_X + MACHINE_WIDTH * 0.5 + SAND_WIDTH * 0.5
-const EQUIPMENT_Z: float = -0.09
 
 enum Direction { FRONT, RIGHT, BACK, LEFT }
+
+# Accepted 2D reference proportions (commit 386f229):
+# machine front span 20.5, sand front span 7.0 -> sand is ~34% of machine width.
+const MACHINE_WIDTH: float = 0.68
+const MACHINE_DEPTH: float = 0.40
+const MACHINE_HEIGHT: float = 0.92
+const SAND_WIDTH: float = MACHINE_WIDTH * (7.0 / 20.5)
+const SAND_DEPTH: float = 0.40
+const SAND_HEIGHT: float = MACHINE_HEIGHT * (48.0 / 54.0)
+const GAP: float = 0.025
+const MACHINE_CENTER_X: float = -0.12
+const FRONT_Z: float = -0.13
+const SAND_CENTER_X: float = MACHINE_CENTER_X + MACHINE_WIDTH * 0.5 + GAP + SAND_WIDTH * 0.5
 
 var occupied: Dictionary = {}
 
@@ -85,24 +91,29 @@ func _remove_bay(bay: Node3D) -> void:
 func _build_bay_item(with_machine: bool) -> Node3D:
 	var bay := Node3D.new()
 	bay.name = "PachislotBay3D"
+
 	var island := Node3D.new()
 	island.name = "IslandEquipment"
 	bay.add_child(island)
+
+	# One-seat island body. Front opening contains machine + sand side by side.
 	_add_box(island, "IslandBase", Vector3(1.0, 0.55, 0.72), Vector3(0.0, 0.275, 0.0), Color("555b62"))
 	_add_box(island, "BackBoard", Vector3(1.0, 1.05, 0.10), Vector3(0.0, 1.05, 0.31), Color("666d75"))
 	_add_box(island, "UpperBox", Vector3(1.0, 0.16, 0.30), Vector3(0.0, 1.55, 0.20), Color("8d9399"))
 
-	var machine_slot := Node3D.new()
-	machine_slot.name = "MachineSlot"
-	machine_slot.position = Vector3(MACHINE_CENTER_X, 0.0, EQUIPMENT_Z)
-	bay.add_child(machine_slot)
+	# Sand is the narrow vertical equipment immediately beside the machine,
+	# matching the accepted 2D composition. It is NOT behind the machine.
+	_add_box(island, "Sand", Vector3(SAND_WIDTH, SAND_HEIGHT, SAND_DEPTH), Vector3(SAND_CENTER_X, 0.55 + SAND_HEIGHT * 0.5, FRONT_Z), Color("727982"))
+	_add_box(island, "SandInset", Vector3(SAND_WIDTH * 0.56, SAND_HEIGHT * 0.20, 0.025), Vector3(SAND_CENTER_X, 0.55 + SAND_HEIGHT * 0.56, FRONT_Z - SAND_DEPTH * 0.5 - 0.013), Color("242a31"))
 
-	# Sand is no longer positioned independently. Its left face is exactly the
-	# machine's right face, and it shares the same front/back center line.
-	_add_box(island, "Sand", Vector3(SAND_WIDTH, 0.76, 0.34), Vector3(SAND_CENTER_X, 0.93, EQUIPMENT_Z), Color("727982"))
-	_add_box(island, "DataCounter", Vector3(0.58, 0.13, 0.16), Vector3(MACHINE_CENTER_X, 1.42, -0.24), Color("242a31"))
+	# Counter spans above the machine opening, as in the accepted 2D item.
+	_add_box(island, "DataCounter", Vector3(MACHINE_WIDTH * 0.76, 0.13, 0.16), Vector3(MACHINE_CENTER_X, 1.47, -0.25), Color("242a31"))
 	_create_stool(island, Vector3(MACHINE_CENTER_X, 0.0, -0.90))
 
+	var machine_slot := Node3D.new()
+	machine_slot.name = "MachineSlot"
+	machine_slot.position = Vector3(MACHINE_CENTER_X, 0.0, FRONT_Z)
+	bay.add_child(machine_slot)
 	if with_machine:
 		_create_machine(machine_slot)
 	return bay
@@ -111,9 +122,9 @@ func _create_machine(parent: Node3D) -> void:
 	var machine := Node3D.new()
 	machine.name = "PachislotMachine3D"
 	parent.add_child(machine)
-	_add_box(machine, "Cabinet", Vector3(MACHINE_WIDTH, 0.92, 0.42), Vector3(0.0, 1.01, 0.0), Color("242932"))
-	_add_box(machine, "ReelPanel", Vector3(0.48, 0.28, 0.025), Vector3(0.0, 1.08, -0.222), Color("f2eee3"))
-	_add_box(machine, "ControlDeck", Vector3(0.52, 0.13, 0.12), Vector3(0.0, 0.77, -0.21), Color("11151b"))
+	_add_box(machine, "Cabinet", Vector3(MACHINE_WIDTH, MACHINE_HEIGHT, MACHINE_DEPTH), Vector3(0.0, 0.55 + MACHINE_HEIGHT * 0.5, 0.0), Color("242932"))
+	_add_box(machine, "ReelPanel", Vector3(MACHINE_WIDTH * 0.76, MACHINE_HEIGHT * 0.29, 0.025), Vector3(0.0, 1.12, -MACHINE_DEPTH * 0.5 - 0.013), Color("f2eee3"))
+	_add_box(machine, "ControlDeck", Vector3(MACHINE_WIDTH * 0.82, 0.13, 0.12), Vector3(0.0, 0.82, -MACHINE_DEPTH * 0.5 - 0.04), Color("11151b"))
 
 func _create_stool(parent: Node3D, pos: Vector3) -> void:
 	var stool := Node3D.new()

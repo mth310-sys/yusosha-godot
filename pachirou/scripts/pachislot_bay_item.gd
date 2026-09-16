@@ -6,6 +6,7 @@ enum Direction {
 	LEFT_UP,
 }
 
+var cell: Vector2i = Vector2i.ZERO
 var direction: Direction = Direction.LEFT_DOWN
 var renderer: Callable
 
@@ -19,13 +20,27 @@ var renderer: Callable
 @onready var data_counter: Node2D = $Equipment/DataCounter
 @onready var stool: Node2D = $Stool
 
-func setup(p_direction: Direction, p_renderer: Callable) -> void:
+func setup(p_cell: Vector2i, p_direction: Direction, p_renderer: Callable) -> void:
+	cell = p_cell
 	direction = p_direction
 	renderer = p_renderer
-	name = "PachislotBay_%s" % direction_name()
+	name = "PachislotBay_%d_%d_%s" % [cell.x, cell.y, direction_name()]
+
+func place_on_grid(grid: IsometricGrid) -> void:
+	position = grid.cell_origin(cell)
+	z_index = int(position.y)
+
+func set_cell(p_cell: Vector2i, grid: IsometricGrid) -> void:
+	cell = p_cell
+	place_on_grid(grid)
+
+func set_direction(p_direction: Direction) -> void:
+	direction = p_direction
+	build()
 
 func build() -> void:
 	clear_visuals()
+	_reset_component_transforms()
 	if renderer.is_valid():
 		renderer.call(self, direction)
 
@@ -45,6 +60,17 @@ func direction_name() -> String:
 		Direction.LEFT_UP:
 			return "LEFT_UP"
 	return "UNKNOWN"
+
+func _reset_component_transforms() -> void:
+	frame.position = Vector2.ZERO
+	equipment.position = Vector2.ZERO
+	stool.position = Vector2.ZERO
+	frame.rotation = 0.0
+	equipment.rotation = 0.0
+	stool.rotation = 0.0
+	frame.scale = Vector2.ONE
+	equipment.scale = Vector2.ONE
+	stool.scale = Vector2.ONE
 
 func _clear_visual_children(parent: Node2D) -> void:
 	for child in parent.get_children():

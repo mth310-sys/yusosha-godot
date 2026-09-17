@@ -6,7 +6,7 @@ const WALK_SPEED: float = 1.25
 const TARGET_SHOWCASE_CELL := Vector2i(1,3)
 const TARGET_SHOWCASE_ROW: int = 0
 const TARGET_SIDE: String = "front"
-const SEATED_ROOT_Y: float = 0.43
+const SEATED_ROOT_Y: float = 0.45
 
 var bita: Node3D
 var grid_rules: PachirouGridRules
@@ -30,8 +30,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not bita_moving or grid_rules == null or bita_path_index >= bita_path.size(): return
 	var target_global := grid_rules.cell_to_world(bita_path[bita_path_index])
-	if bita_path_index == bita_path.size()-1:
-		target_global = grid_rules.seat_world_position(bita_target_seat)
+	if bita_path_index == bita_path.size()-1: target_global = grid_rules.seat_world_position(bita_target_seat)
 	var current := bita.global_position
 	var flat_target := Vector3(target_global.x,current.y,target_global.z)
 	var distance := current.distance_to(flat_target)
@@ -78,8 +77,7 @@ func _find_selected_seat() -> Vector2i:
 		var source_cell := source_cell_variant as Vector2i
 		var row: int = int(machine.get_meta("showcase_row",-1))
 		var side: String = String(machine.get_meta("island_side",""))
-		if source_cell == TARGET_SHOWCASE_CELL and row == TARGET_SHOWCASE_ROW and side == TARGET_SIDE:
-			return seat_cell
+		if source_cell == TARGET_SHOWCASE_CELL and row == TARGET_SHOWCASE_ROW and side == TARGET_SIDE: return seat_cell
 	return Vector2i(-1,-1)
 
 func _on_bita_reached_seat() -> void:
@@ -89,34 +87,32 @@ func _on_bita_reached_seat() -> void:
 	if machine == null: return
 	bita.set_meta("target_machine",machine)
 	_set_bita_seated_pose(machine)
-	if machine_runtime != null and machine_runtime.activate_machine(machine,bita):
-		bita.set_meta("interaction_state","PLAYING")
-	else:
-		bita.set_meta("interaction_state","SEATED")
+	if machine_runtime != null and machine_runtime.activate_machine(machine,bita): bita.set_meta("interaction_state","PLAYING")
+	else: bita.set_meta("interaction_state","SEATED")
 
 func _set_bita_seated_pose(machine: Node3D) -> void:
-	# Keep the seat's X/Z as the authoritative interaction point and lower the
-	# character root to the seat surface. Face the actual machine equipment.
 	var seat_position := grid_rules.seat_world_position(bita_target_seat)
 	bita.global_position = Vector3(seat_position.x,SEATED_ROOT_Y,seat_position.z)
 	var machine_position := machine.global_position
 	var facing := Vector3(machine_position.x-bita.global_position.x,0.0,machine_position.z-bita.global_position.z)
-	if facing.length_squared() > 0.001:
-		bita.rotation.y = atan2(facing.x,facing.z)
-	# First sitting prototype: shorten/lift the lower legs and move the feet
-	# forward while preserving the approved head/body proportions.
-	var left_leg := bita.get_node_or_null("LeftLeg") as MeshInstance3D
-	var right_leg := bita.get_node_or_null("RightLeg") as MeshInstance3D
-	var left_shoe := bita.get_node_or_null("LeftShoe") as MeshInstance3D
-	var right_shoe := bita.get_node_or_null("RightShoe") as MeshInstance3D
-	if left_leg != null:
-		left_leg.scale = Vector3(1.0,0.72,1.0)
-		left_leg.position = Vector3(-0.09,0.15,0.08)
-	if right_leg != null:
-		right_leg.scale = Vector3(1.0,0.72,1.0)
-		right_leg.position = Vector3(0.09,0.15,0.08)
-	if left_shoe != null: left_shoe.position = Vector3(-0.09,0.035,0.20)
-	if right_shoe != null: right_shoe.position = Vector3(0.09,0.035,0.20)
+	if facing.length_squared() > 0.001: bita.rotation.y = atan2(facing.x,facing.z)
+	# Replace the standing lower body with a readable 90-degree seated silhouette.
+	_set_part_visible(bita,"LeftLeg",false)
+	_set_part_visible(bita,"RightLeg",false)
+	_set_part_visible(bita,"LeftShoe",false)
+	_set_part_visible(bita,"RightShoe",false)
+	var pants := _material(Color(0.16,0.19,0.24))
+	var shoes := _material(Color(0.08,0.08,0.09))
+	_box(bita,"LeftThigh",Vector3(0.13,0.14,0.30),Vector3(-0.09,0.08,0.13),pants)
+	_box(bita,"RightThigh",Vector3(0.13,0.14,0.30),Vector3(0.09,0.08,0.13),pants)
+	_box(bita,"LeftShin",Vector3(0.13,0.29,0.14),Vector3(-0.09,-0.10,0.27),pants)
+	_box(bita,"RightShin",Vector3(0.13,0.29,0.14),Vector3(0.09,-0.10,0.27),pants)
+	_box(bita,"LeftSeatedShoe",Vector3(0.14,0.07,0.22),Vector3(-0.09,-0.255,0.32),shoes)
+	_box(bita,"RightSeatedShoe",Vector3(0.14,0.07,0.22),Vector3(0.09,-0.255,0.32),shoes)
+
+func _set_part_visible(root: Node3D,node_name: String,visible: bool) -> void:
+	var part := root.get_node_or_null(node_name) as MeshInstance3D
+	if part != null: part.visible = visible
 
 func _build_customer(root: Node3D) -> void:
 	var skin := _material(Color(0.92,0.72,0.56))

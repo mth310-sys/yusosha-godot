@@ -3,14 +3,14 @@ extends Node3D
 const CHARACTER_HEIGHT: float = 1.20
 
 func _ready() -> void:
-	# Character-development waiting area: keep both prototypes off the active islands.
+	# Character-development waiting area: selected upper-left map tile.
 	name = "Eita"
-	position = Vector3(-7.0,0.0,-7.0)
+	position = Vector3(-7.5,0.0,-9.5)
 	_build_customer(self)
 
 	var bita := Node3D.new()
 	bita.name = "Bita"
-	bita.position = Vector3(0.8,0.0,0.0)
+	bita.position = Vector3(0.55,0.0,0.0)
 	add_child(bita)
 	_build_customer(bita)
 

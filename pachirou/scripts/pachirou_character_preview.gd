@@ -3,6 +3,9 @@ extends Node3D
 const CHARACTER_HEIGHT: float = 1.20
 const TILE_SIZE: float = 1.0
 const WALK_SPEED: float = 1.25
+const TARGET_SHOWCASE_CELL := Vector2i(1,3)
+const TARGET_SHOWCASE_ROW: int = 0
+const TARGET_SIDE: String = "front"
 
 var bita: Node3D
 var grid_rules: PachirouGridRules
@@ -43,18 +46,14 @@ func _start_bita_grid_test() -> void:
 	grid_rules = get_tree().current_scene.get_node_or_null("GridRules") as PachirouGridRules
 	if grid_rules == null: return
 	while not grid_rules.layout_ready: await get_tree().process_frame
-	var seats := grid_rules.available_seats()
-	if seats.is_empty():
-		push_warning("Bita: no registered seats")
+	bita_target_seat = _find_selected_seat()
+	if bita_target_seat.x < 0:
+		push_warning("Bita: selected machine seat was not registered")
 		return
 	var start := grid_rules.world_to_cell(bita.global_position)
-	for seat in seats:
-		var candidate := grid_rules.find_path(start,seat,bita)
-		if not candidate.is_empty() and (bita_path.is_empty() or candidate.size() < bita_path.size()):
-			bita_path = candidate
-			bita_target_seat = seat
+	bita_path = grid_rules.find_path(start,bita_target_seat,bita)
 	if bita_path.is_empty():
-		push_warning("Bita: no reachable seat from %s" % start)
+		push_warning("Bita: selected seat is unreachable from %s" % start)
 		return
 	if not grid_rules.reserve_seat(bita_target_seat,bita):
 		bita_path.clear()
@@ -63,6 +62,20 @@ func _start_bita_grid_test() -> void:
 	bita.global_position = Vector3(start_world.x,bita.global_position.y,start_world.z)
 	bita_path_index = 1 if bita_path.size() > 1 else 0
 	bita_moving = true
+
+func _find_selected_seat() -> Vector2i:
+	for cell_variant in grid_rules.seats.keys():
+		var seat_cell := cell_variant as Vector2i
+		var machine := grid_rules.machine_for_seat(seat_cell)
+		if machine == null: continue
+		var source_cell_variant: Variant = machine.get_meta("grid_cell",Vector2i(-1,-1))
+		if not source_cell_variant is Vector2i: continue
+		var source_cell := source_cell_variant as Vector2i
+		var row: int = int(machine.get_meta("showcase_row",-1))
+		var side: String = String(machine.get_meta("island_side",""))
+		if source_cell == TARGET_SHOWCASE_CELL and row == TARGET_SHOWCASE_ROW and side == TARGET_SIDE:
+			return seat_cell
+	return Vector2i(-1,-1)
 
 func _on_bita_reached_seat() -> void:
 	if grid_rules == null or bita_target_seat.x < 0: return

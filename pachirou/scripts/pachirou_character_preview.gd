@@ -15,7 +15,6 @@ func _ready() -> void:
 	name = "Eita"
 	position = Vector3(-7.5,0.0,-9.5)
 	_build_customer(self)
-
 	bita = Node3D.new()
 	bita.name = "Bita"
 	bita.position = Vector3(TILE_SIZE,0.0,0.0)
@@ -32,34 +31,40 @@ func _process(delta: float) -> void:
 	if distance <= 0.03:
 		bita.global_position = flat_target
 		bita_path_index += 1
-		if bita_path_index >= bita_path.size():
-			bita_moving = false
+		if bita_path_index >= bita_path.size(): bita_moving = false
 		return
 	var direction := (flat_target-current).normalized()
 	bita.global_position = current+direction*minf(WALK_SPEED*delta,distance)
-	if direction.length_squared() > 0.001:
-		bita.rotation.y = atan2(direction.x,direction.z)
+	if direction.length_squared() > 0.001: bita.rotation.y = atan2(direction.x,direction.z)
 
 func _start_bita_grid_test() -> void:
-	await get_tree().process_frame
-	await get_tree().process_frame
 	grid_rules = get_tree().current_scene.get_node_or_null("GridRules") as PachirouGridRules
 	if grid_rules == null: return
+	# Do not race GridRules/ShowcaseLayout. Wait for the final occupancy map.
+	while not grid_rules.layout_ready:
+		await get_tree().process_frame
 	var seats := grid_rules.available_seats()
-	if seats.is_empty(): return
+	if seats.is_empty():
+		push_warning("Bita: no registered seats")
+		return
 	var start := grid_rules.world_to_cell(bita.global_position)
 	for seat in seats:
 		var access := grid_rules.access_cell_for_seat(seat)
 		if access.x < 0: continue
 		var candidate := grid_rules.find_path(start,access)
-		if candidate.size() > 1 and (bita_path.is_empty() or candidate.size() < bita_path.size()):
+		if not candidate.is_empty() and (bita_path.is_empty() or candidate.size() < bita_path.size()):
 			bita_path = candidate
 			bita_target_seat = seat
-	if bita_path.is_empty(): return
+	if bita_path.is_empty():
+		push_warning("Bita: no reachable seat from %s" % start)
+		return
 	if not grid_rules.reserve_seat(bita_target_seat,bita):
 		bita_path.clear()
 		return
-	bita_path_index = 1
+	# Snap the logical start to its cell center before following the route.
+	var start_world := grid_rules.cell_to_world(start)
+	bita.global_position = Vector3(start_world.x,bita.global_position.y,start_world.z)
+	bita_path_index = 1 if bita_path.size() > 1 else 0
 	bita_moving = true
 
 func _build_customer(root: Node3D) -> void:

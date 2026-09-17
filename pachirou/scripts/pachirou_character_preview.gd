@@ -31,7 +31,9 @@ func _process(delta: float) -> void:
 	if distance <= 0.03:
 		bita.global_position = flat_target
 		bita_path_index += 1
-		if bita_path_index >= bita_path.size(): bita_moving = false
+		if bita_path_index >= bita_path.size():
+			bita_moving = false
+			_on_bita_reached_seat()
 		return
 	var direction := (flat_target-current).normalized()
 	bita.global_position = current+direction*minf(WALK_SPEED*delta,distance)
@@ -40,18 +42,14 @@ func _process(delta: float) -> void:
 func _start_bita_grid_test() -> void:
 	grid_rules = get_tree().current_scene.get_node_or_null("GridRules") as PachirouGridRules
 	if grid_rules == null: return
-	# Do not race GridRules/ShowcaseLayout. Wait for the final occupancy map.
-	while not grid_rules.layout_ready:
-		await get_tree().process_frame
+	while not grid_rules.layout_ready: await get_tree().process_frame
 	var seats := grid_rules.available_seats()
 	if seats.is_empty():
 		push_warning("Bita: no registered seats")
 		return
 	var start := grid_rules.world_to_cell(bita.global_position)
 	for seat in seats:
-		var access := grid_rules.access_cell_for_seat(seat)
-		if access.x < 0: continue
-		var candidate := grid_rules.find_path(start,access)
+		var candidate := grid_rules.find_path(start,seat,bita)
 		if not candidate.is_empty() and (bita_path.is_empty() or candidate.size() < bita_path.size()):
 			bita_path = candidate
 			bita_target_seat = seat
@@ -61,11 +59,17 @@ func _start_bita_grid_test() -> void:
 	if not grid_rules.reserve_seat(bita_target_seat,bita):
 		bita_path.clear()
 		return
-	# Snap the logical start to its cell center before following the route.
 	var start_world := grid_rules.cell_to_world(start)
 	bita.global_position = Vector3(start_world.x,bita.global_position.y,start_world.z)
 	bita_path_index = 1 if bita_path.size() > 1 else 0
 	bita_moving = true
+
+func _on_bita_reached_seat() -> void:
+	if grid_rules == null or bita_target_seat.x < 0: return
+	if grid_rules.occupy_seat(bita_target_seat,bita):
+		bita.set_meta("interaction_state","AT_SEAT")
+		var machine := grid_rules.machine_for_seat(bita_target_seat)
+		if machine != null: bita.set_meta("target_machine",machine)
 
 func _build_customer(root: Node3D) -> void:
 	var skin := _material(Color(0.92,0.72,0.56))

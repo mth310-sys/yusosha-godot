@@ -3,6 +3,7 @@ class_name PachirouGridRules
 
 const GRID_SIZE: int = 22
 const TILE_SIZE: float = 1.0
+const DIRECTIONS: Array[Vector2i] = [Vector2i(1,0),Vector2i(-1,0),Vector2i(0,1),Vector2i(0,-1)]
 
 enum CellType { WALKABLE, BLOCKED, SEAT, RESERVED, ENTRANCE }
 
@@ -15,6 +16,7 @@ func _ready() -> void:
 
 func _reset_walkable_grid() -> void:
 	cells.clear()
+	seats.clear()
 	for z in range(GRID_SIZE):
 		for x in range(GRID_SIZE):
 			cells[Vector2i(x,z)] = CellType.WALKABLE
@@ -41,13 +43,8 @@ func _register_seat_for_item(item: Node3D,machine_cell: Vector2i) -> void:
 	var side: String = String(item.get_meta("island_side","front"))
 	var seat_cell := machine_cell+Vector2i(0,1) if side == "front" else machine_cell+Vector2i(0,-1)
 	if not is_inside(seat_cell): return
-	# A seat is a destination, not a normal through-route.
 	cells[seat_cell] = CellType.SEAT
-	seats[seat_cell] = {
-		"machine": item,
-		"occupied_by": null,
-		"reserved_by": null
-	}
+	seats[seat_cell] = {"machine":item,"occupied_by":null,"reserved_by":null}
 
 func is_inside(cell: Vector2i) -> bool:
 	return cell.x >= 0 and cell.x < GRID_SIZE and cell.y >= 0 and cell.y < GRID_SIZE
@@ -60,10 +57,65 @@ func set_cell_type(cell: Vector2i,type: CellType) -> void:
 	if is_inside(cell): cells[cell] = type
 
 func is_walkable(cell: Vector2i) -> bool:
-	return get_cell_type(cell) == CellType.WALKABLE or get_cell_type(cell) == CellType.ENTRANCE
+	var type := get_cell_type(cell)
+	return type == CellType.WALKABLE or type == CellType.ENTRANCE
 
 func is_seat(cell: Vector2i) -> bool:
 	return get_cell_type(cell) == CellType.SEAT
+
+func world_to_cell(world_position: Vector3) -> Vector2i:
+	var half: float = float(GRID_SIZE-1)*0.5
+	return Vector2i(roundi(world_position.x/TILE_SIZE+half),roundi(world_position.z/TILE_SIZE+half))
+
+func cell_to_world(cell: Vector2i) -> Vector3:
+	var half: float = float(GRID_SIZE-1)*0.5
+	return Vector3((float(cell.x)-half)*TILE_SIZE,0.0,(float(cell.y)-half)*TILE_SIZE)
+
+func available_seats() -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for cell_variant in seats.keys():
+		var cell := cell_variant as Vector2i
+		var data: Dictionary = seats[cell]
+		if data["occupied_by"] == null and data["reserved_by"] == null:
+			result.append(cell)
+	return result
+
+func access_cell_for_seat(seat_cell: Vector2i) -> Vector2i:
+	if not seats.has(seat_cell): return Vector2i(-1,-1)
+	var machine := machine_for_seat(seat_cell)
+	if machine == null: return Vector2i(-1,-1)
+	var side: String = String(machine.get_meta("island_side","front"))
+	var access := seat_cell+Vector2i(0,1) if side == "front" else seat_cell+Vector2i(0,-1)
+	return access if is_walkable(access) else Vector2i(-1,-1)
+
+func find_path(start: Vector2i,goal: Vector2i) -> Array[Vector2i]:
+	var empty: Array[Vector2i] = []
+	if not is_inside(start) or not is_inside(goal): return empty
+	if start == goal: return [start]
+	if not is_walkable(goal): return empty
+	var frontier: Array[Vector2i] = [start]
+	var came_from: Dictionary = {start:start}
+	var index: int = 0
+	while index < frontier.size():
+		var current: Vector2i = frontier[index]
+		index += 1
+		for direction in DIRECTIONS:
+			var next := current+direction
+			if not is_inside(next) or came_from.has(next): continue
+			if not is_walkable(next) and next != goal: continue
+			came_from[next] = current
+			if next == goal:
+				return _reconstruct_path(came_from,start,goal)
+			frontier.append(next)
+	return empty
+
+func _reconstruct_path(came_from: Dictionary,start: Vector2i,goal: Vector2i) -> Array[Vector2i]:
+	var path: Array[Vector2i] = [goal]
+	var current := goal
+	while current != start:
+		current = came_from[current] as Vector2i
+		path.push_front(current)
+	return path
 
 func reserve_seat(cell: Vector2i,customer: Node) -> bool:
 	if not seats.has(cell): return false

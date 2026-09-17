@@ -28,6 +28,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not bita_moving or grid_rules == null or bita_path_index >= bita_path.size(): return
 	var target_global := grid_rules.cell_to_world(bita_path[bita_path_index])
+	if bita_path_index == bita_path.size()-1:
+		target_global = grid_rules.seat_world_position(bita_target_seat)
 	var current := bita.global_position
 	var flat_target := Vector3(target_global.x,current.y,target_global.z)
 	var distance := current.distance_to(flat_target)

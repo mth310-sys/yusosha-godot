@@ -14,55 +14,79 @@ func build() -> void:
 	pants = _material(Color(0.16,0.19,0.24))
 	shoes = _material(Color(0.08,0.08,0.09))
 
-	var hip := _joint(self,"Hip",Vector3(0.0,0.43,0.0))
-	_box(hip,"Pelvis",Vector3(0.28,0.14,0.20),Vector3(0.0,0.07,0.0),pants)
+	# Pelvis is the anatomical root. Upper body and both legs articulate from it.
+	var pelvis := _joint(self,"Pelvis",Vector3(0.0,0.57,0.0))
+	_box(pelvis,"PelvisMesh",Vector3(0.30,0.16,0.20),Vector3(0.0,0.0,0.0),pants)
 
-	var torso := _joint(hip,"Torso",Vector3(0.0,0.14,0.0))
-	_box(torso,"Body",Vector3(0.38,0.38,0.22),Vector3(0.0,0.19,0.0),shirt)
-	var neck := _joint(torso,"Neck",Vector3(0.0,0.40,0.0))
-	var head_joint := _joint(neck,"HeadJoint",Vector3.ZERO)
-	_box(head_joint,"Head",Vector3(0.42,0.40,0.38),Vector3(0.0,0.20,0.0),skin)
-	_box(head_joint,"HairTop",Vector3(0.44,0.10,0.40),Vector3(0.0,0.395,-0.01),hair)
-	_box(head_joint,"HairBack",Vector3(0.44,0.24,0.08),Vector3(0.0,0.28,-0.19),hair)
-	_box(head_joint,"LeftEye",Vector3(0.035,0.045,0.018),Vector3(-0.085,0.24,0.198),hair)
-	_box(head_joint,"RightEye",Vector3(0.035,0.045,0.018),Vector3(0.085,0.24,0.198),hair)
+	var waist := _joint(pelvis,"Waist",Vector3(0.0,0.08,0.0))
+	_box(waist,"WaistMesh",Vector3(0.30,0.16,0.20),Vector3(0.0,0.08,0.0),shirt)
+	var chest := _joint(waist,"Chest",Vector3(0.0,0.16,0.0))
+	_box(chest,"ChestMesh",Vector3(0.38,0.24,0.22),Vector3(0.0,0.12,0.0),shirt)
 
-	_build_arm(torso,"Left",-0.245)
-	_build_arm(torso,"Right",0.245)
-	_build_leg(hip,"Left",-0.09)
-	_build_leg(hip,"Right",0.09)
+	var neck := _joint(chest,"Neck",Vector3(0.0,0.28,0.0))
+	_box(neck,"NeckMesh",Vector3(0.10,0.08,0.10),Vector3(0.0,0.04,0.0),skin)
+	var head := _joint(neck,"Head",Vector3(0.0,0.08,0.0))
+	_box(head,"HeadMesh",Vector3(0.34,0.36,0.32),Vector3(0.0,0.18,0.0),skin)
+	_box(head,"HairTop",Vector3(0.36,0.08,0.34),Vector3(0.0,0.37,-0.01),hair)
+	_box(head,"HairBack",Vector3(0.36,0.22,0.07),Vector3(0.0,0.25,-0.17),hair)
+	_box(head,"LeftEye",Vector3(0.03,0.04,0.018),Vector3(-0.07,0.21,0.169),hair)
+	_box(head,"RightEye",Vector3(0.03,0.04,0.018),Vector3(0.07,0.21,0.169),hair)
 
-func _build_arm(torso: Node3D,side: String,x: float) -> void:
-	var shoulder := _joint(torso,side+"Shoulder",Vector3(x,0.34,0.0))
-	_box(shoulder,side+"UpperArm",Vector3(0.10,0.18,0.12),Vector3(0.0,-0.09,0.0),skin)
-	var elbow := _joint(shoulder,side+"Elbow",Vector3(0.0,-0.18,0.0))
-	_box(elbow,side+"Forearm",Vector3(0.10,0.17,0.12),Vector3(0.0,-0.085,0.0),skin)
+	_build_arm(chest,"Left",-0.23)
+	_build_arm(chest,"Right",0.23)
+	_build_leg(pelvis,"Left",-0.09)
+	_build_leg(pelvis,"Right",0.09)
+	set_standing_pose()
 
-func _build_leg(hip: Node3D,side: String,x: float) -> void:
-	var hip_joint := _joint(hip,side+"HipJoint",Vector3(x,0.0,0.0))
-	_box(hip_joint,side+"Thigh",Vector3(0.13,0.18,0.14),Vector3(0.0,-0.09,0.0),pants)
-	var knee := _joint(hip_joint,side+"Knee",Vector3(0.0,-0.18,0.0))
-	_box(knee,side+"Shin",Vector3(0.13,0.18,0.14),Vector3(0.0,-0.09,0.0),pants)
-	var ankle := _joint(knee,side+"Ankle",Vector3(0.0,-0.18,0.0))
-	_box(ankle,side+"Foot",Vector3(0.14,0.07,0.22),Vector3(0.0,-0.035,0.04),shoes)
+func _build_arm(chest: Node3D,side: String,x: float) -> void:
+	var shoulder := _joint(chest,side+"Shoulder",Vector3(x,0.21,0.0))
+	_box(shoulder,side+"UpperArm",Vector3(0.10,0.22,0.11),Vector3(0.0,-0.11,0.0),shirt)
+	var elbow := _joint(shoulder,side+"Elbow",Vector3(0.0,-0.22,0.0))
+	_box(elbow,side+"Forearm",Vector3(0.09,0.20,0.10),Vector3(0.0,-0.10,0.0),skin)
+	var wrist := _joint(elbow,side+"Wrist",Vector3(0.0,-0.20,0.0))
+	_box(wrist,side+"Hand",Vector3(0.10,0.10,0.10),Vector3(0.0,-0.05,0.0),skin)
+
+func _build_leg(pelvis: Node3D,side: String,x: float) -> void:
+	var hip := _joint(pelvis,side+"Hip",Vector3(x,-0.08,0.0))
+	_box(hip,side+"Thigh",Vector3(0.14,0.28,0.16),Vector3(0.0,-0.14,0.0),pants)
+	var knee := _joint(hip,side+"Knee",Vector3(0.0,-0.28,0.0))
+	_box(knee,side+"Shin",Vector3(0.13,0.27,0.14),Vector3(0.0,-0.135,0.0),pants)
+	var ankle := _joint(knee,side+"Ankle",Vector3(0.0,-0.27,0.0))
+	_box(ankle,side+"Foot",Vector3(0.14,0.09,0.24),Vector3(0.0,-0.045,0.055),shoes)
 
 func set_standing_pose() -> void:
-	rotation = Vector3.ZERO
-	_set_joint_rotation("Hip/LeftHipJoint",Vector3.ZERO)
-	_set_joint_rotation("Hip/RightHipJoint",Vector3.ZERO)
-	_set_joint_rotation("Hip/LeftHipJoint/LeftKnee",Vector3.ZERO)
-	_set_joint_rotation("Hip/RightHipJoint/RightKnee",Vector3.ZERO)
-	_set_joint_rotation("Hip/Torso/LeftShoulder",Vector3.ZERO)
-	_set_joint_rotation("Hip/Torso/RightShoulder",Vector3.ZERO)
+	var pelvis := get_node_or_null("Pelvis") as Node3D
+	if pelvis != null:
+		pelvis.position = Vector3(0.0,0.57,0.0)
+		pelvis.rotation = Vector3.ZERO
+	_set_joint_rotation("Pelvis/Waist",Vector3.ZERO)
+	_set_joint_rotation("Pelvis/Waist/Chest",Vector3.ZERO)
+	_set_joint_rotation("Pelvis/LeftHip",Vector3.ZERO)
+	_set_joint_rotation("Pelvis/RightHip",Vector3.ZERO)
+	_set_joint_rotation("Pelvis/LeftHip/LeftKnee",Vector3.ZERO)
+	_set_joint_rotation("Pelvis/RightHip/RightKnee",Vector3.ZERO)
+	_set_joint_rotation("Pelvis/Waist/Chest/LeftShoulder",Vector3.ZERO)
+	_set_joint_rotation("Pelvis/Waist/Chest/RightShoulder",Vector3.ZERO)
+	_set_joint_rotation("Pelvis/Waist/Chest/LeftShoulder/LeftElbow",Vector3.ZERO)
+	_set_joint_rotation("Pelvis/Waist/Chest/RightShoulder/RightElbow",Vector3.ZERO)
 
 func set_seated_pose() -> void:
-	# Local +Z is the character's forward direction.
-	_set_joint_rotation("Hip/LeftHipJoint",Vector3(deg_to_rad(-88.0),0.0,0.0))
-	_set_joint_rotation("Hip/RightHipJoint",Vector3(deg_to_rad(-88.0),0.0,0.0))
-	_set_joint_rotation("Hip/LeftHipJoint/LeftKnee",Vector3(deg_to_rad(88.0),0.0,0.0))
-	_set_joint_rotation("Hip/RightHipJoint/RightKnee",Vector3(deg_to_rad(88.0),0.0,0.0))
-	_set_joint_rotation("Hip/Torso/LeftShoulder",Vector3(deg_to_rad(-28.0),0.0,0.0))
-	_set_joint_rotation("Hip/Torso/RightShoulder",Vector3(deg_to_rad(-28.0),0.0,0.0))
+	# Proper seated posture: pelvis lowers and tilts slightly, thighs project
+	# forward, knees bend downward, torso leans mildly toward the interaction.
+	var pelvis := get_node_or_null("Pelvis") as Node3D
+	if pelvis != null:
+		pelvis.position = Vector3(0.0,0.47,0.0)
+		pelvis.rotation = Vector3(deg_to_rad(-5.0),0.0,0.0)
+	_set_joint_rotation("Pelvis/Waist",Vector3(deg_to_rad(4.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/Waist/Chest",Vector3(deg_to_rad(-8.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/LeftHip",Vector3(deg_to_rad(-88.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/RightHip",Vector3(deg_to_rad(-88.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/LeftHip/LeftKnee",Vector3(deg_to_rad(92.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/RightHip/RightKnee",Vector3(deg_to_rad(92.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/Waist/Chest/LeftShoulder",Vector3(deg_to_rad(-32.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/Waist/Chest/RightShoulder",Vector3(deg_to_rad(-32.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/Waist/Chest/LeftShoulder/LeftElbow",Vector3(deg_to_rad(-55.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/Waist/Chest/RightShoulder/RightElbow",Vector3(deg_to_rad(-55.0),0.0,0.0))
 
 func _set_joint_rotation(path: String,value: Vector3) -> void:
 	var joint := get_node_or_null(path) as Node3D

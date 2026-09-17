@@ -2,19 +2,65 @@ extends Node3D
 
 const CHARACTER_HEIGHT: float = 1.20
 const TILE_SIZE: float = 1.0
+const WALK_SPEED: float = 1.25
+
+var bita: Node3D
+var grid_rules: PachirouGridRules
+var bita_path: Array[Vector2i] = []
+var bita_path_index: int = 0
+var bita_target_seat := Vector2i(-1,-1)
+var bita_moving: bool = false
 
 func _ready() -> void:
-	# Character-development waiting area: selected upper-left map tile.
-	# Eita and Bita stand on separate adjacent grid-cell centers.
 	name = "Eita"
 	position = Vector3(-7.5,0.0,-9.5)
 	_build_customer(self)
 
-	var bita := Node3D.new()
+	bita = Node3D.new()
 	bita.name = "Bita"
 	bita.position = Vector3(TILE_SIZE,0.0,0.0)
 	add_child(bita)
 	_build_customer(bita)
+	call_deferred("_start_bita_grid_test")
+
+func _process(delta: float) -> void:
+	if not bita_moving or grid_rules == null or bita_path_index >= bita_path.size(): return
+	var target_global := grid_rules.cell_to_world(bita_path[bita_path_index])
+	var current := bita.global_position
+	var flat_target := Vector3(target_global.x,current.y,target_global.z)
+	var distance := current.distance_to(flat_target)
+	if distance <= 0.03:
+		bita.global_position = flat_target
+		bita_path_index += 1
+		if bita_path_index >= bita_path.size():
+			bita_moving = false
+		return
+	var direction := (flat_target-current).normalized()
+	bita.global_position = current+direction*minf(WALK_SPEED*delta,distance)
+	if direction.length_squared() > 0.001:
+		bita.rotation.y = atan2(direction.x,direction.z)
+
+func _start_bita_grid_test() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	grid_rules = get_tree().current_scene.get_node_or_null("GridRules") as PachirouGridRules
+	if grid_rules == null: return
+	var seats := grid_rules.available_seats()
+	if seats.is_empty(): return
+	var start := grid_rules.world_to_cell(bita.global_position)
+	for seat in seats:
+		var access := grid_rules.access_cell_for_seat(seat)
+		if access.x < 0: continue
+		var candidate := grid_rules.find_path(start,access)
+		if candidate.size() > 1 and (bita_path.is_empty() or candidate.size() < bita_path.size()):
+			bita_path = candidate
+			bita_target_seat = seat
+	if bita_path.is_empty(): return
+	if not grid_rules.reserve_seat(bita_target_seat,bita):
+		bita_path.clear()
+		return
+	bita_path_index = 1
+	bita_moving = true
 
 func _build_customer(root: Node3D) -> void:
 	var skin := _material(Color(0.92,0.72,0.56))

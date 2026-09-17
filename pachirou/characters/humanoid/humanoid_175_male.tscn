@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3]
-
-[ext_resource path="res://characters/humanoid/humanoid_175_male.gd" type="Script" id="1_humanoid"]
-
-[node name="Humanoid175Male" type="Node3D"]
-script = ExtResource("1_humanoid")

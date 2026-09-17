@@ -6,9 +6,11 @@ const WALK_SPEED: float = 1.25
 const TARGET_SHOWCASE_CELL := Vector2i(1,3)
 const TARGET_SHOWCASE_ROW: int = 0
 const TARGET_SIDE: String = "front"
+const SEATED_ROOT_Y: float = 0.43
 
 var bita: Node3D
 var grid_rules: PachirouGridRules
+var machine_runtime: PachirouMachineRuntime
 var bita_path: Array[Vector2i] = []
 var bita_path_index: int = 0
 var bita_target_seat := Vector2i(-1,-1)
@@ -46,6 +48,7 @@ func _process(delta: float) -> void:
 
 func _start_bita_grid_test() -> void:
 	grid_rules = get_tree().current_scene.get_node_or_null("GridRules") as PachirouGridRules
+	machine_runtime = get_tree().current_scene.get_node_or_null("MachineRuntime") as PachirouMachineRuntime
 	if grid_rules == null: return
 	while not grid_rules.layout_ready: await get_tree().process_frame
 	bita_target_seat = _find_selected_seat()
@@ -81,10 +84,39 @@ func _find_selected_seat() -> Vector2i:
 
 func _on_bita_reached_seat() -> void:
 	if grid_rules == null or bita_target_seat.x < 0: return
-	if grid_rules.occupy_seat(bita_target_seat,bita):
-		bita.set_meta("interaction_state","AT_SEAT")
-		var machine := grid_rules.machine_for_seat(bita_target_seat)
-		if machine != null: bita.set_meta("target_machine",machine)
+	if not grid_rules.occupy_seat(bita_target_seat,bita): return
+	var machine := grid_rules.machine_for_seat(bita_target_seat)
+	if machine == null: return
+	bita.set_meta("target_machine",machine)
+	_set_bita_seated_pose(machine)
+	if machine_runtime != null and machine_runtime.activate_machine(machine,bita):
+		bita.set_meta("interaction_state","PLAYING")
+	else:
+		bita.set_meta("interaction_state","SEATED")
+
+func _set_bita_seated_pose(machine: Node3D) -> void:
+	# Keep the seat's X/Z as the authoritative interaction point and lower the
+	# character root to the seat surface. Face the actual machine equipment.
+	var seat_position := grid_rules.seat_world_position(bita_target_seat)
+	bita.global_position = Vector3(seat_position.x,SEATED_ROOT_Y,seat_position.z)
+	var machine_position := machine.global_position
+	var facing := Vector3(machine_position.x-bita.global_position.x,0.0,machine_position.z-bita.global_position.z)
+	if facing.length_squared() > 0.001:
+		bita.rotation.y = atan2(facing.x,facing.z)
+	# First sitting prototype: shorten/lift the lower legs and move the feet
+	# forward while preserving the approved head/body proportions.
+	var left_leg := bita.get_node_or_null("LeftLeg") as MeshInstance3D
+	var right_leg := bita.get_node_or_null("RightLeg") as MeshInstance3D
+	var left_shoe := bita.get_node_or_null("LeftShoe") as MeshInstance3D
+	var right_shoe := bita.get_node_or_null("RightShoe") as MeshInstance3D
+	if left_leg != null:
+		left_leg.scale = Vector3(1.0,0.72,1.0)
+		left_leg.position = Vector3(-0.09,0.15,0.08)
+	if right_leg != null:
+		right_leg.scale = Vector3(1.0,0.72,1.0)
+		right_leg.position = Vector3(0.09,0.15,0.08)
+	if left_shoe != null: left_shoe.position = Vector3(-0.09,0.035,0.20)
+	if right_shoe != null: right_shoe.position = Vector3(0.09,0.035,0.20)
 
 func _build_customer(root: Node3D) -> void:
 	var skin := _material(Color(0.92,0.72,0.56))

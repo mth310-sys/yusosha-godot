@@ -2,6 +2,8 @@ extends Node3D
 class_name PachirouGridRules
 
 const GRID_SIZE: int = 22
+const SHOWCASE_GRID_SIZE: int = 18
+const SHOWCASE_TO_MAP_OFFSET := Vector2i(2,2)
 const TILE_SIZE: float = 1.0
 const DIRECTIONS: Array[Vector2i] = [Vector2i(1,0),Vector2i(-1,0),Vector2i(0,1),Vector2i(0,-1)]
 
@@ -22,7 +24,11 @@ func _reset_walkable_grid() -> void:
 			cells[Vector2i(x,z)] = CellType.WALKABLE
 
 func _register_current_layout() -> void:
-	await get_tree().process_frame
+	# ShowcaseLayout creates/snaps the final islands after two frames.
+	# Register only after that layout has finished and metadata exists.
+	for wait_index in range(4):
+		await get_tree().process_frame
+	_reset_walkable_grid()
 	var world := get_parent().get_node_or_null("World") as Node3D
 	if world == null: return
 	_register_nodes_recursive(world)
@@ -34,7 +40,9 @@ func _register_nodes_recursive(node: Node) -> void:
 			if item.has_meta("grid_cell"):
 				var cell_variant: Variant = item.get_meta("grid_cell")
 				if cell_variant is Vector2i:
-					var cell := cell_variant as Vector2i
+					# Existing showcase metadata uses the old centered 18x18 coordinates.
+					# The visible floor is now 22x22, so translate by two cells on each axis.
+					var cell := (cell_variant as Vector2i)+SHOWCASE_TO_MAP_OFFSET
 					set_cell_type(cell,CellType.BLOCKED)
 					_register_seat_for_item(item,cell)
 			_register_nodes_recursive(item)

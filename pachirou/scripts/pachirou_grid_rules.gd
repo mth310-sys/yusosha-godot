@@ -19,13 +19,10 @@ func _reset_walkable_grid() -> void:
 	cells.clear()
 	seats.clear()
 	for z in range(GRID_SIZE):
-		for x in range(GRID_SIZE):
-			cells[Vector2i(x,z)] = CellType.WALKABLE
+		for x in range(GRID_SIZE): cells[Vector2i(x,z)] = CellType.WALKABLE
 
 func _register_current_layout() -> void:
-	# Wait until ShowcaseLayout has created and snapped all final island copies.
-	for wait_index in range(6):
-		await get_tree().process_frame
+	for wait_index in range(6): await get_tree().process_frame
 	_reset_walkable_grid()
 	var world := get_parent().get_node_or_null("World") as Node3D
 	if world == null: return
@@ -37,8 +34,6 @@ func _register_nodes_recursive(node: Node) -> void:
 		if child is Node3D:
 			var item := child as Node3D
 			if item.has_meta("grid_cell"):
-				# The final world position is authoritative. This keeps navigation aligned
-				# even if the presentation layout changes its internal grid size later.
 				var cell := world_to_cell(item.global_position)
 				set_cell_type(cell,CellType.BLOCKED)
 				_register_seat_for_item(item,cell)
@@ -65,6 +60,14 @@ func is_walkable(cell: Vector2i) -> bool:
 	var type := get_cell_type(cell)
 	return type == CellType.WALKABLE or type == CellType.ENTRANCE
 
+func can_enter_as_destination(cell: Vector2i,customer: Node = null) -> bool:
+	if is_walkable(cell): return true
+	if not is_seat(cell) or not seats.has(cell): return false
+	var data: Dictionary = seats[cell]
+	if data["occupied_by"] != null and data["occupied_by"] != customer: return false
+	if data["reserved_by"] != null and data["reserved_by"] != customer: return false
+	return true
+
 func is_seat(cell: Vector2i) -> bool:
 	return get_cell_type(cell) == CellType.SEAT
 
@@ -81,23 +84,14 @@ func available_seats() -> Array[Vector2i]:
 	for cell_variant in seats.keys():
 		var cell := cell_variant as Vector2i
 		var data: Dictionary = seats[cell]
-		if data["occupied_by"] == null and data["reserved_by"] == null:
-			result.append(cell)
+		if data["occupied_by"] == null and data["reserved_by"] == null: result.append(cell)
 	return result
 
-func access_cell_for_seat(seat_cell: Vector2i) -> Vector2i:
-	if not seats.has(seat_cell): return Vector2i(-1,-1)
-	var machine := machine_for_seat(seat_cell)
-	if machine == null: return Vector2i(-1,-1)
-	var side: String = String(machine.get_meta("island_side","front"))
-	var access := seat_cell+Vector2i(0,1) if side == "front" else seat_cell+Vector2i(0,-1)
-	return access if is_walkable(access) else Vector2i(-1,-1)
-
-func find_path(start: Vector2i,goal: Vector2i) -> Array[Vector2i]:
+func find_path(start: Vector2i,goal: Vector2i,customer: Node = null) -> Array[Vector2i]:
 	var empty: Array[Vector2i] = []
 	if not is_inside(start) or not is_inside(goal): return empty
-	if start == goal: return [start]
-	if not is_walkable(goal): return empty
+	if start == goal: return [start] if can_enter_as_destination(goal,customer) else empty
+	if not can_enter_as_destination(goal,customer): return empty
 	var frontier: Array[Vector2i] = [start]
 	var came_from: Dictionary = {start:start}
 	var index: int = 0
@@ -107,7 +101,10 @@ func find_path(start: Vector2i,goal: Vector2i) -> Array[Vector2i]:
 		for direction in DIRECTIONS:
 			var next := current+direction
 			if not is_inside(next) or came_from.has(next): continue
-			if not is_walkable(next) and next != goal: continue
+			# Seat cells may only be entered when they are the requested destination.
+			# They are never used as through-route cells.
+			if next != goal and not is_walkable(next): continue
+			if next == goal and not can_enter_as_destination(next,customer): continue
 			came_from[next] = current
 			if next == goal: return _reconstruct_path(came_from,start,goal)
 			frontier.append(next)

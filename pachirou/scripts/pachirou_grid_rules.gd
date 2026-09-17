@@ -40,11 +40,19 @@ func _register_nodes_recursive(node: Node) -> void:
 			_register_nodes_recursive(item)
 
 func _register_seat_for_item(item: Node3D,machine_cell: Vector2i) -> void:
-	var side: String = String(item.get_meta("island_side","front"))
-	var seat_cell := machine_cell+Vector2i(0,1) if side == "front" else machine_cell+Vector2i(0,-1)
+	var stool := item.find_child("RoundStool",true,false) as Node3D
+	var seat_cell: Vector2i
+	var seat_position: Vector3
+	if stool != null:
+		seat_position = stool.global_position
+		seat_cell = world_to_cell(seat_position)
+	else:
+		var side: String = String(item.get_meta("island_side","front"))
+		seat_cell = machine_cell+Vector2i(0,1) if side == "front" else machine_cell+Vector2i(0,-1)
+		seat_position = cell_to_world(seat_cell)
 	if not is_inside(seat_cell): return
 	cells[seat_cell] = CellType.SEAT
-	seats[seat_cell] = {"machine":item,"occupied_by":null,"reserved_by":null}
+	seats[seat_cell] = {"machine":item,"stool":stool,"seat_position":seat_position,"occupied_by":null,"reserved_by":null}
 
 func is_inside(cell: Vector2i) -> bool:
 	return cell.x >= 0 and cell.x < GRID_SIZE and cell.y >= 0 and cell.y < GRID_SIZE
@@ -79,6 +87,10 @@ func cell_to_world(cell: Vector2i) -> Vector3:
 	var half: float = float(GRID_SIZE-1)*0.5
 	return Vector3((float(cell.x)-half)*TILE_SIZE,0.0,(float(cell.y)-half)*TILE_SIZE)
 
+func seat_world_position(cell: Vector2i) -> Vector3:
+	if not seats.has(cell): return cell_to_world(cell)
+	return seats[cell]["seat_position"] as Vector3
+
 func available_seats() -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
 	for cell_variant in seats.keys():
@@ -101,8 +113,6 @@ func find_path(start: Vector2i,goal: Vector2i,customer: Node = null) -> Array[Ve
 		for direction in DIRECTIONS:
 			var next := current+direction
 			if not is_inside(next) or came_from.has(next): continue
-			# Seat cells may only be entered when they are the requested destination.
-			# They are never used as through-route cells.
 			if next != goal and not is_walkable(next): continue
 			if next == goal and not can_enter_as_destination(next,customer): continue
 			came_from[next] = current

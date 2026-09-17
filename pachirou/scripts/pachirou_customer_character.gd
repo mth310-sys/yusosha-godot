@@ -14,73 +14,71 @@ func build() -> void:
 	pants = _material(Color(0.16,0.19,0.24))
 	shoes = _material(Color(0.08,0.08,0.09))
 
-	# Human-proportion prototype. The skeleton remains procedural, but the
-	# visible body uses rounded volumes so joint placement can be judged clearly.
-	var pelvis := _joint(self,"Pelvis",Vector3(0.0,0.62,0.0))
-	_ellipsoid(pelvis,"PelvisMesh",Vector3(0.28,0.18,0.20),Vector3.ZERO,pants)
+	# Natural low-poly human prototype. Joint nodes remain the animation rig;
+	# visible joint spheres are removed so the silhouette reads as one body.
+	var pelvis := _joint(self,"Pelvis",Vector3(0.0,0.66,0.0))
+	_ellipsoid(pelvis,"PelvisMesh",Vector3(0.27,0.20,0.19),Vector3.ZERO,pants)
 
 	var waist := _joint(pelvis,"Waist",Vector3(0.0,0.10,0.0))
-	_ellipsoid(waist,"WaistMesh",Vector3(0.25,0.20,0.18),Vector3(0.0,0.10,0.0),shirt)
+	_ellipsoid(waist,"Abdomen",Vector3(0.25,0.22,0.17),Vector3(0.0,0.11,0.0),shirt)
 	var chest := _joint(waist,"Chest",Vector3(0.0,0.20,0.0))
-	_ellipsoid(chest,"ChestMesh",Vector3(0.36,0.30,0.21),Vector3(0.0,0.15,0.0),shirt)
+	_ellipsoid(chest,"ChestMesh",Vector3(0.35,0.31,0.20),Vector3(0.0,0.145,0.0),shirt)
 
-	var neck := _joint(chest,"Neck",Vector3(0.0,0.32,0.0))
-	_cylinder(neck,"NeckMesh",0.055,0.10,Vector3(0.0,0.05,0.0),skin)
-	var head := _joint(neck,"Head",Vector3(0.0,0.10,0.0))
-	_ellipsoid(head,"HeadMesh",Vector3(0.24,0.30,0.25),Vector3(0.0,0.15,0.0),skin)
-	_ellipsoid(head,"HairCap",Vector3(0.25,0.12,0.26),Vector3(0.0,0.285,-0.01),hair)
-	_sphere(head,"LeftEye",0.018,Vector3(-0.052,0.17,0.122),hair)
-	_sphere(head,"RightEye",0.018,Vector3(0.052,0.17,0.122),hair)
+	var neck := _joint(chest,"Neck",Vector3(0.0,0.31,0.0))
+	_cylinder(neck,"NeckMesh",0.047,0.075,Vector3(0.0,0.037,0.0),skin)
+	var head := _joint(neck,"Head",Vector3(0.0,0.075,0.0))
+	_ellipsoid(head,"Cranium",Vector3(0.205,0.245,0.205),Vector3(0.0,0.145,-0.005),skin)
+	_ellipsoid(head,"Face",Vector3(0.175,0.205,0.155),Vector3(0.0,0.115,0.055),skin)
+	_ellipsoid(head,"Hair",Vector3(0.215,0.105,0.215),Vector3(0.0,0.275,-0.012),hair)
+	_sphere(head,"LeftEye",0.012,Vector3(-0.045,0.145,0.139),hair)
+	_sphere(head,"RightEye",0.012,Vector3(0.045,0.145,0.139),hair)
 
-	_build_arm(chest,"Left",-0.215)
-	_build_arm(chest,"Right",0.215)
-	_build_leg(pelvis,"Left",-0.085)
-	_build_leg(pelvis,"Right",0.085)
+	_build_arm(chest,"Left",-0.205)
+	_build_arm(chest,"Right",0.205)
+	_build_leg(pelvis,"Left",-0.078)
+	_build_leg(pelvis,"Right",0.078)
 	set_standing_pose()
 
 func _build_arm(chest: Node3D,side: String,x: float) -> void:
-	var shoulder := _joint(chest,side+"Shoulder",Vector3(x,0.23,0.0))
-	_sphere(shoulder,side+"ShoulderJoint",0.065,Vector3.ZERO,shirt)
-	_capsule(shoulder,side+"UpperArm",0.055,0.24,Vector3(0.0,-0.12,0.0),shirt)
-	var elbow := _joint(shoulder,side+"Elbow",Vector3(0.0,-0.24,0.0))
-	_sphere(elbow,side+"ElbowJoint",0.052,Vector3.ZERO,skin)
-	_capsule(elbow,side+"Forearm",0.048,0.22,Vector3(0.0,-0.11,0.0),skin)
-	var wrist := _joint(elbow,side+"Wrist",Vector3(0.0,-0.22,0.0))
-	_ellipsoid(wrist,side+"Hand",Vector3(0.09,0.13,0.07),Vector3(0.0,-0.065,0.0),skin)
+	var shoulder := _joint(chest,side+"Shoulder",Vector3(x,0.205,0.0))
+	_tapered_limb(shoulder,side+"UpperArm",0.060,0.050,0.245,Vector3(0.0,-0.1225,0.0),shirt)
+	var elbow := _joint(shoulder,side+"Elbow",Vector3(0.0,-0.245,0.0))
+	_tapered_limb(elbow,side+"Forearm",0.050,0.040,0.225,Vector3(0.0,-0.1125,0.0),skin)
+	var wrist := _joint(elbow,side+"Wrist",Vector3(0.0,-0.225,0.0))
+	_ellipsoid(wrist,side+"Hand",Vector3(0.075,0.115,0.060),Vector3(0.0,-0.057,0.01),skin)
 
 func _build_leg(pelvis: Node3D,side: String,x: float) -> void:
-	var hip := _joint(pelvis,side+"Hip",Vector3(x,-0.07,0.0))
-	_sphere(hip,side+"HipJoint",0.075,Vector3.ZERO,pants)
-	_capsule(hip,side+"Thigh",0.075,0.34,Vector3(0.0,-0.17,0.0),pants)
-	var knee := _joint(hip,side+"Knee",Vector3(0.0,-0.34,0.0))
-	_sphere(knee,side+"KneeJoint",0.065,Vector3.ZERO,pants)
-	_capsule(knee,side+"Shin",0.060,0.34,Vector3(0.0,-0.17,0.0),pants)
-	var ankle := _joint(knee,side+"Ankle",Vector3(0.0,-0.34,0.0))
-	_sphere(ankle,side+"AnkleJoint",0.045,Vector3.ZERO,shoes)
-	_ellipsoid(ankle,side+"Foot",Vector3(0.13,0.08,0.25),Vector3(0.0,-0.035,0.075),shoes)
+	var hip := _joint(pelvis,side+"Hip",Vector3(x,-0.075,0.0))
+	_tapered_limb(hip,side+"Thigh",0.082,0.066,0.355,Vector3(0.0,-0.1775,0.0),pants)
+	var knee := _joint(hip,side+"Knee",Vector3(0.0,-0.355,0.0))
+	_tapered_limb(knee,side+"Shin",0.065,0.050,0.345,Vector3(0.0,-0.1725,0.0),pants)
+	var ankle := _joint(knee,side+"Ankle",Vector3(0.0,-0.345,0.0))
+	_ellipsoid(ankle,side+"Foot",Vector3(0.125,0.075,0.245),Vector3(0.0,-0.035,0.075),shoes)
 
 func set_standing_pose() -> void:
 	var pelvis := get_node_or_null("Pelvis") as Node3D
 	if pelvis != null:
-		pelvis.position = Vector3(0.0,0.62,0.0)
+		pelvis.position = Vector3(0.0,0.66,0.0)
 		pelvis.rotation = Vector3.ZERO
 	_reset_pose_joints()
+	_set_joint_rotation("Pelvis/Waist/Chest/LeftShoulder",Vector3(0.0,0.0,deg_to_rad(-3.0)))
+	_set_joint_rotation("Pelvis/Waist/Chest/RightShoulder",Vector3(0.0,0.0,deg_to_rad(3.0)))
 
 func set_seated_pose() -> void:
 	var pelvis := get_node_or_null("Pelvis") as Node3D
 	if pelvis != null:
-		pelvis.position = Vector3(0.0,0.50,0.0)
-		pelvis.rotation = Vector3(deg_to_rad(-4.0),0.0,0.0)
+		pelvis.position = Vector3(0.0,0.51,0.0)
+		pelvis.rotation = Vector3(deg_to_rad(-3.0),0.0,0.0)
 	_set_joint_rotation("Pelvis/Waist",Vector3(deg_to_rad(3.0),0.0,0.0))
-	_set_joint_rotation("Pelvis/Waist/Chest",Vector3(deg_to_rad(-7.0),0.0,0.0))
-	_set_joint_rotation("Pelvis/LeftHip",Vector3(deg_to_rad(-88.0),0.0,0.0))
-	_set_joint_rotation("Pelvis/RightHip",Vector3(deg_to_rad(-88.0),0.0,0.0))
-	_set_joint_rotation("Pelvis/LeftHip/LeftKnee",Vector3(deg_to_rad(92.0),0.0,0.0))
-	_set_joint_rotation("Pelvis/RightHip/RightKnee",Vector3(deg_to_rad(92.0),0.0,0.0))
-	_set_joint_rotation("Pelvis/Waist/Chest/LeftShoulder",Vector3(deg_to_rad(-18.0),0.0,deg_to_rad(-5.0)))
-	_set_joint_rotation("Pelvis/Waist/Chest/RightShoulder",Vector3(deg_to_rad(-18.0),0.0,deg_to_rad(5.0)))
-	_set_joint_rotation("Pelvis/Waist/Chest/LeftShoulder/LeftElbow",Vector3(deg_to_rad(-55.0),0.0,0.0))
-	_set_joint_rotation("Pelvis/Waist/Chest/RightShoulder/RightElbow",Vector3(deg_to_rad(-55.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/Waist/Chest",Vector3(deg_to_rad(-6.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/LeftHip",Vector3(deg_to_rad(-86.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/RightHip",Vector3(deg_to_rad(-86.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/LeftHip/LeftKnee",Vector3(deg_to_rad(88.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/RightHip/RightKnee",Vector3(deg_to_rad(88.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/Waist/Chest/LeftShoulder",Vector3(deg_to_rad(-16.0),0.0,deg_to_rad(-4.0)))
+	_set_joint_rotation("Pelvis/Waist/Chest/RightShoulder",Vector3(deg_to_rad(-16.0),0.0,deg_to_rad(4.0)))
+	_set_joint_rotation("Pelvis/Waist/Chest/LeftShoulder/LeftElbow",Vector3(deg_to_rad(-62.0),0.0,0.0))
+	_set_joint_rotation("Pelvis/Waist/Chest/RightShoulder/RightElbow",Vector3(deg_to_rad(-62.0),0.0,0.0))
 
 func _reset_pose_joints() -> void:
 	_set_joint_rotation("Pelvis/Waist",Vector3.ZERO)
@@ -105,12 +103,14 @@ func _joint(parent: Node3D,node_name: String,local_position: Vector3) -> Node3D:
 	parent.add_child(joint)
 	return joint
 
-func _capsule(parent: Node3D,node_name: String,radius: float,height: float,local_position: Vector3,material: StandardMaterial3D) -> void:
+func _tapered_limb(parent: Node3D,node_name: String,top_radius: float,bottom_radius: float,height: float,local_position: Vector3,material: StandardMaterial3D) -> void:
 	var instance := MeshInstance3D.new()
 	instance.name = node_name
-	var mesh := CapsuleMesh.new()
-	mesh.radius = radius
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = top_radius
+	mesh.bottom_radius = bottom_radius
 	mesh.height = height
+	mesh.radial_segments = 10
 	instance.mesh = mesh
 	instance.position = local_position
 	instance.material_override = material
@@ -122,6 +122,8 @@ func _sphere(parent: Node3D,node_name: String,radius: float,local_position: Vect
 	var mesh := SphereMesh.new()
 	mesh.radius = radius
 	mesh.height = radius*2.0
+	mesh.radial_segments = 12
+	mesh.rings = 6
 	instance.mesh = mesh
 	instance.position = local_position
 	instance.material_override = material
@@ -133,6 +135,8 @@ func _ellipsoid(parent: Node3D,node_name: String,size: Vector3,local_position: V
 	var mesh := SphereMesh.new()
 	mesh.radius = 0.5
 	mesh.height = 1.0
+	mesh.radial_segments = 12
+	mesh.rings = 6
 	instance.mesh = mesh
 	instance.scale = size
 	instance.position = local_position
@@ -146,6 +150,7 @@ func _cylinder(parent: Node3D,node_name: String,radius: float,height: float,loca
 	mesh.top_radius = radius
 	mesh.bottom_radius = radius
 	mesh.height = height
+	mesh.radial_segments = 10
 	instance.mesh = mesh
 	instance.position = local_position
 	instance.material_override = material

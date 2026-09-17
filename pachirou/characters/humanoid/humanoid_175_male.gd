@@ -6,65 +6,93 @@ const JOINT_RADIUS: float = 0.018
 const BONE_RADIUS: float = 0.010
 
 var skeleton: Skeleton3D
-var profile: SkeletonProfileHumanoid
 var debug_material: StandardMaterial3D
 
 func _ready() -> void:
-	_build_from_godot_humanoid_profile()
+	_build_clean_humanoid()
 	_build_debug_skeleton()
 
-func _build_from_godot_humanoid_profile() -> void:
-	profile = SkeletonProfileHumanoid.new()
+func _build_clean_humanoid() -> void:
+	# Clean rebuild. No previous generated/profile rest-pose data is reused.
+	# Coordinates are absolute T-pose joint locations for a 1.75 m adult male.
+	# They are converted to parent-local Skeleton3D rest transforms below.
 	skeleton = Skeleton3D.new()
 	skeleton.name = "Skeleton3D"
 	add_child(skeleton)
 
-	# Build the exact hierarchy/names/reference rests defined by Godot's
-	# SkeletonProfileHumanoid instead of maintaining a hand-authored rig.
-	for profile_index in range(profile.get_bone_size()):
-		var bone_name: StringName = profile.get_bone_name(profile_index)
-		skeleton.add_bone(String(bone_name))
+	var points: Dictionary = {
+		"Root": Vector3(0.0,0.0,0.0),
+		"Hips": Vector3(0.0,0.94,0.0),
+		"Spine": Vector3(0.0,1.08,0.0),
+		"Chest": Vector3(0.0,1.25,0.0),
+		"UpperChest": Vector3(0.0,1.39,0.0),
+		"Neck": Vector3(0.0,1.51,0.0),
+		"Head": Vector3(0.0,1.62,0.0),
+		"HeadTop": Vector3(0.0,1.75,0.0),
+		"LeftShoulder": Vector3(-0.18,1.46,0.0),
+		"LeftUpperArm": Vector3(-0.24,1.44,0.0),
+		"LeftLowerArm": Vector3(-0.54,1.44,0.0),
+		"LeftHand": Vector3(-0.80,1.44,0.0),
+		"LeftHandTip": Vector3(-0.98,1.44,0.0),
+		"RightShoulder": Vector3(0.18,1.46,0.0),
+		"RightUpperArm": Vector3(0.24,1.44,0.0),
+		"RightLowerArm": Vector3(0.54,1.44,0.0),
+		"RightHand": Vector3(0.80,1.44,0.0),
+		"RightHandTip": Vector3(0.98,1.44,0.0),
+		"LeftUpperLeg": Vector3(-0.09,0.91,0.0),
+		"LeftLowerLeg": Vector3(-0.09,0.49,0.0),
+		"LeftFoot": Vector3(-0.09,0.08,0.0),
+		"LeftToes": Vector3(-0.09,0.04,0.18),
+		"RightUpperLeg": Vector3(0.09,0.91,0.0),
+		"RightLowerLeg": Vector3(0.09,0.49,0.0),
+		"RightFoot": Vector3(0.09,0.08,0.0),
+		"RightToes": Vector3(0.09,0.04,0.18)
+	}
 
-	for profile_index in range(profile.get_bone_size()):
-		var bone_name: StringName = profile.get_bone_name(profile_index)
-		var parent_name: StringName = profile.get_bone_parent(profile_index)
-		var bone_index: int = skeleton.find_bone(String(bone_name))
-		var parent_index: int = -1
-		if not parent_name.is_empty():
-			parent_index = skeleton.find_bone(String(parent_name))
-		skeleton.set_bone_parent(bone_index,parent_index)
-		skeleton.set_bone_rest(bone_index,profile.get_reference_pose(profile_index))
+	_add_absolute_bone("Root","",points)
+	_add_absolute_bone("Hips","Root",points)
+	_add_absolute_bone("Spine","Hips",points)
+	_add_absolute_bone("Chest","Spine",points)
+	_add_absolute_bone("UpperChest","Chest",points)
+	_add_absolute_bone("Neck","UpperChest",points)
+	_add_absolute_bone("Head","Neck",points)
+	_add_absolute_bone("HeadTop","Head",points)
 
-	# SkeletonProfileHumanoid is a normalized reference rig. Scale the whole
-	# reference skeleton so its measured vertical extent is exactly 1.75 m.
-	_scale_rest_pose_to_height(HEIGHT_M)
+	_add_absolute_bone("LeftShoulder","UpperChest",points)
+	_add_absolute_bone("LeftUpperArm","LeftShoulder",points)
+	_add_absolute_bone("LeftLowerArm","LeftUpperArm",points)
+	_add_absolute_bone("LeftHand","LeftLowerArm",points)
+	_add_absolute_bone("LeftHandTip","LeftHand",points)
 
-func _scale_rest_pose_to_height(target_height: float) -> void:
-	var min_y: float = INF
-	var max_y: float = -INF
-	for bone_index in range(skeleton.get_bone_count()):
-		var y_value: float = skeleton.get_bone_global_rest(bone_index).origin.y
-		min_y = minf(min_y,y_value)
-		max_y = maxf(max_y,y_value)
-	var source_height: float = max_y-min_y
-	if source_height <= 0.001:
-		return
-	var factor: float = target_height/source_height
-	for bone_index in range(skeleton.get_bone_count()):
-		var rest: Transform3D = skeleton.get_bone_rest(bone_index)
-		rest.origin *= factor
-		skeleton.set_bone_rest(bone_index,rest)
+	_add_absolute_bone("RightShoulder","UpperChest",points)
+	_add_absolute_bone("RightUpperArm","RightShoulder",points)
+	_add_absolute_bone("RightLowerArm","RightUpperArm",points)
+	_add_absolute_bone("RightHand","RightLowerArm",points)
+	_add_absolute_bone("RightHandTip","RightHand",points)
 
-	# Put the lowest reference joint on the floor without adding a transform
-	# to Skeleton3D itself. Root is the profile's global translation bone.
-	var scaled_min_y: float = INF
-	for bone_index in range(skeleton.get_bone_count()):
-		scaled_min_y = minf(scaled_min_y,skeleton.get_bone_global_rest(bone_index).origin.y)
-	var root_index: int = skeleton.find_bone(String(profile.get_root_bone()))
-	if root_index >= 0:
-		var root_rest: Transform3D = skeleton.get_bone_rest(root_index)
-		root_rest.origin.y -= scaled_min_y
-		skeleton.set_bone_rest(root_index,root_rest)
+	_add_absolute_bone("LeftUpperLeg","Hips",points)
+	_add_absolute_bone("LeftLowerLeg","LeftUpperLeg",points)
+	_add_absolute_bone("LeftFoot","LeftLowerLeg",points)
+	_add_absolute_bone("LeftToes","LeftFoot",points)
+
+	_add_absolute_bone("RightUpperLeg","Hips",points)
+	_add_absolute_bone("RightLowerLeg","RightUpperLeg",points)
+	_add_absolute_bone("RightFoot","RightLowerLeg",points)
+	_add_absolute_bone("RightToes","RightFoot",points)
+
+func _add_absolute_bone(bone_name: String,parent_name: String,points: Dictionary) -> void:
+	var bone_index: int = skeleton.get_bone_count()
+	skeleton.add_bone(bone_name)
+	var parent_index: int = -1
+	var local_origin: Vector3 = points[bone_name] as Vector3
+	if not parent_name.is_empty():
+		parent_index = skeleton.find_bone(parent_name)
+		var parent_origin: Vector3 = points[parent_name] as Vector3
+		local_origin -= parent_origin
+	skeleton.set_bone_parent(bone_index,parent_index)
+	var rest := Transform3D.IDENTITY
+	rest.origin = local_origin
+	skeleton.set_bone_rest(bone_index,rest)
 
 func _build_debug_skeleton() -> void:
 	debug_material = StandardMaterial3D.new()

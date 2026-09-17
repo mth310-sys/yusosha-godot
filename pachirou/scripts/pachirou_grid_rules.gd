@@ -2,8 +2,6 @@ extends Node3D
 class_name PachirouGridRules
 
 const GRID_SIZE: int = 22
-const SHOWCASE_GRID_SIZE: int = 18
-const SHOWCASE_TO_MAP_OFFSET := Vector2i(2,2)
 const TILE_SIZE: float = 1.0
 const DIRECTIONS: Array[Vector2i] = [Vector2i(1,0),Vector2i(-1,0),Vector2i(0,1),Vector2i(0,-1)]
 
@@ -11,6 +9,7 @@ enum CellType { WALKABLE, BLOCKED, SEAT, RESERVED, ENTRANCE }
 
 var cells: Dictionary = {}
 var seats: Dictionary = {}
+var layout_ready: bool = false
 
 func _ready() -> void:
 	_reset_walkable_grid()
@@ -24,27 +23,25 @@ func _reset_walkable_grid() -> void:
 			cells[Vector2i(x,z)] = CellType.WALKABLE
 
 func _register_current_layout() -> void:
-	# ShowcaseLayout creates/snaps the final islands after two frames.
-	# Register only after that layout has finished and metadata exists.
-	for wait_index in range(4):
+	# Wait until ShowcaseLayout has created and snapped all final island copies.
+	for wait_index in range(6):
 		await get_tree().process_frame
 	_reset_walkable_grid()
 	var world := get_parent().get_node_or_null("World") as Node3D
 	if world == null: return
 	_register_nodes_recursive(world)
+	layout_ready = true
 
 func _register_nodes_recursive(node: Node) -> void:
 	for child in node.get_children():
 		if child is Node3D:
 			var item := child as Node3D
 			if item.has_meta("grid_cell"):
-				var cell_variant: Variant = item.get_meta("grid_cell")
-				if cell_variant is Vector2i:
-					# Existing showcase metadata uses the old centered 18x18 coordinates.
-					# The visible floor is now 22x22, so translate by two cells on each axis.
-					var cell := (cell_variant as Vector2i)+SHOWCASE_TO_MAP_OFFSET
-					set_cell_type(cell,CellType.BLOCKED)
-					_register_seat_for_item(item,cell)
+				# The final world position is authoritative. This keeps navigation aligned
+				# even if the presentation layout changes its internal grid size later.
+				var cell := world_to_cell(item.global_position)
+				set_cell_type(cell,CellType.BLOCKED)
+				_register_seat_for_item(item,cell)
 			_register_nodes_recursive(item)
 
 func _register_seat_for_item(item: Node3D,machine_cell: Vector2i) -> void:
@@ -112,8 +109,7 @@ func find_path(start: Vector2i,goal: Vector2i) -> Array[Vector2i]:
 			if not is_inside(next) or came_from.has(next): continue
 			if not is_walkable(next) and next != goal: continue
 			came_from[next] = current
-			if next == goal:
-				return _reconstruct_path(came_from,start,goal)
+			if next == goal: return _reconstruct_path(came_from,start,goal)
 			frontier.append(next)
 	return empty
 

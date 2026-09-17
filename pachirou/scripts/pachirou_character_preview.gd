@@ -1,16 +1,18 @@
 extends Node3D
 
 const CHARACTER_HEIGHT: float = 1.20
+const TILE_SIZE: float = 1.0
 
 func _ready() -> void:
 	# Character-development waiting area: selected upper-left map tile.
+	# Eita and Bita stand on separate adjacent grid-cell centers.
 	name = "Eita"
 	position = Vector3(-7.5,0.0,-9.5)
 	_build_customer(self)
 
 	var bita := Node3D.new()
 	bita.name = "Bita"
-	bita.position = Vector3(0.55,0.0,0.0)
+	bita.position = Vector3(TILE_SIZE,0.0,0.0)
 	add_child(bita)
 	_build_customer(bita)
 

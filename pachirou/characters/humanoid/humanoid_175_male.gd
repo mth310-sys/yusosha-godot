@@ -2,11 +2,15 @@ extends Node3D
 class_name Humanoid175Male
 
 const HEIGHT_M: float = 1.75
+const JOINT_RADIUS: float = 0.025
+const BONE_RADIUS: float = 0.014
 
 var skeleton: Skeleton3D
+var debug_material: StandardMaterial3D
 
 func _ready() -> void:
 	_build_skeleton()
+	_build_debug_skeleton()
 
 func _build_skeleton() -> void:
 	skeleton = Skeleton3D.new()
@@ -44,10 +48,52 @@ func _build_skeleton() -> void:
 	_add_bone("RightToes",right_foot,Vector3(0.0,-0.05,0.17))
 
 func _add_bone(bone_name: String,parent_index: int,origin: Vector3) -> int:
-	var index := skeleton.get_bone_count()
+	var index: int = skeleton.get_bone_count()
 	skeleton.add_bone(bone_name)
 	skeleton.set_bone_parent(index,parent_index)
 	var rest := Transform3D.IDENTITY
 	rest.origin = origin
 	skeleton.set_bone_rest(index,rest)
 	return index
+
+func _build_debug_skeleton() -> void:
+	debug_material = StandardMaterial3D.new()
+	debug_material.albedo_color = Color(0.92,0.92,0.95,1.0)
+	debug_material.roughness = 0.7
+	var debug_root := Node3D.new()
+	debug_root.name = "BoneDebug"
+	add_child(debug_root)
+
+	for bone_index in skeleton.get_bone_count():
+		var joint_position: Vector3 = skeleton.get_bone_global_rest(bone_index).origin
+		_add_joint(debug_root,joint_position)
+		var parent_index: int = skeleton.get_bone_parent(bone_index)
+		if parent_index >= 0:
+			var parent_position: Vector3 = skeleton.get_bone_global_rest(parent_index).origin
+			_add_bone_segment(debug_root,parent_position,joint_position)
+
+func _add_joint(parent: Node3D,position_value: Vector3) -> void:
+	var mesh_instance := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = JOINT_RADIUS
+	sphere.height = JOINT_RADIUS * 2.0
+	sphere.material = debug_material
+	mesh_instance.mesh = sphere
+	mesh_instance.position = position_value
+	parent.add_child(mesh_instance)
+
+func _add_bone_segment(parent: Node3D,start: Vector3,end: Vector3) -> void:
+	var delta: Vector3 = end-start
+	var length: float = delta.length()
+	if length <= 0.001:
+		return
+	var mesh_instance := MeshInstance3D.new()
+	var cylinder := CylinderMesh.new()
+	cylinder.top_radius = BONE_RADIUS
+	cylinder.bottom_radius = BONE_RADIUS
+	cylinder.height = length
+	cylinder.material = debug_material
+	mesh_instance.mesh = cylinder
+	mesh_instance.position = (start+end)*0.5
+	mesh_instance.quaternion = Quaternion(Vector3.UP,delta.normalized())
+	parent.add_child(mesh_instance)

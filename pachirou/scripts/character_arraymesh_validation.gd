@@ -77,15 +77,21 @@ func _build_character() -> void:
 	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.105, -0.19, 0)))
 	skeleton.reset_bone_poses()
 
-	_add_ellipsoid("Head", Vector3(0, 0.94, 0), Vector3(0.235, 0.205, 0.215), Color(0.84, 0.64, 0.50))
+	# Character Base 01: young male / about three heads tall.
+	_add_ellipsoid("Head", Vector3(0, 0.945, 0), Vector3(0.225, 0.190, 0.205), Color(0.84, 0.64, 0.50))
 	_add_hair()
-	_add_ellipsoid("Torso", Vector3(0, 0.61, 0), Vector3(0.225, 0.275, 0.145), Color(0.95, 0.95, 0.93))
-	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.17, 0), 0.065, 0.34, Color(0.84, 0.64, 0.50))
-	_add_limb("ArmRMesh", arm_r, Vector3(0, -0.17, 0), 0.065, 0.34, Color(0.84, 0.64, 0.50))
-	_add_limb("LegLMesh", leg_l, Vector3(0, -0.16, 0), 0.082, 0.32, Color(0.10, 0.13, 0.18))
-	_add_limb("LegRMesh", leg_r, Vector3(0, -0.16, 0), 0.082, 0.32, Color(0.10, 0.13, 0.18))
-	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.345, 0.055))
-	_add_shoe_to_bone("ShoeR", leg_r, Vector3(0, -0.345, 0.055))
+	_add_face()
+	# Shirt and pants are independent meshes so they can become replaceable modules.
+	_add_ellipsoid("Shirt", Vector3(0, 0.615, 0), Vector3(0.205, 0.245, 0.135), Color(0.96, 0.96, 0.94))
+	_add_ellipsoid("PantsHip", Vector3(0, 0.405, 0), Vector3(0.175, 0.105, 0.125), Color(0.10, 0.13, 0.18))
+	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.155, 0), 0.058, 0.31, Color(0.84, 0.64, 0.50))
+	_add_limb("ArmRMesh", arm_r, Vector3(0, -0.155, 0), 0.058, 0.31, Color(0.84, 0.64, 0.50))
+	_add_hand("HandL", arm_l, Vector3(0, -0.335, 0))
+	_add_hand("HandR", arm_r, Vector3(0, -0.335, 0))
+	_add_limb("LegLMesh", leg_l, Vector3(0, -0.155, 0), 0.073, 0.31, Color(0.10, 0.13, 0.18))
+	_add_limb("LegRMesh", leg_r, Vector3(0, -0.155, 0), 0.073, 0.31, Color(0.10, 0.13, 0.18))
+	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.335, 0.055))
+	_add_shoe_to_bone("ShoeR", leg_r, Vector3(0, -0.335, 0.055))
 
 func _add_limb(label: String, bone_idx: int, local_center: Vector3, radius: float, height: float, color: Color) -> void:
 	var attachment := BoneAttachment3D.new()
@@ -110,10 +116,32 @@ func _add_ellipsoid(label: String, center: Vector3, radii: Vector3, color: Color
 func _add_hair() -> void:
 	var m := MeshInstance3D.new()
 	m.name = "Hair"
-	m.position = Vector3(0, 1.015, -0.015)
-	m.mesh = _ellipsoid_mesh(Vector3(0.238, 0.155, 0.218), 16, 8, 0.0, PI * 0.72)
+	m.position = Vector3(0, 1.018, -0.012)
+	m.mesh = _ellipsoid_mesh(Vector3(0.229, 0.142, 0.209), 20, 10, 0.0, PI * 0.64)
 	m.material_override = _material(Color(0.16, 0.10, 0.07))
 	visual_root.add_child(m)
+
+func _add_face() -> void:
+	# Base face specification: tiny black dot eyes only.
+	for x in [-0.072, 0.072]:
+		var eye := MeshInstance3D.new()
+		eye.name = "EyeL" if x < 0.0 else "EyeR"
+		eye.position = Vector3(x, 0.965, 0.198)
+		eye.mesh = _ellipsoid_mesh(Vector3(0.012, 0.015, 0.008), 10, 6)
+		eye.material_override = _material(Color(0.025, 0.025, 0.025))
+		visual_root.add_child(eye)
+
+func _add_hand(label: String, bone_idx: int, local_center: Vector3) -> void:
+	var attachment := BoneAttachment3D.new()
+	attachment.name = label + "Attachment"
+	attachment.bone_name = skeleton.get_bone_name(bone_idx)
+	skeleton.add_child(attachment)
+	var hand := MeshInstance3D.new()
+	hand.name = label
+	hand.position = local_center
+	hand.mesh = _ellipsoid_mesh(Vector3(0.067, 0.073, 0.058), 10, 6)
+	hand.material_override = _material(Color(0.84, 0.64, 0.50))
+	attachment.add_child(hand)
 
 func _add_shoe_to_bone(label: String, bone_idx: int, local_center: Vector3) -> void:
 	var attachment := BoneAttachment3D.new()
@@ -123,7 +151,7 @@ func _add_shoe_to_bone(label: String, bone_idx: int, local_center: Vector3) -> v
 	var m := MeshInstance3D.new()
 	m.name = label
 	m.position = local_center
-	m.mesh = _box_mesh(Vector3(0.15, 0.075, 0.22))
+	m.mesh = _rounded_shoe_mesh()
 	m.material_override = _material(Color(0.97, 0.97, 0.95))
 	attachment.add_child(m)
 
@@ -151,6 +179,10 @@ func _ellipsoid_mesh(radii: Vector3, radial: int, rings: int, phi_min: float = 0
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return mesh
+
+func _rounded_shoe_mesh() -> ArrayMesh:
+	# Low-cut sneaker: scaled ellipsoid gives a softer silhouette than a box.
+	return _ellipsoid_mesh(Vector3(0.082, 0.047, 0.125), 12, 6)
 
 func _box_mesh(size: Vector3) -> ArrayMesh:
 	var hx := size.x * 0.5

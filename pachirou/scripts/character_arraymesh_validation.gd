@@ -435,10 +435,10 @@ func _add_ellipsoid(label: String, center: Vector3, radii: Vector3, color: Color
 func _add_hair_v2() -> void:
 	var hair_color := Color(0.16, 0.10, 0.07)
 	# Main cap follows the skull; smaller pieces define a short-hair outline.
-	_add_ellipsoid("HairCrown", Vector3(0, 1.096, -0.020), Vector3(0.158, 0.088, 0.148), hair_color)
-	_add_ellipsoid("HairBack", Vector3(0, 1.038, -0.120), Vector3(0.137, 0.084, 0.046), hair_color)
-	_add_ellipsoid("TempleL", Vector3(-0.137, 1.045, -0.005), Vector3(0.030, 0.060, 0.078), hair_color)
-	_add_ellipsoid("TempleR", Vector3(0.137, 1.045, -0.005), Vector3(0.030, 0.060, 0.078), hair_color)
+	_add_ellipsoid("HairCrown", Vector3(0, 1.091, -0.014), Vector3(0.148, 0.080, 0.137), hair_color)
+	_add_ellipsoid("HairBack", Vector3(0, 1.038, -0.112), Vector3(0.119, 0.073, 0.038), hair_color)
+	_add_ellipsoid("TempleL", Vector3(-0.132, 1.044, -0.002), Vector3(0.025, 0.052, 0.066), hair_color)
+	_add_ellipsoid("TempleR", Vector3(0.132, 1.044, -0.002), Vector3(0.025, 0.052, 0.066), hair_color)
 	_add_ellipsoid("FringeL", Vector3(-0.050, 1.058, 0.130), Vector3(0.060, 0.023, 0.018), hair_color)
 	_add_ellipsoid("FringeR", Vector3(0.055, 1.064, 0.130), Vector3(0.064, 0.021, 0.018), hair_color)
 
@@ -473,7 +473,11 @@ func _add_sleeve(label: String, bone_idx: int, local_center: Vector3) -> void:
 	var sleeve := MeshInstance3D.new()
 	sleeve.name = label
 	sleeve.position = local_center
-	sleeve.mesh = _ellipsoid_mesh(Vector3(0.061, 0.092, 0.060), 10, 6)
+	sleeve.mesh = _fixed_ring_mesh([
+		Vector3(0.056, 0.070, 0.055),
+		Vector3(0.052, 0.010, 0.051),
+		Vector3(0.047, -0.065, 0.047)
+	], 10)
 	sleeve.material_override = _material(Color(0.96, 0.96, 0.94))
 	attachment.add_child(sleeve)
 
@@ -504,16 +508,16 @@ func _add_hand(label: String, bone_idx: int, local_center: Vector3) -> void:
 	var hand := MeshInstance3D.new()
 	hand.name = label
 	hand.position = local_center
-	hand.mesh = _ellipsoid_mesh(Vector3(0.058, 0.065, 0.052), 10, 6)
+	hand.mesh = _ellipsoid_mesh(Vector3(0.050, 0.058, 0.046), 10, 6)
 	hand.material_override = _material(Color(0.84, 0.64, 0.50))
 	attachment.add_child(hand)
 	var thumb := MeshInstance3D.new()
 	thumb.name = label + "Thumb"
-	var thumb_x: float = 0.044 if label.ends_with("L") else -0.044
+	var thumb_x: float = 0.038 if label.ends_with("L") else -0.044
 	thumb.position = local_center + Vector3(thumb_x, 0.004, 0.010)
 	var thumb_angle: float = -28.0 if label.ends_with("L") else 28.0
 	thumb.rotation_degrees = Vector3(0, 0, thumb_angle)
-	thumb.mesh = _ellipsoid_mesh(Vector3(0.021, 0.034, 0.020), 8, 5)
+	thumb.mesh = _ellipsoid_mesh(Vector3(0.018, 0.029, 0.017), 8, 5)
 	thumb.material_override = _material(Color(0.84, 0.64, 0.50))
 	attachment.add_child(thumb)
 
@@ -586,10 +590,10 @@ func _ellipsoid_mesh(radii: Vector3, radial: int, rings: int, phi_min: float = 0
 func _rounded_shoe_mesh() -> ArrayMesh:
 	# Low-cut sneaker: scaled ellipsoid gives a softer silhouette than a box.
 	return _fixed_ring_mesh([
-		Vector3(0.060, 0.038, 0.092),
-		Vector3(0.069, 0.018, 0.112),
-		Vector3(0.066, -0.018, 0.118),
-		Vector3(0.058, -0.038, 0.105)
+		Vector3(0.056, 0.030, 0.086),
+		Vector3(0.061, 0.014, 0.105),
+		Vector3(0.060, -0.014, 0.110),
+		Vector3(0.055, -0.030, 0.101)
 	], 12)
 
 func _box_mesh(size: Vector3) -> ArrayMesh:

@@ -164,8 +164,6 @@ func _build_character() -> void:
 	_add_upper_arm("UpperArmR", arm_r)
 	_add_forearm("ForearmLMesh", forearm_l_idx)
 	_add_forearm("ForearmRMesh", forearm_r_idx)
-	_add_fixed_sleeve("SleeveL", Vector3(-0.184, 0.718, 0), -4.0)
-	_add_fixed_sleeve("SleeveR", Vector3(0.184, 0.718, 0), 4.0)
 	_add_hand("HandL", forearm_l_idx, Vector3(0, -0.155, 0))
 	_add_hand("HandR", forearm_r_idx, Vector3(0, -0.155, 0))
 	_add_thigh("ThighL", leg_l)
@@ -376,9 +374,18 @@ func _add_bone_part(label: String, bone_idx: int, center: Vector3, mesh: ArrayMe
 	attachment.add_child(part)
 
 func _add_upper_arm(label: String, bone_idx: int) -> void:
-	_add_bone_part(label, bone_idx, Vector3(0, -0.085, 0), _fixed_ring_mesh([
-		Vector3(0.052, 0.080, 0.050), Vector3(0.048, 0.0, 0.046), Vector3(0.044, -0.080, 0.043)
-	], 10), Color(0.84, 0.64, 0.50))
+	# One continuous arm silhouette: the upper section is shirt fabric and the
+	# lower section is skin. No separate sleeve object or shoulder ring.
+	_add_bone_part(label + "Sleeve", bone_idx, Vector3(0, -0.035, 0), _fixed_ring_mesh([
+		Vector3(0.051, 0.045, 0.049),
+		Vector3(0.049, 0.0, 0.047),
+		Vector3(0.047, -0.045, 0.045)
+	], 12), Color(0.96, 0.96, 0.94))
+	_add_bone_part(label + "Skin", bone_idx, Vector3(0, -0.125, 0), _fixed_ring_mesh([
+		Vector3(0.047, 0.045, 0.045),
+		Vector3(0.045, 0.0, 0.044),
+		Vector3(0.043, -0.045, 0.042)
+	], 12), Color(0.84, 0.64, 0.50))
 
 func _add_forearm(label: String, bone_idx: int) -> void:
 	_add_bone_part(label, bone_idx, Vector3(0, -0.075, 0), _fixed_ring_mesh([
@@ -466,23 +473,6 @@ func _add_face_v2() -> void:
 		eye.mesh = _ellipsoid_mesh(Vector3(0.010, 0.013, 0.007), 10, 6)
 		eye.material_override = _material(Color(0.025, 0.025, 0.025))
 		visual_root.add_child(eye)
-
-func _add_fixed_sleeve(label: String, center: Vector3, z_rotation: float) -> void:
-	# Sleeve belongs to the shirt silhouette. The animated arm begins inside
-	# the cuff, avoiding a detached shoulder ring during the walk cycle.
-	var sleeve := MeshInstance3D.new()
-	sleeve.name = label
-	sleeve.position = center
-	sleeve.rotation_degrees = Vector3(0, 0, z_rotation)
-	sleeve.mesh = _fixed_ring_mesh([
-		# Short cloth tube around the upper arm; no shoulder-cap bulge.
-		Vector3(0.043, 0.034, 0.043),
-		Vector3(0.044, 0.010, 0.044),
-		Vector3(0.041, -0.020, 0.041),
-		Vector3(0.039, -0.046, 0.039)
-	], 14)
-	sleeve.material_override = _material(Color(0.96, 0.96, 0.94))
-	visual_root.add_child(sleeve)
 
 func _add_hair() -> void:
 	_add_loft_part("Hair", Vector3(0, 1.055, -0.018), [

@@ -19,7 +19,7 @@ script = ExtResource("1_main")
 [node name="World" type="Node3D" parent="."]
 
 [node name="CharacterBase01Preview" parent="World" instance=ExtResource("13_character")]
-position = Vector3(0, 0, -0.8)
+position = Vector3(-9.5, 0, 9.5)\nrotation_degrees = Vector3(0, 135, 0)
 
 [node name="FloorExpansion" type="Node3D" parent="World"]
 script = ExtResource("9_floor")

@@ -38,29 +38,29 @@ func _apply_walk_side(arm_idx: int, forearm_idx: int, thigh_idx: int, shin_idx: 
 	if phase < 0.25:
 		# Contact: foot stays nearly level while the body passes over it.
 		var u: float = phase / 0.25
-		thigh_angle = lerpf(deg_to_rad(12.0), deg_to_rad(-4.0), u)
+		thigh_angle = lerpf(deg_to_rad(15.0), deg_to_rad(-5.0), u)
 		knee_angle = lerpf(deg_to_rad(4.0), deg_to_rad(8.0), u)
 		foot_angle = lerpf(deg_to_rad(-2.0), deg_to_rad(1.0), u)
 	elif phase < 0.50:
 		# Push-off: leg moves behind and heel begins to release.
 		var u: float = (phase - 0.25) / 0.25
-		thigh_angle = lerpf(deg_to_rad(-4.0), deg_to_rad(-13.0), u)
-		knee_angle = lerpf(deg_to_rad(8.0), deg_to_rad(20.0), u)
+		thigh_angle = lerpf(deg_to_rad(-5.0), deg_to_rad(-16.0), u)
+		knee_angle = lerpf(deg_to_rad(8.0), deg_to_rad(24.0), u)
 		foot_angle = lerpf(deg_to_rad(1.0), deg_to_rad(8.0), u)
 	elif phase < 0.75:
 		# Swing: knee bends, foot clears the floor.
 		var u: float = (phase - 0.50) / 0.25
-		thigh_angle = lerpf(deg_to_rad(-13.0), deg_to_rad(8.0), u)
-		knee_angle = lerpf(deg_to_rad(20.0), deg_to_rad(14.0), u)
+		thigh_angle = lerpf(deg_to_rad(-16.0), deg_to_rad(11.0), u)
+		knee_angle = lerpf(deg_to_rad(24.0), deg_to_rad(17.0), u)
 		foot_angle = lerpf(deg_to_rad(8.0), deg_to_rad(-5.0), u)
 	else:
 		# Landing: extend the leg and flatten the sole before contact.
 		var u: float = (phase - 0.75) / 0.25
-		thigh_angle = lerpf(deg_to_rad(8.0), deg_to_rad(12.0), u)
-		knee_angle = lerpf(deg_to_rad(14.0), deg_to_rad(4.0), u)
+		thigh_angle = lerpf(deg_to_rad(11.0), deg_to_rad(15.0), u)
+		knee_angle = lerpf(deg_to_rad(17.0), deg_to_rad(4.0), u)
 		foot_angle = lerpf(deg_to_rad(-5.0), deg_to_rad(-2.0), u)
-	arm_angle = -thigh_angle * 0.72
-	elbow_angle = deg_to_rad(14.0) + abs(arm_angle) * 0.28
+	arm_angle = -thigh_angle * 0.88
+	elbow_angle = deg_to_rad(15.0) + abs(arm_angle) * 0.32
 	skeleton.set_bone_pose_rotation(arm_idx, Quaternion(Vector3.RIGHT, arm_angle))
 	skeleton.set_bone_pose_rotation(forearm_idx, Quaternion(Vector3.RIGHT, -elbow_angle))
 	skeleton.set_bone_pose_rotation(thigh_idx, Quaternion(Vector3.RIGHT, thigh_angle))

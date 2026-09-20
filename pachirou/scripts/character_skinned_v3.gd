@@ -94,13 +94,21 @@ func _build_body_mesh() -> ArrayMesh:
 		_ring(Vector3(0,0.62,0),0.165,0.102,"Spine","Chest",0.55),
 		_ring(Vector3(0,0.73,0),0.185,0.108,"Chest","Spine",0.82),
 		_ring(Vector3(0,0.79,0),0.175,0.100,"Chest","Spine",0.92)
-	],14,true,true)
+	],14,false,false)
 
 	_add_arm_from_skeleton(st,-1.0,"ShoulderL","UpperArmL","LowerArmL","HandL")
 	_add_arm_from_skeleton(st,1.0,"ShoulderR","UpperArmR","LowerArmR","HandR")
 	_add_leg_from_skeleton(st,-1.0,"UpperLegL","LowerLegL","FootL")
 	_add_leg_from_skeleton(st,1.0,"UpperLegR","LowerLegR","FootR")
 	_add_head_from_skeleton(st)
+
+	# Skeleton junction skins. These bridge the open chain roots instead of
+	# closing them with caps, so shoulder/hip/neck have no exposed discs.
+	_add_junction(st,Vector3(-0.145,0.765,0),Vector3(-0.185,0.745,0),0.105,0.075,"Chest","ShoulderL")
+	_add_junction(st,Vector3(0.145,0.765,0),Vector3(0.185,0.745,0),0.105,0.075,"Chest","ShoulderR")
+	_add_junction(st,Vector3(-0.075,0.425,0),Vector3(-0.080,0.390,0),0.100,0.080,"Hips","UpperLegL")
+	_add_junction(st,Vector3(0.075,0.425,0),Vector3(0.080,0.390,0),0.100,0.080,"Hips","UpperLegR")
+	_add_junction(st,Vector3(0,0.790,0),Vector3(0,0.835,0),0.095,0.075,"Chest","Head")
 
 	st.generate_normals()
 	return st.commit()
@@ -126,7 +134,7 @@ func _add_arm_from_skeleton(st: SurfaceTool, side: float, shoulder: String, uppe
 		_ring(Vector3(hand_p.x,hand_p.y+0.025,0),0.042,0.042,lower,hand,0.55),
 		_ring(Vector3(hand_p.x,hand_p.y-0.035,0),0.050,0.045,hand,lower,0.95)
 	]
-	_add_bone_chain(st,rings,10,true,true)
+	_add_bone_chain(st,rings,10,false,true)
 
 func _add_leg_from_skeleton(st: SurfaceTool, side: float, upper: String, lower: String, foot: String) -> void:
 	var upper_p: Vector3 = _bone_rest_position(upper)
@@ -140,7 +148,7 @@ func _add_leg_from_skeleton(st: SurfaceTool, side: float, upper: String, lower: 
 		_ring(Vector3(foot_p.x,foot_p.y+0.045,0),0.052,0.050,lower,foot,0.55),
 		_ring(Vector3(foot_p.x,0.035,0.035),0.058,0.095,foot,lower,0.96)
 	]
-	_add_bone_chain(st,rings,10,true,true)
+	_add_bone_chain(st,rings,10,false,true)
 
 func _add_head_from_skeleton(st: SurfaceTool) -> void:
 	var head_p: Vector3 = _bone_rest_position("Head")
@@ -151,7 +159,17 @@ func _add_head_from_skeleton(st: SurfaceTool) -> void:
 		_ring(Vector3(0,head_p.y+0.115,0),0.145,0.128,"Head","Chest",0.98),
 		_ring(Vector3(0,head_p.y+0.195,0),0.105,0.095,"Head","Chest",1.0)
 	]
-	_add_bone_chain(st,rings,14,true,true)
+	_add_bone_chain(st,rings,14,false,true)
+
+func _add_junction(st: SurfaceTool, a: Vector3, b: Vector3, radius_a: float, radius_b: float, bone_a: String, bone_b: String) -> void:
+	# Short closed bridge around a skeleton branch. It has no end caps; both
+	# ends disappear inside their neighbouring surfaces.
+	var rings: Array = [
+		_ring(a,radius_a,radius_a*0.82,bone_a,bone_b,0.82),
+		_ring(a.lerp(b,0.5),(radius_a+radius_b)*0.5,(radius_a+radius_b)*0.41,bone_a,bone_b,0.50),
+		_ring(b,radius_b,radius_b*0.82,bone_b,bone_a,0.82)
+	]
+	_add_bone_chain(st,rings,12,false,false)
 
 func _add_bone_chain(st: SurfaceTool, rings: Array, segments: int, cap_first: bool, cap_last: bool) -> void:
 	var loops: Array = []

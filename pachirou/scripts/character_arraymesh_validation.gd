@@ -81,6 +81,7 @@ func _build_character() -> void:
 	# Stable authored primitives replace the experimental loft topology.
 	_add_ellipsoid("Head", Vector3(0, 0.985, 0), Vector3(0.158, 0.172, 0.148), Color(0.84, 0.64, 0.50))
 	_add_ellipsoid("Neck", Vector3(0, 0.835, -0.005), Vector3(0.060, 0.065, 0.058), Color(0.84, 0.64, 0.50))
+	_add_collar()
 	_add_hair_v2()
 	_add_face_v2()
 	_add_fixed_part("ShirtBody", Vector3(0, 0.665, 0), _shirt_mesh(), Color(0.96, 0.96, 0.94))
@@ -322,14 +323,28 @@ func _add_ellipsoid(label: String, center: Vector3, radii: Vector3, color: Color
 	visual_root.add_child(m)
 
 func _add_hair_v2() -> void:
-	# Compact short-hair silhouette: crown, back and two restrained front locks.
 	var hair_color := Color(0.16, 0.10, 0.07)
-	_add_ellipsoid("HairCrown", Vector3(0, 1.092, -0.020), Vector3(0.160, 0.092, 0.150), hair_color)
-	_add_ellipsoid("HairBack", Vector3(0, 1.035, -0.118), Vector3(0.142, 0.090, 0.050), hair_color)
-	_add_ellipsoid("HairSideL", Vector3(-0.135, 1.050, -0.015), Vector3(0.038, 0.070, 0.095), hair_color)
-	_add_ellipsoid("HairSideR", Vector3(0.135, 1.050, -0.015), Vector3(0.038, 0.070, 0.095), hair_color)
-	_add_ellipsoid("FringeL", Vector3(-0.050, 1.058, 0.130), Vector3(0.064, 0.028, 0.020), hair_color)
-	_add_ellipsoid("FringeR", Vector3(0.058, 1.064, 0.130), Vector3(0.070, 0.026, 0.020), hair_color)
+	# Main cap follows the skull; smaller pieces define a short-hair outline.
+	_add_ellipsoid("HairCrown", Vector3(0, 1.096, -0.020), Vector3(0.158, 0.088, 0.148), hair_color)
+	_add_ellipsoid("HairBack", Vector3(0, 1.038, -0.120), Vector3(0.137, 0.084, 0.046), hair_color)
+	_add_ellipsoid("TempleL", Vector3(-0.137, 1.045, -0.005), Vector3(0.030, 0.060, 0.078), hair_color)
+	_add_ellipsoid("TempleR", Vector3(0.137, 1.045, -0.005), Vector3(0.030, 0.060, 0.078), hair_color)
+	_add_ellipsoid("FringeL", Vector3(-0.050, 1.058, 0.130), Vector3(0.060, 0.023, 0.018), hair_color)
+	_add_ellipsoid("FringeR", Vector3(0.055, 1.064, 0.130), Vector3(0.064, 0.021, 0.018), hair_color)
+
+func _add_collar() -> void:
+	var collar := MeshInstance3D.new()
+	collar.name = "CrewNeck"
+	collar.position = Vector3(0, 0.825, 0.052)
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.052
+	torus.outer_radius = 0.068
+	torus.rings = 12
+	torus.ring_segments = 8
+	collar.mesh = torus
+	collar.scale = Vector3(1.0, 0.55, 0.72)
+	collar.material_override = _material(Color(0.82, 0.82, 0.80))
+	visual_root.add_child(collar)
 
 func _add_face_v2() -> void:
 	for x in [-0.057, 0.057]:
@@ -460,7 +475,12 @@ func _ellipsoid_mesh(radii: Vector3, radial: int, rings: int, phi_min: float = 0
 
 func _rounded_shoe_mesh() -> ArrayMesh:
 	# Low-cut sneaker: scaled ellipsoid gives a softer silhouette than a box.
-	return _ellipsoid_mesh(Vector3(0.071, 0.041, 0.112), 12, 6)
+	return _fixed_ring_mesh([
+		Vector3(0.060, 0.038, 0.092),
+		Vector3(0.069, 0.018, 0.112),
+		Vector3(0.066, -0.018, 0.118),
+		Vector3(0.058, -0.038, 0.105)
+	], 12)
 
 func _box_mesh(size: Vector3) -> ArrayMesh:
 	var hx := size.x * 0.5

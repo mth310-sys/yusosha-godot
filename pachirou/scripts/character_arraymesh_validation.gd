@@ -21,26 +21,51 @@ func _process(delta: float) -> void:
 	t += delta
 	if skeleton == null:
 		return
-	var phase: float = sin(t * 4.0)
-	var swing: float = phase * deg_to_rad(15.0)
-	var knee_l: float = maxf(0.0, -phase) * deg_to_rad(22.0)
-	var knee_r: float = maxf(0.0, phase) * deg_to_rad(22.0)
-	var elbow_l: float = deg_to_rad(16.0) + maxf(0.0, phase) * deg_to_rad(12.0)
-	var elbow_r: float = deg_to_rad(16.0) + maxf(0.0, -phase) * deg_to_rad(12.0)
-	skeleton.set_bone_pose_rotation(1, Quaternion(Vector3.RIGHT, swing))
-	skeleton.set_bone_pose_rotation(2, Quaternion(Vector3.RIGHT, -swing))
-	skeleton.set_bone_pose_rotation(3, Quaternion(Vector3.RIGHT, -swing))
-	skeleton.set_bone_pose_rotation(4, Quaternion(Vector3.RIGHT, swing))
-	if forearm_l_idx >= 0:
-		skeleton.set_bone_pose_rotation(forearm_l_idx, Quaternion(Vector3.RIGHT, -elbow_l))
-		skeleton.set_bone_pose_rotation(forearm_r_idx, Quaternion(Vector3.RIGHT, -elbow_r))
-		skeleton.set_bone_pose_rotation(shin_l_idx, Quaternion(Vector3.RIGHT, knee_l))
-		skeleton.set_bone_pose_rotation(shin_r_idx, Quaternion(Vector3.RIGHT, knee_r))
-		var foot_l: float = -maxf(0.0, phase) * deg_to_rad(8.0) + maxf(0.0, -phase) * deg_to_rad(4.0)
-		var foot_r: float = -maxf(0.0, -phase) * deg_to_rad(8.0) + maxf(0.0, phase) * deg_to_rad(4.0)
-		skeleton.set_bone_pose_rotation(foot_l_idx, Quaternion(Vector3.RIGHT, foot_l))
-		skeleton.set_bone_pose_rotation(foot_r_idx, Quaternion(Vector3.RIGHT, foot_r))
-	visual_root.position.y = abs(sin(t * 4.0)) * 0.005
+	# Four-phase indoor walk: contact -> push-off -> swing -> landing.
+	var cycle: float = fmod(t * 0.64, 1.0)
+	var left_phase: float = cycle
+	var right_phase: float = fmod(cycle + 0.5, 1.0)
+	_apply_walk_side(1, forearm_l_idx, 3, shin_l_idx, foot_l_idx, left_phase)
+	_apply_walk_side(2, forearm_r_idx, 4, shin_r_idx, foot_r_idx, right_phase)
+	visual_root.position.y = sin(cycle * TAU * 2.0) * 0.0025 + 0.0025
+
+func _apply_walk_side(arm_idx: int, forearm_idx: int, thigh_idx: int, shin_idx: int, foot_idx: int, phase: float) -> void:
+	var thigh_angle: float
+	var knee_angle: float
+	var foot_angle: float
+	var arm_angle: float
+	var elbow_angle: float
+	if phase < 0.25:
+		# Contact: foot stays nearly level while the body passes over it.
+		var u: float = phase / 0.25
+		thigh_angle = lerpf(deg_to_rad(12.0), deg_to_rad(-4.0), u)
+		knee_angle = lerpf(deg_to_rad(4.0), deg_to_rad(8.0), u)
+		foot_angle = lerpf(deg_to_rad(-2.0), deg_to_rad(1.0), u)
+	elif phase < 0.50:
+		# Push-off: leg moves behind and heel begins to release.
+		var u: float = (phase - 0.25) / 0.25
+		thigh_angle = lerpf(deg_to_rad(-4.0), deg_to_rad(-13.0), u)
+		knee_angle = lerpf(deg_to_rad(8.0), deg_to_rad(20.0), u)
+		foot_angle = lerpf(deg_to_rad(1.0), deg_to_rad(8.0), u)
+	elif phase < 0.75:
+		# Swing: knee bends, foot clears the floor.
+		var u: float = (phase - 0.50) / 0.25
+		thigh_angle = lerpf(deg_to_rad(-13.0), deg_to_rad(8.0), u)
+		knee_angle = lerpf(deg_to_rad(20.0), deg_to_rad(14.0), u)
+		foot_angle = lerpf(deg_to_rad(8.0), deg_to_rad(-5.0), u)
+	else:
+		# Landing: extend the leg and flatten the sole before contact.
+		var u: float = (phase - 0.75) / 0.25
+		thigh_angle = lerpf(deg_to_rad(8.0), deg_to_rad(12.0), u)
+		knee_angle = lerpf(deg_to_rad(14.0), deg_to_rad(4.0), u)
+		foot_angle = lerpf(deg_to_rad(-5.0), deg_to_rad(-2.0), u)
+	arm_angle = -thigh_angle * 0.72
+	elbow_angle = deg_to_rad(14.0) + abs(arm_angle) * 0.28
+	skeleton.set_bone_pose_rotation(arm_idx, Quaternion(Vector3.RIGHT, arm_angle))
+	skeleton.set_bone_pose_rotation(forearm_idx, Quaternion(Vector3.RIGHT, -elbow_angle))
+	skeleton.set_bone_pose_rotation(thigh_idx, Quaternion(Vector3.RIGHT, thigh_angle))
+	skeleton.set_bone_pose_rotation(shin_idx, Quaternion(Vector3.RIGHT, knee_angle))
+	skeleton.set_bone_pose_rotation(foot_idx, Quaternion(Vector3.RIGHT, foot_angle))
 
 func _build_environment() -> void:
 	var world := WorldEnvironment.new()

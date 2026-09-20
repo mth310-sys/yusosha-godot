@@ -27,7 +27,13 @@ func _process(delta: float) -> void:
 	var right_phase: float = fmod(cycle + 0.5, 1.0)
 	_apply_walk_side(1, forearm_l_idx, 3, shin_l_idx, foot_l_idx, left_phase)
 	_apply_walk_side(2, forearm_r_idx, 4, shin_r_idx, foot_r_idx, right_phase)
-	visual_root.position.y = sin(cycle * TAU * 2.0) * 0.0025 + 0.0025
+	# Whole-body motion stays intentionally small for an indoor NPC.
+	var step_wave: float = sin(cycle * TAU)
+	var double_step: float = sin(cycle * TAU * 2.0)
+	visual_root.position.y = double_step * 0.0025 + 0.0025
+	visual_root.position.x = step_wave * 0.004
+	visual_root.rotation.z = step_wave * deg_to_rad(0.8)
+	visual_root.rotation.y = -step_wave * deg_to_rad(1.2)
 
 func _apply_walk_side(arm_idx: int, forearm_idx: int, thigh_idx: int, shin_idx: int, foot_idx: int, phase: float) -> void:
 	var thigh_angle: float
@@ -59,8 +65,8 @@ func _apply_walk_side(arm_idx: int, forearm_idx: int, thigh_idx: int, shin_idx: 
 		thigh_angle = lerpf(deg_to_rad(11.0), deg_to_rad(15.0), u)
 		knee_angle = lerpf(deg_to_rad(17.0), deg_to_rad(4.0), u)
 		foot_angle = lerpf(deg_to_rad(-5.0), deg_to_rad(-2.0), u)
-	arm_angle = -thigh_angle * 0.88
-	elbow_angle = deg_to_rad(15.0) + abs(arm_angle) * 0.32
+	arm_angle = -thigh_angle * 1.02
+	elbow_angle = deg_to_rad(15.0) + abs(arm_angle) * 0.34
 	skeleton.set_bone_pose_rotation(arm_idx, Quaternion(Vector3.RIGHT, arm_angle))
 	skeleton.set_bone_pose_rotation(forearm_idx, Quaternion(Vector3.RIGHT, -elbow_angle))
 	skeleton.set_bone_pose_rotation(thigh_idx, Quaternion(Vector3.RIGHT, thigh_angle))

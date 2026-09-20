@@ -125,26 +125,12 @@ func _add_csg_cylinder(parent: Node, pos: Vector3, radius: float, height: float,
 	parent.add_child(shape)
 
 func _skin_baked_mesh(source: ArrayMesh) -> ArrayMesh:
+	# Keep the CSG bake topology intact here. Joint refinement is disabled until
+	# it can preserve every optional mesh array safely.
 	var result := ArrayMesh.new()
 	for surface_index in range(source.get_surface_count()):
 		var arrays: Array = source.surface_get_arrays(surface_index)
 		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-		var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
-		var raw_indices: Variant = arrays[Mesh.ARRAY_INDEX]
-		var indices := PackedInt32Array()
-		if raw_indices != null:
-			indices = raw_indices as PackedInt32Array
-		if indices.is_empty():
-			indices.resize(vertices.size())
-			for vertex_index in range(vertices.size()):
-				indices[vertex_index] = vertex_index
-		var refined: Array = _refine_joint_topology(vertices,normals,indices)
-		vertices = refined[0]
-		normals = refined[1]
-		indices = refined[2]
-		arrays[Mesh.ARRAY_VERTEX] = vertices
-		arrays[Mesh.ARRAY_NORMAL] = normals
-		arrays[Mesh.ARRAY_INDEX] = indices
 		var bone_array := PackedInt32Array()
 		var weight_array := PackedFloat32Array()
 		for vertex in vertices:
@@ -161,61 +147,6 @@ func _skin_baked_mesh(source: ArrayMesh) -> ArrayMesh:
 		arrays[Mesh.ARRAY_WEIGHTS] = weight_array
 		result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
 	return result
-
-func _refine_joint_topology(vertices: PackedVector3Array, normals: PackedVector3Array, indices: PackedInt32Array) -> Array:
-	# Split long triangles crossing deformation bands. This adds real geometry
-	# around shoulder/hip/elbow/knee instead of asking one large CSG triangle to bend.
-	var out_v := PackedVector3Array()
-	var out_n := PackedVector3Array()
-	var out_i := PackedInt32Array()
-	for i in range(0,indices.size(),3):
-		var ia: int = indices[i]
-		var ib: int = indices[i+1]
-		var ic: int = indices[i+2]
-		var a: Vector3 = vertices[ia]
-		var b: Vector3 = vertices[ib]
-		var d: Vector3 = vertices[ic]
-		var na: Vector3 = normals[ia]
-		var nb: Vector3 = normals[ib]
-		var nd: Vector3 = normals[ic]
-		if _needs_joint_split(a,b,d):
-			var ab: Vector3 = (a+b)*0.5
-			var bd: Vector3 = (b+d)*0.5
-			var da: Vector3 = (d+a)*0.5
-			var nab: Vector3 = (na+nb).normalized()
-			var nbd: Vector3 = (nb+nd).normalized()
-			var nda: Vector3 = (nd+na).normalized()
-			_append_triangle(out_v,out_n,out_i,a,na,ab,nab,da,nda)
-			_append_triangle(out_v,out_n,out_i,ab,nab,b,nb,bd,nbd)
-			_append_triangle(out_v,out_n,out_i,da,nda,bd,nbd,d,nd)
-			_append_triangle(out_v,out_n,out_i,ab,nab,bd,nbd,da,nda)
-		else:
-			_append_triangle(out_v,out_n,out_i,a,na,b,nb,d,nd)
-	return [out_v,out_n,out_i]
-
-func _needs_joint_split(a: Vector3, b: Vector3, c: Vector3) -> bool:
-	var center: Vector3 = (a+b+c)/3.0
-	var max_edge: float = max(a.distance_to(b),max(b.distance_to(c),c.distance_to(a)))
-	if max_edge < 0.055:
-		return false
-	var ax: float = abs(center.x)
-	var shoulder_zone: bool = center.y > 0.67 and center.y < 0.80 and ax > 0.12
-	var elbow_zone: bool = center.y > 0.48 and center.y < 0.60 and ax > 0.16
-	var hip_zone: bool = center.y > 0.34 and center.y < 0.46 and ax < 0.16
-	var knee_zone: bool = center.y > 0.17 and center.y < 0.29 and ax < 0.15
-	return shoulder_zone or elbow_zone or hip_zone or knee_zone
-
-func _append_triangle(v: PackedVector3Array, n: PackedVector3Array, idx: PackedInt32Array, a: Vector3, na: Vector3, b: Vector3, nb: Vector3, c: Vector3, nc: Vector3) -> void:
-	var base: int = v.size()
-	v.append(a)
-	v.append(b)
-	v.append(c)
-	n.append(na)
-	n.append(nb)
-	n.append(nc)
-	idx.append(base)
-	idx.append(base+1)
-	idx.append(base+2)
 
 func _weight_pair(a: String, b: String, wa: float) -> Array:
 	return [int(bones[a]),int(bones[b]),clamp(wa,0.0,1.0)]

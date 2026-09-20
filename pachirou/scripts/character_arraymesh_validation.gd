@@ -166,8 +166,8 @@ func _build_character() -> void:
 	_add_upper_arm("UpperArmR", arm_r)
 	_add_forearm("ForearmLMesh", forearm_l_idx)
 	_add_forearm("ForearmRMesh", forearm_r_idx)
-	_add_sleeve("SleeveL", arm_l, Vector3(0, -0.055, 0))
-	_add_sleeve("SleeveR", arm_r, Vector3(0, -0.055, 0))
+	_add_sleeve("SleeveL", arm_l, Vector3(0, -0.038, 0))
+	_add_sleeve("SleeveR", arm_r, Vector3(0, -0.038, 0))
 	_add_hand("HandL", forearm_l_idx, Vector3(0, -0.155, 0))
 	_add_hand("HandR", forearm_r_idx, Vector3(0, -0.155, 0))
 	_add_thigh("ThighL", leg_l)
@@ -439,8 +439,9 @@ func _add_hair_v2() -> void:
 	_add_ellipsoid("HairBack", Vector3(0, 1.038, -0.112), Vector3(0.119, 0.073, 0.038), hair_color)
 	_add_ellipsoid("TempleL", Vector3(-0.132, 1.044, -0.002), Vector3(0.025, 0.052, 0.066), hair_color)
 	_add_ellipsoid("TempleR", Vector3(0.132, 1.044, -0.002), Vector3(0.025, 0.052, 0.066), hair_color)
-	_add_ellipsoid("FringeL", Vector3(-0.050, 1.058, 0.130), Vector3(0.060, 0.023, 0.018), hair_color)
-	_add_ellipsoid("FringeR", Vector3(0.055, 1.064, 0.130), Vector3(0.064, 0.021, 0.018), hair_color)
+	_add_ellipsoid("FringeL", Vector3(-0.064, 1.061, 0.126), Vector3(0.044, 0.026, 0.017), hair_color)
+	_add_ellipsoid("FringeC", Vector3(-0.006, 1.052, 0.134), Vector3(0.038, 0.031, 0.016), hair_color)
+	_add_ellipsoid("FringeR", Vector3(0.052, 1.066, 0.127), Vector3(0.041, 0.024, 0.017), hair_color)
 
 func _add_collar() -> void:
 	var collar := MeshInstance3D.new()
@@ -472,11 +473,11 @@ func _add_sleeve(label: String, bone_idx: int, local_center: Vector3) -> void:
 	skeleton.add_child(attachment)
 	var sleeve := MeshInstance3D.new()
 	sleeve.name = label
-	sleeve.position = local_center
+	sleeve.position = local_center + Vector3(0, 0.012, 0)
 	sleeve.mesh = _fixed_ring_mesh([
-		Vector3(0.056, 0.070, 0.055),
-		Vector3(0.052, 0.010, 0.051),
-		Vector3(0.047, -0.065, 0.047)
+		Vector3(0.052, 0.054, 0.052),
+		Vector3(0.049, 0.010, 0.049),
+		Vector3(0.043, -0.048, 0.043)
 	], 10)
 	sleeve.material_override = _material(Color(0.96, 0.96, 0.94))
 	attachment.add_child(sleeve)

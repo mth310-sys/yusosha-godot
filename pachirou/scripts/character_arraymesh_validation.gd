@@ -71,26 +71,27 @@ func _build_character() -> void:
 	# BoneAttachment3D follows the bone GLOBAL pose. Child bones therefore use
 	# local offsets from Root, while Root carries the character's body height.
 	skeleton.set_bone_rest(root, Transform3D(Basis.IDENTITY, Vector3(0, 0.58, 0)))
-	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.205, 0.17, 0)))
-	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.205, 0.17, 0)))
-	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.085, -0.16, 0)))
-	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.085, -0.16, 0)))
+	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.215, 0.17, 0)))
+	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.215, 0.17, 0)))
+	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.09, -0.15, 0)))
+	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.09, -0.15, 0)))
 	skeleton.reset_bone_poses()
 
 	# Character Base 01 v2: fixed 3.7-head stylized human.
 	# Stable authored primitives replace the experimental loft topology.
-	_add_ellipsoid("Head", Vector3(0, 0.985, 0), Vector3(0.165, 0.175, 0.155), Color(0.84, 0.64, 0.50))
+	_add_ellipsoid("Head", Vector3(0, 0.985, 0), Vector3(0.158, 0.172, 0.148), Color(0.84, 0.64, 0.50))
 	_add_hair_v2()
 	_add_face_v2()
-	_add_ellipsoid("ShirtBody", Vector3(0, 0.665, 0), Vector3(0.19, 0.205, 0.125), Color(0.96, 0.96, 0.94))
-	_add_ellipsoid("PantsHip", Vector3(0, 0.465, 0), Vector3(0.145, 0.105, 0.105), Color(0.10, 0.13, 0.18))
-	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.15, 0), 0.050, 0.30, Color(0.84, 0.64, 0.50))
+	_add_ellipsoid("ShirtBody", Vector3(0, 0.665, 0), Vector3(0.205, 0.205, 0.132), Color(0.96, 0.96, 0.94))
+	_add_ellipsoid("ShirtHem", Vector3(0, 0.515, 0), Vector3(0.195, 0.050, 0.130), Color(0.96, 0.96, 0.94))
+	_add_ellipsoid("PantsHip", Vector3(0, 0.455, 0), Vector3(0.155, 0.115, 0.11), Color(0.10, 0.13, 0.18))
+	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.15, 0), 0.054, 0.30, Color(0.84, 0.64, 0.50))
 	_add_limb("ArmRMesh", arm_r, Vector3(0, -0.15, 0), 0.050, 0.30, Color(0.84, 0.64, 0.50))
 	_add_sleeve("SleeveL", arm_l, Vector3(0, -0.055, 0))
 	_add_sleeve("SleeveR", arm_r, Vector3(0, -0.055, 0))
 	_add_hand("HandL", arm_l, Vector3(0, -0.325, 0))
 	_add_hand("HandR", arm_r, Vector3(0, -0.325, 0))
-	_add_limb("LegLMesh", leg_l, Vector3(0, -0.17, 0), 0.060, 0.34, Color(0.10, 0.13, 0.18))
+	_add_limb("LegLMesh", leg_l, Vector3(0, -0.17, 0), 0.066, 0.34, Color(0.10, 0.13, 0.18))
 	_add_limb("LegRMesh", leg_r, Vector3(0, -0.17, 0), 0.060, 0.34, Color(0.10, 0.13, 0.18))
 	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.365, 0.045))
 	_add_shoe_to_bone("ShoeR", leg_r, Vector3(0, -0.365, 0.045))
@@ -233,11 +234,14 @@ func _add_ellipsoid(label: String, center: Vector3, radii: Vector3, color: Color
 	visual_root.add_child(m)
 
 func _add_hair_v2() -> void:
-	# Short dark-brown hair: crown/back volume plus restrained front fringe.
-	_add_ellipsoid("HairCrown", Vector3(0, 1.095, -0.018), Vector3(0.172, 0.105, 0.158), Color(0.16, 0.10, 0.07))
-	_add_ellipsoid("HairBack", Vector3(0, 1.025, -0.115), Vector3(0.145, 0.095, 0.055), Color(0.16, 0.10, 0.07))
-	_add_ellipsoid("FringeL", Vector3(-0.072, 1.064, 0.132), Vector3(0.075, 0.050, 0.025), Color(0.16, 0.10, 0.07))
-	_add_ellipsoid("FringeR", Vector3(0.068, 1.070, 0.132), Vector3(0.080, 0.045, 0.025), Color(0.16, 0.10, 0.07))
+	# Compact short-hair silhouette: crown, back and two restrained front locks.
+	var hair_color := Color(0.16, 0.10, 0.07)
+	_add_ellipsoid("HairCrown", Vector3(0, 1.092, -0.020), Vector3(0.160, 0.092, 0.150), hair_color)
+	_add_ellipsoid("HairBack", Vector3(0, 1.035, -0.118), Vector3(0.142, 0.090, 0.050), hair_color)
+	_add_ellipsoid("HairSideL", Vector3(-0.135, 1.050, -0.015), Vector3(0.038, 0.070, 0.095), hair_color)
+	_add_ellipsoid("HairSideR", Vector3(0.135, 1.050, -0.015), Vector3(0.038, 0.070, 0.095), hair_color)
+	_add_ellipsoid("FringeL", Vector3(-0.052, 1.066, 0.127), Vector3(0.067, 0.035, 0.022), hair_color)
+	_add_ellipsoid("FringeR", Vector3(0.060, 1.072, 0.127), Vector3(0.073, 0.031, 0.022), hair_color)
 
 func _add_face_v2() -> void:
 	for x in [-0.057, 0.057]:
@@ -330,7 +334,7 @@ func _ellipsoid_mesh(radii: Vector3, radial: int, rings: int, phi_min: float = 0
 
 func _rounded_shoe_mesh() -> ArrayMesh:
 	# Low-cut sneaker: scaled ellipsoid gives a softer silhouette than a box.
-	return _ellipsoid_mesh(Vector3(0.082, 0.047, 0.125), 12, 6)
+	return _ellipsoid_mesh(Vector3(0.078, 0.043, 0.118), 12, 6)
 
 func _box_mesh(size: Vector3) -> ArrayMesh:
 	var hx := size.x * 0.5

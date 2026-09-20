@@ -92,10 +92,8 @@ func _build_character() -> void:
 	_add_sleeve("SleeveR", arm_r, Vector3(0, -0.055, 0))
 	_add_hand("HandL", arm_l, Vector3(0, -0.325, 0))
 	_add_hand("HandR", arm_r, Vector3(0, -0.325, 0))
-	_add_limb("LegLMesh", leg_l, Vector3(0, -0.17, 0), 0.062, 0.34, Color(0.10, 0.13, 0.18))
-	_add_limb("LegRMesh", leg_r, Vector3(0, -0.17, 0), 0.062, 0.34, Color(0.10, 0.13, 0.18))
-	_add_upper_leg("UpperLegL", leg_l)
-	_add_upper_leg("UpperLegR", leg_r)
+	_add_trouser_leg("TrouserLegL", leg_l)
+	_add_trouser_leg("TrouserLegR", leg_r)
 	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.365, 0.045))
 	_add_shoe_to_bone("ShoeR", leg_r, Vector3(0, -0.365, 0.045))
 
@@ -111,9 +109,9 @@ func _shirt_mesh() -> ArrayMesh:
 	# Fixed convex T-shirt torso: narrower waist/hem, broader chest.
 	return _fixed_ring_mesh([
 		Vector3(0.155, 0.215, 0.105),
-		Vector3(0.188, 0.145, 0.125),
-		Vector3(0.182, 0.020, 0.128),
-		Vector3(0.170, -0.190, 0.118),
+		Vector3(0.190, 0.145, 0.125),
+		Vector3(0.178, 0.020, 0.124),
+		Vector3(0.164, -0.190, 0.114),
 		Vector3(0.168, -0.220, 0.116)
 	], 12)
 
@@ -366,6 +364,23 @@ func _add_hand(label: String, bone_idx: int, local_center: Vector3) -> void:
 	hand.material_override = _material(Color(0.84, 0.64, 0.50))
 	attachment.add_child(hand)
 
+func _add_trouser_leg(label: String, bone_idx: int) -> void:
+	var attachment := BoneAttachment3D.new()
+	attachment.name = label + "Attachment"
+	attachment.bone_name = skeleton.get_bone_name(bone_idx)
+	skeleton.add_child(attachment)
+	var trouser := MeshInstance3D.new()
+	trouser.name = label
+	trouser.position = Vector3(0, -0.165, 0)
+	trouser.mesh = _fixed_ring_mesh([
+		Vector3(0.078, 0.165, 0.075),
+		Vector3(0.073, 0.080, 0.070),
+		Vector3(0.066, -0.025, 0.064),
+		Vector3(0.058, -0.165, 0.058)
+	], 10)
+	trouser.material_override = _material(Color(0.10, 0.13, 0.18))
+	attachment.add_child(trouser)
+
 func _add_upper_leg(label: String, bone_idx: int) -> void:
 	var attachment := BoneAttachment3D.new()
 	attachment.name = label + "Attachment"
@@ -417,7 +432,7 @@ func _ellipsoid_mesh(radii: Vector3, radial: int, rings: int, phi_min: float = 0
 
 func _rounded_shoe_mesh() -> ArrayMesh:
 	# Low-cut sneaker: scaled ellipsoid gives a softer silhouette than a box.
-	return _ellipsoid_mesh(Vector3(0.078, 0.043, 0.118), 12, 6)
+	return _ellipsoid_mesh(Vector3(0.071, 0.041, 0.112), 12, 6)
 
 func _box_mesh(size: Vector3) -> ArrayMesh:
 	var hx := size.x * 0.5

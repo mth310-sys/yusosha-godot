@@ -5,6 +5,10 @@ extends Node3D
 
 var skeleton: Skeleton3D
 var visual_root: Node3D
+var forearm_l_idx: int = -1
+var forearm_r_idx: int = -1
+var shin_l_idx: int = -1
+var shin_r_idx: int = -1
 var t := 0.0
 
 func _ready() -> void:
@@ -15,11 +19,21 @@ func _process(delta: float) -> void:
 	t += delta
 	if skeleton == null:
 		return
-	var swing := sin(t * 4.0) * deg_to_rad(18.0)
+	var phase: float = sin(t * 4.0)
+	var swing: float = phase * deg_to_rad(18.0)
+	var knee_l: float = maxf(0.0, -phase) * deg_to_rad(32.0)
+	var knee_r: float = maxf(0.0, phase) * deg_to_rad(32.0)
+	var elbow_l: float = deg_to_rad(10.0) + maxf(0.0, phase) * deg_to_rad(12.0)
+	var elbow_r: float = deg_to_rad(10.0) + maxf(0.0, -phase) * deg_to_rad(12.0)
 	skeleton.set_bone_pose_rotation(1, Quaternion(Vector3.RIGHT, swing))
 	skeleton.set_bone_pose_rotation(2, Quaternion(Vector3.RIGHT, -swing))
 	skeleton.set_bone_pose_rotation(3, Quaternion(Vector3.RIGHT, -swing))
 	skeleton.set_bone_pose_rotation(4, Quaternion(Vector3.RIGHT, swing))
+	if forearm_l_idx >= 0:
+		skeleton.set_bone_pose_rotation(forearm_l_idx, Quaternion(Vector3.RIGHT, -elbow_l))
+		skeleton.set_bone_pose_rotation(forearm_r_idx, Quaternion(Vector3.RIGHT, -elbow_r))
+		skeleton.set_bone_pose_rotation(shin_l_idx, Quaternion(Vector3.RIGHT, knee_l))
+		skeleton.set_bone_pose_rotation(shin_r_idx, Quaternion(Vector3.RIGHT, knee_r))
 	visual_root.position.y = abs(sin(t * 4.0)) * 0.008
 
 func _build_environment() -> void:
@@ -64,10 +78,18 @@ func _build_character() -> void:
 	var arm_r: int = skeleton.add_bone("ArmR")
 	var leg_l: int = skeleton.add_bone("LegL")
 	var leg_r: int = skeleton.add_bone("LegR")
+	forearm_l_idx = skeleton.add_bone("ForearmL")
+	forearm_r_idx = skeleton.add_bone("ForearmR")
+	shin_l_idx = skeleton.add_bone("ShinL")
+	shin_r_idx = skeleton.add_bone("ShinR")
 	skeleton.set_bone_parent(arm_l, root)
 	skeleton.set_bone_parent(arm_r, root)
 	skeleton.set_bone_parent(leg_l, root)
 	skeleton.set_bone_parent(leg_r, root)
+	skeleton.set_bone_parent(forearm_l_idx, arm_l)
+	skeleton.set_bone_parent(forearm_r_idx, arm_r)
+	skeleton.set_bone_parent(shin_l_idx, leg_l)
+	skeleton.set_bone_parent(shin_r_idx, leg_r)
 	# BoneAttachment3D follows the bone GLOBAL pose. Child bones therefore use
 	# local offsets from Root, while Root carries the character's body height.
 	skeleton.set_bone_rest(root, Transform3D(Basis.IDENTITY, Vector3(0, 0.58, 0)))
@@ -75,6 +97,10 @@ func _build_character() -> void:
 	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.205, 0.17, 0)))
 	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.100, -0.15, 0)))
 	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.100, -0.15, 0)))
+	skeleton.set_bone_rest(forearm_l_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.17, 0)))
+	skeleton.set_bone_rest(forearm_r_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.17, 0)))
+	skeleton.set_bone_rest(shin_l_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.18, 0)))
+	skeleton.set_bone_rest(shin_r_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.18, 0)))
 	skeleton.reset_bone_poses()
 
 	# Character Base 01 v2: fixed 3.7-head stylized human.
@@ -88,16 +114,20 @@ func _build_character() -> void:
 	_add_ellipsoid("ShoulderL", Vector3(-0.158, 0.748, 0), Vector3(0.064, 0.082, 0.092), Color(0.96, 0.96, 0.94))
 	_add_ellipsoid("ShoulderR", Vector3(0.158, 0.748, 0), Vector3(0.064, 0.082, 0.092), Color(0.96, 0.96, 0.94))
 	_add_fixed_part("PantsHip", Vector3(0, 0.455, 0), _pants_hip_mesh(), Color(0.10, 0.13, 0.18))
-	_add_arm("ArmLMesh", arm_l)
-	_add_arm("ArmRMesh", arm_r)
+	_add_upper_arm("UpperArmL", arm_l)
+	_add_upper_arm("UpperArmR", arm_r)
+	_add_forearm("ForearmLMesh", forearm_l_idx)
+	_add_forearm("ForearmRMesh", forearm_r_idx)
 	_add_sleeve("SleeveL", arm_l, Vector3(0, -0.055, 0))
 	_add_sleeve("SleeveR", arm_r, Vector3(0, -0.055, 0))
-	_add_hand("HandL", arm_l, Vector3(0, -0.320, 0))
-	_add_hand("HandR", arm_r, Vector3(0, -0.320, 0))
-	_add_trouser_leg("TrouserLegL", leg_l)
-	_add_trouser_leg("TrouserLegR", leg_r)
-	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.365, 0.045))
-	_add_shoe_to_bone("ShoeR", leg_r, Vector3(0, -0.365, 0.045))
+	_add_hand("HandL", forearm_l_idx, Vector3(0, -0.155, 0))
+	_add_hand("HandR", forearm_r_idx, Vector3(0, -0.155, 0))
+	_add_thigh("ThighL", leg_l)
+	_add_thigh("ThighR", leg_r)
+	_add_shin("ShinLMesh", shin_l_idx)
+	_add_shin("ShinRMesh", shin_r_idx)
+	_add_shoe_to_bone("ShoeL", shin_l_idx, Vector3(0, -0.185, 0.045))
+	_add_shoe_to_bone("ShoeR", shin_r_idx, Vector3(0, -0.185, 0.045))
 
 func _add_fixed_part(label: String, center: Vector3, mesh: ArrayMesh, color: Color) -> void:
 	var mesh_instance := MeshInstance3D.new()
@@ -283,6 +313,38 @@ func _extruded_profile_mesh(profile: Array[Vector2], depth: float) -> ArrayMesh:
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return mesh
+
+func _add_bone_part(label: String, bone_idx: int, center: Vector3, mesh: ArrayMesh, color: Color) -> void:
+	var attachment := BoneAttachment3D.new()
+	attachment.name = label + "Attachment"
+	attachment.bone_name = skeleton.get_bone_name(bone_idx)
+	skeleton.add_child(attachment)
+	var part := MeshInstance3D.new()
+	part.name = label
+	part.position = center
+	part.mesh = mesh
+	part.material_override = _material(color)
+	attachment.add_child(part)
+
+func _add_upper_arm(label: String, bone_idx: int) -> void:
+	_add_bone_part(label, bone_idx, Vector3(0, -0.085, 0), _fixed_ring_mesh([
+		Vector3(0.052, 0.080, 0.050), Vector3(0.048, 0.0, 0.046), Vector3(0.044, -0.080, 0.043)
+	], 10), Color(0.84, 0.64, 0.50))
+
+func _add_forearm(label: String, bone_idx: int) -> void:
+	_add_bone_part(label, bone_idx, Vector3(0, -0.075, 0), _fixed_ring_mesh([
+		Vector3(0.044, 0.070, 0.043), Vector3(0.041, 0.0, 0.040), Vector3(0.037, -0.070, 0.037)
+	], 10), Color(0.84, 0.64, 0.50))
+
+func _add_thigh(label: String, bone_idx: int) -> void:
+	_add_bone_part(label, bone_idx, Vector3(0, -0.090, 0), _fixed_ring_mesh([
+		Vector3(0.078, 0.085, 0.075), Vector3(0.073, 0.0, 0.070), Vector3(0.067, -0.085, 0.064)
+	], 10), Color(0.10, 0.13, 0.18))
+
+func _add_shin(label: String, bone_idx: int) -> void:
+	_add_bone_part(label, bone_idx, Vector3(0, -0.085, 0), _fixed_ring_mesh([
+		Vector3(0.066, 0.080, 0.063), Vector3(0.061, 0.0, 0.060), Vector3(0.056, -0.080, 0.056)
+	], 10), Color(0.10, 0.13, 0.18))
 
 func _add_arm(label: String, bone_idx: int) -> void:
 	var attachment := BoneAttachment3D.new()

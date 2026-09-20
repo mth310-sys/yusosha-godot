@@ -24,16 +24,16 @@ func _build_body() -> void:
 	_box("ShoeL", Vector3(0.28,0.14,0.40), Vector3(-0.18,0.09,0.07), SHOES, Vector3(0,0,0))
 	_box("ShoeR", Vector3(0.28,0.14,0.40), Vector3(0.18,0.09,0.07), SHOES, Vector3(0,0,0))
 	# Straight trousers, separate modules.
-	_capsule("LegL", 0.13,0.58,Vector3(-0.17,0.42,0),PANTS)
-	_capsule("LegR", 0.13,0.58,Vector3(0.17,0.42,0),PANTS)
+	_limb_with_pivot("LegLPivot","LegL",0.13,0.58,Vector3(-0.17,0.69,0),Vector3(0,-0.27,0),PANTS)
+	_limb_with_pivot("LegRPivot","LegR",0.13,0.58,Vector3(0.17,0.69,0),Vector3(0,-0.27,0),PANTS)
 	# Barrel/oval torso and thin T-shirt shell.
 	_sphere("Torso",Vector3(0.43,0.48,0.30),Vector3(0,0.91,0),SHIRT)
 	# Short sleeves.
 	_sphere("SleeveL",Vector3(0.18,0.20,0.18),Vector3(-0.43,1.04,0),SHIRT)
 	_sphere("SleeveR",Vector3(0.18,0.20,0.18),Vector3(0.43,1.04,0),SHIRT)
 	# Simple cylindrical arms.
-	_capsule("ArmL",0.105,0.43,Vector3(-0.47,0.79,0),SKIN)
-	_capsule("ArmR",0.105,0.43,Vector3(0.47,0.79,0),SKIN)
+	_limb_with_pivot("ArmLPivot","ArmL",0.105,0.43,Vector3(-0.47,1.00,0),Vector3(0,-0.21,0),SKIN)
+	_limb_with_pivot("ArmRPivot","ArmR",0.105,0.43,Vector3(0.47,1.00,0),Vector3(0,-0.21,0),SKIN)
 	# Mitten hands + separated thumbs.
 	_sphere("HandL",Vector3(0.13,0.15,0.11),Vector3(-0.47,0.53,0),SKIN)
 	_sphere("HandR",Vector3(0.13,0.15,0.11),Vector3(0.47,0.53,0),SKIN)
@@ -75,24 +75,24 @@ func _sphere(n:String,s:Vector3,p:Vector3,c:Color) -> void:
 		visual.add_child(node)
 
 func _limb_with_pivot(pivot_name:String,n:String,r:float,h:float,pivot_pos:Vector3,local_pos:Vector3,c:Color) -> void:
-    var visual := get_node_or_null("Visual") as Node3D
-    if visual == null:
-        return
-    var pivot := Node3D.new()
-    pivot.name = pivot_name
-    pivot.position = pivot_pos
-    visual.add_child(pivot)
-    var node := MeshInstance3D.new()
-    node.name = n
-    var mesh := CapsuleMesh.new()
-    mesh.radius = r
-    mesh.height = h
-    mesh.radial_segments = 12
-    mesh.rings = 4
-    node.mesh = mesh
-    node.position = local_pos
-    node.material_override = _material(c)
-    pivot.add_child(node)
+	var visual := get_node_or_null("Visual") as Node3D
+	if visual == null:
+	    return
+	var pivot := Node3D.new()
+	pivot.name = pivot_name
+	pivot.position = pivot_pos
+	visual.add_child(pivot)
+	var node := MeshInstance3D.new()
+	node.name = n
+	var mesh := CapsuleMesh.new()
+	mesh.radius = r
+	mesh.height = h
+	mesh.radial_segments = 12
+	mesh.rings = 4
+	node.mesh = mesh
+	node.position = local_pos
+	node.material_override = _material(c)
+	pivot.add_child(node)
 
 func _capsule(n:String,r:float,h:float,p:Vector3,c:Color) -> void:
 	var node:=MeshInstance3D.new()

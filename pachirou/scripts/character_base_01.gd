@@ -20,14 +20,13 @@ func _build_body() -> void:
 	add_child(visual)
 
 	# Legs / straight trousers. Pivots are retained for animation.
-	_tapered_cylinder("Waist", 0.255, 0.285, 0.14, Vector3(0,0.55,0), PANTS, visual, 22)
+	_tapered_cylinder("Waist", 0.235, 0.265, 0.12, Vector3(0,0.535,0), PANTS, visual, 22)
 	_make_leg("LegLPivot", -0.155)
 	_make_leg("LegRPivot", 0.155)
 
 	# T-shirt: tapered shell + separate hem and sleeves.
-	_sphere_child("Torso", Vector3(0.39,0.43,0.285), Vector3(0,0.88,0), SHIRT, visual, 28, 14)
-	_sphere_child("Chest", Vector3(0.375,0.25,0.29), Vector3(0,1.04,0.005), SHIRT, visual, 28, 14)
-	_tapered_cylinder("ShirtHem", 0.350, 0.365, 0.105, Vector3(0,0.555,0), SHIRT, visual, 24)
+	_sphere_child("Torso", Vector3(0.365,0.405,0.275), Vector3(0,0.88,0), SHIRT, visual, 32, 16)
+	_tapered_cylinder("ShirtHem", 0.325, 0.340, 0.085, Vector3(0,0.585,0), SHIRT, visual, 24)
 	_sphere_child("SleeveL", Vector3(0.135,0.155,0.135), Vector3(-0.370,1.035,0), SHIRT, visual, 20, 10)
 	_sphere_child("SleeveR", Vector3(0.135,0.155,0.135), Vector3(0.370,1.035,0), SHIRT, visual, 20, 10)
 	_torus_child("Collar", 0.115, 0.018, Vector3(0,1.225,0.015), SHIRT, visual)

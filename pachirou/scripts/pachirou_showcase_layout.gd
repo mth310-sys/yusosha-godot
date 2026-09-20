@@ -128,3 +128,21 @@ func _mark_zelvolt_machine(node: Node3D,cell: Vector2i,row: int,side: String) ->
 	if row == 0 and side == "front" and cell == Vector2i(1,ISLAND_FRONT_ROWS[0]):
 		node.set_meta("machine_id","zelvolt")
 		node.set_meta("play_scene","res://pachirou/machines/zelvolt/zelvolt.tscn")
+		_add_machine_click_area(node)
+
+func _add_machine_click_area(node: Node3D) -> void:
+	var machine := node.get_node_or_null("MachineSlot") as Node3D
+	if machine == null:
+		return
+	var area := Area3D.new()
+	area.name = "PlayClickArea"
+	area.set_meta("machine_id","zelvolt")
+	area.set_meta("play_scene","res://pachirou/machines/zelvolt/zelvolt.tscn")
+	machine.add_child(area)
+	var shape_node := CollisionShape3D.new()
+	shape_node.name = "CollisionShape3D"
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(0.72,0.92,0.48)
+	shape_node.shape = shape
+	shape_node.position = Vector3(0,0.46,0)
+	area.add_child(shape_node)

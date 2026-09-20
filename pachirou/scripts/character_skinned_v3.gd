@@ -143,7 +143,7 @@ func _skin_baked_mesh(source: ArrayMesh) -> ArrayMesh:
 			weight_array.append(0.0)
 		arrays[Mesh.ARRAY_BONES] = bone_array
 		arrays[Mesh.ARRAY_WEIGHTS] = weight_array
-		result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[],{},Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS if false else 0)
+		result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
 	return result
 
 func _nearest_bones(vertex: Vector3) -> Array:

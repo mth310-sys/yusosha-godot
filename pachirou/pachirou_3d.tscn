@@ -21,6 +21,7 @@ script = ExtResource("1_main")
 [node name="CharacterBase01Preview" parent="World" instance=ExtResource("13_character")]
 position = Vector3(-9.5, 0, 9.5)
 rotation_degrees = Vector3(0, 135, 0)
+build_validation_environment = false
 
 
 [node name="FloorExpansion" type="Node3D" parent="World"]

@@ -64,7 +64,7 @@ func _sphere(n:String,s:Vector3,p:Vector3,c:Color) -> void:
 	node.scale=s
 	node.position=p
 	node.material_override=_material(c)
-	get_node("Visual").add_child(node)
+	var visual := get_node_or_null("Visual") as Node3D\n\tif visual != null:\n\t\tvisual.add_child(node)
 
 func _capsule(n:String,r:float,h:float,p:Vector3,c:Color) -> void:
 	var node:=MeshInstance3D.new()
@@ -77,7 +77,7 @@ func _capsule(n:String,r:float,h:float,p:Vector3,c:Color) -> void:
 	node.mesh=mesh
 	node.position=p
 	node.material_override=_material(c)
-	get_node("Visual").add_child(node)
+	var visual := get_node_or_null("Visual") as Node3D\n\tif visual != null:\n\t\tvisual.add_child(node)
 
 func _box(n:String,s:Vector3,p:Vector3,c:Color,rot:Vector3) -> void:
 	var node:=MeshInstance3D.new()
@@ -88,4 +88,4 @@ func _box(n:String,s:Vector3,p:Vector3,c:Color,rot:Vector3) -> void:
 	node.position=p
 	node.rotation_degrees=rot
 	node.material_override=_material(c)
-	get_node("Visual").add_child(node)
+	var visual := get_node_or_null("Visual") as Node3D\n\tif visual != null:\n\t\tvisual.add_child(node)

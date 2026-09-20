@@ -1,0 +1,91 @@
+extends Node3D
+
+# Character Base 01 — visual prototype only.
+# Dimensions are local prototype units; final scale is matched to the hall equipment.
+const SKIN := Color("d7a47f")
+const HAIR := Color("342b28")
+const SHIRT := Color("f3f2ed")
+const PANTS := Color("30343a")
+const SHOES := Color("f5f5f1")
+const EYES := Color("171717")
+
+func _ready() -> void:
+	_build_body()
+
+func _build_body() -> void:
+	# Approx. 3-head adult silhouette; no visible neck.
+	# Feet / shoes
+	_box("ShoeL", Vector3(0.28,0.14,0.40), Vector3(-0.18,0.09,0.07), SHOES, Vector3(0,0,0))
+	_box("ShoeR", Vector3(0.28,0.14,0.40), Vector3(0.18,0.09,0.07), SHOES, Vector3(0,0,0))
+	# Straight trousers, separate modules.
+	_capsule("LegL", 0.13,0.58,Vector3(-0.17,0.42,0),PANTS)
+	_capsule("LegR", 0.13,0.58,Vector3(0.17,0.42,0),PANTS)
+	# Barrel/oval torso and thin T-shirt shell.
+	_sphere("Torso",Vector3(0.43,0.48,0.30),Vector3(0,0.91,0),SHIRT)
+	# Short sleeves.
+	_sphere("SleeveL",Vector3(0.18,0.20,0.18),Vector3(-0.43,1.04,0),SHIRT)
+	_sphere("SleeveR",Vector3(0.18,0.20,0.18),Vector3(0.43,1.04,0),SHIRT)
+	# Simple cylindrical arms.
+	_capsule("ArmL",0.105,0.43,Vector3(-0.47,0.79,0),SKIN)
+	_capsule("ArmR",0.105,0.43,Vector3(0.47,0.79,0),SKIN)
+	# Mitten hands + separated thumbs.
+	_sphere("HandL",Vector3(0.13,0.15,0.11),Vector3(-0.47,0.53,0),SKIN)
+	_sphere("HandR",Vector3(0.13,0.15,0.11),Vector3(0.47,0.53,0),SKIN)
+	_sphere("ThumbL",Vector3(0.055,0.075,0.055),Vector3(-0.38,0.55,0.07),SKIN)
+	_sphere("ThumbR",Vector3(0.055,0.075,0.055),Vector3(0.38,0.55,0.07),SKIN)
+	# Wide, slightly vertically compressed head.
+	_sphere("Head",Vector3(0.48,0.40,0.40),Vector3(0,1.50,0),SKIN)
+	# Small simplified ears.
+	_sphere("EarL",Vector3(0.075,0.10,0.055),Vector3(-0.46,1.50,0),SKIN)
+	_sphere("EarR",Vector3(0.075,0.10,0.055),Vector3(0.46,1.50,0),SKIN)
+	# Normal face: tiny black dot eyes only.
+	_sphere("EyeL",Vector3(0.030,0.040,0.018),Vector3(-0.15,1.52,0.386),EYES)
+	_sphere("EyeR",Vector3(0.030,0.040,0.018),Vector3(0.15,1.52,0.386),EYES)
+	# Modular short dark-brown hair: cap + simple front/back locks.
+	_sphere("HairCap",Vector3(0.49,0.26,0.41),Vector3(0,1.73,-0.015),HAIR)
+	for x in [-0.28,-0.14,0.0,0.14,0.28]:
+		_sphere("FrontHair",Vector3(0.105,0.16,0.075),Vector3(x,1.66,0.34),HAIR)
+
+func _material(c: Color) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	m.roughness = 0.9
+	return m
+
+func _sphere(n:String,s:Vector3,p:Vector3,c:Color) -> void:
+	var node:=MeshInstance3D.new()
+	node.name=n
+	var mesh:=SphereMesh.new()
+	mesh.radius=1.0
+	mesh.height=2.0
+	mesh.radial_segments=16
+	mesh.rings=8
+	node.mesh=mesh
+	node.scale=s
+	node.position=p
+	node.material_override=_material(c)
+	add_child(node)
+
+func _capsule(n:String,r:float,h:float,p:Vector3,c:Color) -> void:
+	var node:=MeshInstance3D.new()
+	node.name=n
+	var mesh:=CapsuleMesh.new()
+	mesh.radius=r
+	mesh.height=h
+	mesh.radial_segments=12
+	mesh.rings=4
+	node.mesh=mesh
+	node.position=p
+	node.material_override=_material(c)
+	add_child(node)
+
+func _box(n:String,s:Vector3,p:Vector3,c:Color,rot:Vector3) -> void:
+	var node:=MeshInstance3D.new()
+	node.name=n
+	var mesh:=BoxMesh.new()
+	mesh.size=s
+	node.mesh=mesh
+	node.position=p
+	node.rotation_degrees=rot
+	node.material_override=_material(c)
+	add_child(node)

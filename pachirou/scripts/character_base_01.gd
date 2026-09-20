@@ -20,12 +20,14 @@ func _build_body() -> void:
 	add_child(visual)
 
 	# Legs / straight trousers. Pivots are retained for animation.
-	_make_leg("LegLPivot", -0.165)
-	_make_leg("LegRPivot", 0.165)
+	_tapered_cylinder("Waist", 0.285, 0.305, 0.18, Vector3(0,0.61,0), PANTS, visual, 22)
+	_make_leg("LegLPivot", -0.155)
+	_make_leg("LegRPivot", 0.155)
 
 	# T-shirt: tapered shell + separate hem and sleeves.
-	_tapered_cylinder("Torso", 0.335, 0.405, 0.62, Vector3(0,0.88,0), SHIRT, visual, 24)
-	_tapered_cylinder("ShirtHem", 0.355, 0.365, 0.075, Vector3(0,0.585,0), SHIRT, visual, 24)
+	_sphere_child("Torso", Vector3(0.39,0.43,0.285), Vector3(0,0.88,0), SHIRT, visual, 28, 14)
+	_sphere_child("Chest", Vector3(0.375,0.25,0.29), Vector3(0,1.04,0.005), SHIRT, visual, 28, 14)
+	_tapered_cylinder("ShirtHem", 0.335, 0.355, 0.085, Vector3(0,0.585,0), SHIRT, visual, 24)
 	_sphere_child("SleeveL", Vector3(0.155,0.175,0.155), Vector3(-0.385,1.055,0), SHIRT, visual, 20, 10)
 	_sphere_child("SleeveR", Vector3(0.155,0.175,0.155), Vector3(0.385,1.055,0), SHIRT, visual, 20, 10)
 
@@ -34,18 +36,19 @@ func _build_body() -> void:
 	_make_arm("ArmRPivot", 0.415, false)
 
 	# Head: wide and slightly compressed, no visible neck.
-	_sphere_child("Head", Vector3(0.455,0.385,0.385), Vector3(0,1.485,0), SKIN, visual, 28, 14)
-	_sphere_child("EarL", Vector3(0.068,0.090,0.052), Vector3(-0.438,1.485,0), SKIN, visual, 16, 8)
-	_sphere_child("EarR", Vector3(0.068,0.090,0.052), Vector3(0.438,1.485,0), SKIN, visual, 16, 8)
-	_sphere_child("EyeL", Vector3(0.026,0.033,0.016), Vector3(-0.132,1.500,0.381), EYES, visual, 12, 6)
-	_sphere_child("EyeR", Vector3(0.026,0.033,0.016), Vector3(0.132,1.500,0.381), EYES, visual, 12, 6)
+	_sphere_child("Head", Vector3(0.445,0.375,0.365), Vector3(0,1.475,0), SKIN, visual, 28, 14)
+	_sphere_child("EarL", Vector3(0.068,0.090,0.052), Vector3(-0.425,1.475,0), SKIN, visual, 16, 8)
+	_sphere_child("EarR", Vector3(0.068,0.090,0.052), Vector3(0.425,1.475,0), SKIN, visual, 16, 8)
+	_sphere_child("EyeL", Vector3(0.026,0.033,0.016), Vector3(-0.125,1.490,0.360), EYES, visual, 12, 6)
+	_sphere_child("EyeR", Vector3(0.026,0.033,0.016), Vector3(0.125,1.490,0.360), EYES, visual, 12, 6)
 
 	# Short hair: one clean cap with a restrained modular fringe.
-	_sphere_child("HairCap", Vector3(0.463,0.245,0.395), Vector3(0,1.705,-0.020), HAIR, visual, 28, 14)
-	_sphere_child("HairBack", Vector3(0.405,0.185,0.090), Vector3(0,1.575,-0.330), HAIR, visual, 20, 10)
-	_sphere_child("FringeL", Vector3(0.205,0.105,0.050), Vector3(-0.205,1.610,0.350), HAIR, visual, 18, 8)
-	_sphere_child("FringeC", Vector3(0.205,0.095,0.052), Vector3(0.000,1.600,0.360), HAIR, visual, 18, 8)
-	_sphere_child("FringeR", Vector3(0.205,0.105,0.050), Vector3(0.205,1.610,0.350), HAIR, visual, 18, 8)
+	_sphere_child("HairCap", Vector3(0.448,0.225,0.370), Vector3(0,1.690,-0.025), HAIR, visual, 32, 16)
+	_sphere_child("HairBack", Vector3(0.390,0.135,0.080), Vector3(0,1.585,-0.325), HAIR, visual, 24, 12)
+	for i in range(5):
+		var fx := -0.25 + float(i) * 0.125
+		var fy := 1.590 + (0.018 if i % 2 == 0 else 0.0)
+		_sphere_child("Fringe%d" % i, Vector3(0.105,0.085,0.040), Vector3(fx,fy,0.345), HAIR, visual, 18, 9)
 
 func _make_leg(pivot_name:String, x:float) -> void:
 	var visual := get_node_or_null("Visual") as Node3D
@@ -55,11 +58,11 @@ func _make_leg(pivot_name:String, x:float) -> void:
 	pivot.name = pivot_name
 	pivot.position = Vector3(x,0.69,0)
 	visual.add_child(pivot)
-	_tapered_cylinder("LegL" if x < 0.0 else "LegR", 0.115, 0.135, 0.54, Vector3(0,-0.27,0), PANTS, pivot, 18)
+	_tapered_cylinder("LegL" if x < 0.0 else "LegR", 0.105, 0.125, 0.52, Vector3(0,-0.27,0), PANTS, pivot, 18)
 	# Low-cut sneaker: rounded upper, toe and thin sole.
-	_box_child("Sole", Vector3(0.275,0.055,0.405), Vector3(0,-0.575,0.065), SOLE, pivot)
-	_box_child("ShoeUpper", Vector3(0.245,0.115,0.345), Vector3(0,-0.515,0.045), SHOES, pivot)
-	_sphere_child("Toe", Vector3(0.123,0.070,0.105), Vector3(0,-0.515,0.205), SHOES, pivot, 16, 8)
+	_box_child("Sole", Vector3(0.245,0.045,0.350), Vector3(0,-0.575,0.065), SOLE, pivot)
+	_box_child("ShoeUpper", Vector3(0.215,0.095,0.285), Vector3(0,-0.515,0.045), SHOES, pivot)
+	_sphere_child("Toe", Vector3(0.108,0.065,0.115), Vector3(0,-0.515,0.205), SHOES, pivot, 16, 8)
 
 func _make_arm(pivot_name:String, x:float, left:bool) -> void:
 	var visual := get_node_or_null("Visual") as Node3D
@@ -69,8 +72,8 @@ func _make_arm(pivot_name:String, x:float, left:bool) -> void:
 	pivot.name = pivot_name
 	pivot.position = Vector3(x,1.01,0)
 	visual.add_child(pivot)
-	_tapered_cylinder("ArmL" if left else "ArmR", 0.085, 0.102, 0.39, Vector3(0,-0.205,0), SKIN, pivot, 16)
-	_sphere_child("HandL" if left else "HandR", Vector3(0.112,0.135,0.095), Vector3(0,-0.445,0), SKIN, pivot, 18, 9)
+	_tapered_cylinder("ArmL" if left else "ArmR", 0.078, 0.094, 0.37, Vector3(0,-0.205,0), SKIN, pivot, 16)
+	_sphere_child("HandL" if left else "HandR", Vector3(0.102,0.125,0.090), Vector3(0,-0.445,0), SKIN, pivot, 18, 9)
 	_sphere_child("ThumbL" if left else "ThumbR", Vector3(0.047,0.066,0.047), Vector3(0.075 if left else -0.075,-0.425,0.055), SKIN, pivot, 14, 7)
 
 func _material(c:Color) -> StandardMaterial3D:

@@ -9,18 +9,23 @@
 [ext_resource type="Mesh" path="res://characters/base01_mesh/hair.obj" id="7_hair"]
 
 [sub_resource type="StandardMaterial3D" id="Skin"]
+cull_mode = 1
 albedo_color = Color(0.843,0.643,0.498,1)
 roughness = 0.88
 [sub_resource type="StandardMaterial3D" id="Hair"]
+cull_mode = 1
 albedo_color = Color(0.204,0.169,0.157,1)
 roughness = 0.9
 [sub_resource type="StandardMaterial3D" id="Shirt"]
+cull_mode = 1
 albedo_color = Color(0.953,0.949,0.929,1)
 roughness = 0.92
 [sub_resource type="StandardMaterial3D" id="Pants"]
+cull_mode = 1
 albedo_color = Color(0.188,0.204,0.227,1)
 roughness = 0.9
 [sub_resource type="StandardMaterial3D" id="Shoes"]
+cull_mode = 1
 albedo_color = Color(0.961,0.961,0.945,1)
 roughness = 0.86
 
@@ -38,10 +43,6 @@ mesh = ExtResource("1_head")
 position = Vector3(0,1.475,0)
 material_override = SubResource("Skin")
 
-[node name="Hair" type="MeshInstance3D" parent="Visual"]
-mesh = ExtResource("7_hair")
-position = Vector3(0,1.69,-0.025)
-material_override = SubResource("Hair")
 
 [node name="ArmLPivot" type="Node3D" parent="Visual"]
 position = Vector3(-0.405,1.02,0)

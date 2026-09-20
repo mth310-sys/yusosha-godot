@@ -77,7 +77,7 @@ func _sphere(n:String,s:Vector3,p:Vector3,c:Color) -> void:
 func _limb_with_pivot(pivot_name:String,n:String,r:float,h:float,pivot_pos:Vector3,local_pos:Vector3,c:Color) -> void:
 	var visual := get_node_or_null("Visual") as Node3D
 	if visual == null:
-	    return
+		return
 	var pivot := Node3D.new()
 	pivot.name = pivot_name
 	pivot.position = pivot_pos

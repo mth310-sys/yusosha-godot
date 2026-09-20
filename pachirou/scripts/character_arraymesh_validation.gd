@@ -68,21 +68,24 @@ func _build_character() -> void:
 	skeleton.set_bone_parent(arm_r, root)
 	skeleton.set_bone_parent(leg_l, root)
 	skeleton.set_bone_parent(leg_r, root)
-	skeleton.set_bone_rest(root, Transform3D(Basis.IDENTITY, Vector3.ZERO))
-	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.255, 0.76, 0)))
-	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.255, 0.76, 0)))
-	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.105, 0.39, 0)))
-	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.105, 0.39, 0)))
+	# BoneAttachment3D follows the bone GLOBAL pose. Child bones therefore use
+	# local offsets from Root, while Root carries the character's body height.
+	skeleton.set_bone_rest(root, Transform3D(Basis.IDENTITY, Vector3(0, 0.58, 0)))
+	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.255, 0.18, 0)))
+	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.255, 0.18, 0)))
+	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.105, -0.19, 0)))
+	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.105, -0.19, 0)))
+	skeleton.reset_bone_poses()
 
 	_add_ellipsoid("Head", Vector3(0, 0.94, 0), Vector3(0.235, 0.205, 0.215), Color(0.84, 0.64, 0.50))
 	_add_hair()
 	_add_ellipsoid("Torso", Vector3(0, 0.61, 0), Vector3(0.225, 0.275, 0.145), Color(0.95, 0.95, 0.93))
 	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.17, 0), 0.065, 0.34, Color(0.84, 0.64, 0.50))
 	_add_limb("ArmRMesh", arm_r, Vector3(0, -0.17, 0), 0.065, 0.34, Color(0.84, 0.64, 0.50))
-	_add_limb("LegLMesh", leg_l, Vector3(0, -0.18, 0), 0.082, 0.36, Color(0.10, 0.13, 0.18))
-	_add_limb("LegRMesh", leg_r, Vector3(0, -0.18, 0), 0.082, 0.36, Color(0.10, 0.13, 0.18))
-	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.39, 0.045))
-	_add_shoe_to_bone("ShoeR", leg_r, Vector3(0, -0.39, 0.045))
+	_add_limb("LegLMesh", leg_l, Vector3(0, -0.16, 0), 0.082, 0.32, Color(0.10, 0.13, 0.18))
+	_add_limb("LegRMesh", leg_r, Vector3(0, -0.16, 0), 0.082, 0.32, Color(0.10, 0.13, 0.18))
+	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.345, 0.055))
+	_add_shoe_to_bone("ShoeR", leg_r, Vector3(0, -0.345, 0.055))
 
 func _add_limb(label: String, bone_idx: int, local_center: Vector3, radius: float, height: float, color: Color) -> void:
 	var attachment := BoneAttachment3D.new()

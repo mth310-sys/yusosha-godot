@@ -74,6 +74,26 @@ func _sphere(n:String,s:Vector3,p:Vector3,c:Color) -> void:
 	if visual != null:
 		visual.add_child(node)
 
+func _limb_with_pivot(pivot_name:String,n:String,r:float,h:float,pivot_pos:Vector3,local_pos:Vector3,c:Color) -> void:
+    var visual := get_node_or_null("Visual") as Node3D
+    if visual == null:
+        return
+    var pivot := Node3D.new()
+    pivot.name = pivot_name
+    pivot.position = pivot_pos
+    visual.add_child(pivot)
+    var node := MeshInstance3D.new()
+    node.name = n
+    var mesh := CapsuleMesh.new()
+    mesh.radius = r
+    mesh.height = h
+    mesh.radial_segments = 12
+    mesh.rings = 4
+    node.mesh = mesh
+    node.position = local_pos
+    node.material_override = _material(c)
+    pivot.add_child(node)
+
 func _capsule(n:String,r:float,h:float,p:Vector3,c:Color) -> void:
 	var node:=MeshInstance3D.new()
 	node.name=n

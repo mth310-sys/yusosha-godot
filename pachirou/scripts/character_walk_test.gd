@@ -1,22 +1,12 @@
 extends Node
 
 @export var move_speed: float = 1.35
-@export var step_bob: float = 0.012
-@export var step_frequency: float = 9.0
-@export var arm_swing_degrees: float = 18.0
-@export var leg_swing_degrees: float = 15.0
 
 var _grid: PachirouGridRules
 var _path: Array[Vector2i] = []
 var _path_index: int = 0
-var _step_time: float = 0.0
-var _visual: Node3D
 var _character_ready: bool = false
 var _character: Node3D
-var _arm_l: Node3D
-var _arm_r: Node3D
-var _leg_l: Node3D
-var _leg_r: Node3D
 
 func _ready() -> void:
 	call_deferred("_begin_walk_test")
@@ -25,16 +15,9 @@ func _begin_walk_test() -> void:
 	_character = get_parent() as Node3D
 	if _character == null:
 		return
-	# CharacterBase01 builds Visual in its own _ready(). Wait until that has completed.
 	for wait_index in range(2):
 		await get_tree().process_frame
-	_visual = _character.get_node_or_null("Visual") as Node3D
-	_character_ready = _visual != null
-	if _visual != null:
-		_arm_l = _visual.get_node_or_null("ArmLPivot") as Node3D
-		_arm_r = _visual.get_node_or_null("ArmRPivot") as Node3D
-		_leg_l = _visual.get_node_or_null("LegLPivot") as Node3D
-		_leg_r = _visual.get_node_or_null("LegRPivot") as Node3D
+	_character_ready = true
 	_grid = get_tree().current_scene.get_node_or_null("GridRules") as PachirouGridRules
 	if _grid == null:
 		return
@@ -50,7 +33,6 @@ func _begin_walk_test() -> void:
 
 func _process(delta: float) -> void:
 	if not _character_ready or _grid == null or _path_index >= _path.size():
-		_reset_bob()
 		return
 	var target := _grid.cell_to_world(_path[_path_index])
 	var offset := target - _character.global_position
@@ -60,8 +42,7 @@ func _process(delta: float) -> void:
 		_character.global_position.z = target.z
 		_path_index += 1
 		if _path_index >= _path.size():
-			_reset_bob()
-		return
+			return
 		target = _grid.cell_to_world(_path[_path_index])
 		offset = target - _character.global_position
 		offset.y = 0.0
@@ -70,10 +51,6 @@ func _process(delta: float) -> void:
 	var direction := offset.normalized()
 	_character.global_position += direction * minf(move_speed * delta, offset.length())
 	_character.rotation.y = atan2(direction.x, direction.z)
-	_step_time += delta * step_frequency
-	if _visual != null:
-		_visual.position.y = absf(sin(_step_time * 2.0)) * step_bob
-	_apply_walk_pose(sin(_step_time))
 
 func _choose_goal(start: Vector2i) -> Vector2i:
 	var candidates: Array[Vector2i] = [
@@ -103,18 +80,3 @@ func _nearest_walkable(origin: Vector2i) -> Vector2i:
 				if _grid.is_inside(cell) and _grid.is_walkable(cell):
 					return cell
 	return origin
-
-func _apply_walk_pose(phase: float) -> void:
-	if _arm_l != null:
-		_arm_l.rotation_degrees.x = phase * arm_swing_degrees
-	if _arm_r != null:
-		_arm_r.rotation_degrees.x = -phase * arm_swing_degrees
-	if _leg_l != null:
-		_leg_l.rotation_degrees.x = -phase * leg_swing_degrees
-	if _leg_r != null:
-		_leg_r.rotation_degrees.x = phase * leg_swing_degrees
-
-func _reset_bob() -> void:
-	if _visual != null:
-		_visual.position.y = move_toward(_visual.position.y, 0.0, 0.003)
-	_apply_walk_pose(0.0)

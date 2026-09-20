@@ -15,6 +15,10 @@ func _ready() -> void:
 	_build_body()
 
 func _build_body() -> void:
+	var visual := Node3D.new()
+	visual.name = "Visual"
+	visual.scale = Vector3.ONE * EQUIPMENT_SCALE
+	add_child(visual)
 	# Approx. 3-head adult silhouette; no visible neck.
 	# Feet / shoes
 	_box("ShoeL", Vector3(0.28,0.14,0.40), Vector3(-0.18,0.09,0.07), SHOES, Vector3(0,0,0))

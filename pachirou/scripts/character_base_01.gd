@@ -25,10 +25,10 @@ func _build_body() -> void:
 	_make_leg("LegRPivot", 0.155)
 
 	# T-shirt: tapered shell + separate hem and sleeves.
-	_sphere_child("Torso", Vector3(0.365,0.405,0.275), Vector3(0,0.88,0), SHIRT, visual, 32, 16)
-	_tapered_cylinder("ShirtHem", 0.325, 0.340, 0.085, Vector3(0,0.585,0), SHIRT, visual, 24)
-	_sphere_child("SleeveL", Vector3(0.135,0.155,0.135), Vector3(-0.370,1.035,0), SHIRT, visual, 20, 10)
-	_sphere_child("SleeveR", Vector3(0.135,0.155,0.135), Vector3(0.370,1.035,0), SHIRT, visual, 20, 10)
+	_tapered_cylinder("Torso", 0.305, 0.365, 0.565, Vector3(0,0.865,0), SHIRT, visual, 32)
+	_tapered_cylinder("ShirtHem", 0.305, 0.320, 0.075, Vector3(0,0.575,0), SHIRT, visual, 24)
+	_sphere_child("SleeveL", Vector3(0.135,0.155,0.135), Vector3(-0.335,1.035,0), SHIRT, visual, 20, 10)
+	_sphere_child("SleeveR", Vector3(0.135,0.155,0.135), Vector3(0.335,1.035,0), SHIRT, visual, 20, 10)
 	_torus_child("Collar", 0.115, 0.018, Vector3(0,1.225,0.015), SHIRT, visual)
 
 	# Arms / mitten hands. Pivots are retained for animation.

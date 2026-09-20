@@ -15,12 +15,12 @@ func _process(delta: float) -> void:
 	t += delta
 	if skeleton == null:
 		return
-	var swing := sin(t * 4.0) * deg_to_rad(24.0)
+	var swing := sin(t * 4.0) * deg_to_rad(18.0)
 	skeleton.set_bone_pose_rotation(1, Quaternion(Vector3.RIGHT, swing))
 	skeleton.set_bone_pose_rotation(2, Quaternion(Vector3.RIGHT, -swing))
 	skeleton.set_bone_pose_rotation(3, Quaternion(Vector3.RIGHT, -swing))
 	skeleton.set_bone_pose_rotation(4, Quaternion(Vector3.RIGHT, swing))
-	visual_root.position.y = abs(sin(t * 4.0)) * 0.012
+	visual_root.position.y = abs(sin(t * 4.0)) * 0.008
 
 func _build_environment() -> void:
 	var world := WorldEnvironment.new()
@@ -82,19 +82,19 @@ func _build_character() -> void:
 	_add_ellipsoid("Head", Vector3(0, 0.985, 0), Vector3(0.158, 0.172, 0.148), Color(0.84, 0.64, 0.50))
 	_add_hair_v2()
 	_add_face_v2()
-	_add_ellipsoid("ShirtBody", Vector3(0, 0.665, 0), Vector3(0.205, 0.205, 0.132), Color(0.96, 0.96, 0.94))
-	_add_ellipsoid("ShoulderL", Vector3(-0.175, 0.760, 0), Vector3(0.080, 0.095, 0.105), Color(0.96, 0.96, 0.94))
-	_add_ellipsoid("ShoulderR", Vector3(0.175, 0.760, 0), Vector3(0.080, 0.095, 0.105), Color(0.96, 0.96, 0.94))
-	_add_ellipsoid("ShirtHem", Vector3(0, 0.515, 0), Vector3(0.195, 0.050, 0.130), Color(0.96, 0.96, 0.94))
-	_add_ellipsoid("PantsHip", Vector3(0, 0.455, 0), Vector3(0.155, 0.115, 0.11), Color(0.10, 0.13, 0.18))
+	_add_ellipsoid("ShirtBody", Vector3(0, 0.665, 0), Vector3(0.190, 0.215, 0.128), Color(0.96, 0.96, 0.94))
+	_add_ellipsoid("ShoulderL", Vector3(-0.165, 0.755, 0), Vector3(0.068, 0.088, 0.095), Color(0.96, 0.96, 0.94))
+	_add_ellipsoid("ShoulderR", Vector3(0.165, 0.755, 0), Vector3(0.068, 0.088, 0.095), Color(0.96, 0.96, 0.94))
+	_add_ellipsoid("ShirtHem", Vector3(0, 0.515, 0), Vector3(0.182, 0.045, 0.124), Color(0.96, 0.96, 0.94))
+	_add_ellipsoid("PantsHip", Vector3(0, 0.455, 0), Vector3(0.145, 0.105, 0.105), Color(0.10, 0.13, 0.18))
 	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.15, 0), 0.054, 0.30, Color(0.84, 0.64, 0.50))
 	_add_limb("ArmRMesh", arm_r, Vector3(0, -0.15, 0), 0.050, 0.30, Color(0.84, 0.64, 0.50))
 	_add_sleeve("SleeveL", arm_l, Vector3(0, -0.055, 0))
 	_add_sleeve("SleeveR", arm_r, Vector3(0, -0.055, 0))
 	_add_hand("HandL", arm_l, Vector3(0, -0.325, 0))
 	_add_hand("HandR", arm_r, Vector3(0, -0.325, 0))
-	_add_limb("LegLMesh", leg_l, Vector3(0, -0.17, 0), 0.066, 0.34, Color(0.10, 0.13, 0.18))
-	_add_limb("LegRMesh", leg_r, Vector3(0, -0.17, 0), 0.060, 0.34, Color(0.10, 0.13, 0.18))
+	_add_limb("LegLMesh", leg_l, Vector3(0, -0.17, 0), 0.062, 0.34, Color(0.10, 0.13, 0.18))
+	_add_limb("LegRMesh", leg_r, Vector3(0, -0.17, 0), 0.062, 0.34, Color(0.10, 0.13, 0.18))
 	_add_upper_leg("UpperLegL", leg_l)
 	_add_upper_leg("UpperLegR", leg_r)
 	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.365, 0.045))
@@ -264,7 +264,7 @@ func _add_sleeve(label: String, bone_idx: int, local_center: Vector3) -> void:
 	var sleeve := MeshInstance3D.new()
 	sleeve.name = label
 	sleeve.position = local_center
-	sleeve.mesh = _ellipsoid_mesh(Vector3(0.068, 0.100, 0.064), 10, 6)
+	sleeve.mesh = _ellipsoid_mesh(Vector3(0.061, 0.092, 0.060), 10, 6)
 	sleeve.material_override = _material(Color(0.96, 0.96, 0.94))
 	attachment.add_child(sleeve)
 
@@ -307,7 +307,7 @@ func _add_upper_leg(label: String, bone_idx: int) -> void:
 	var upper_leg := MeshInstance3D.new()
 	upper_leg.name = label
 	upper_leg.position = Vector3(0, -0.055, 0)
-	upper_leg.mesh = _ellipsoid_mesh(Vector3(0.078, 0.105, 0.075), 10, 6)
+	upper_leg.mesh = _ellipsoid_mesh(Vector3(0.070, 0.095, 0.068), 10, 6)
 	upper_leg.material_override = _material(Color(0.10, 0.13, 0.18))
 	attachment.add_child(upper_leg)
 

@@ -127,7 +127,7 @@ func _mark_zelvolt_machine(node: Node3D,cell: Vector2i,row: int,side: String) ->
 	# First row, nearest/front machine: dedicate it to ZELVOLT.
 	if row == 0 and side == "front" and cell == Vector2i(1,ISLAND_FRONT_ROWS[0]):
 		node.set_meta("machine_id","zelvolt")
-		node.set_meta("play_scene","res://pachirou/machines/zelvolt/zelvolt.tscn")
+		node.set_meta("play_scene","res://machines/zelvolt/zelvolt.tscn")
 		_add_machine_click_area(node)
 
 func _add_machine_click_area(node: Node3D) -> void:
@@ -137,7 +137,7 @@ func _add_machine_click_area(node: Node3D) -> void:
 	var area := Area3D.new()
 	area.name = "PlayClickArea"
 	area.set_meta("machine_id","zelvolt")
-	area.set_meta("play_scene","res://pachirou/machines/zelvolt/zelvolt.tscn")
+	area.set_meta("play_scene","res://machines/zelvolt/zelvolt.tscn")
 	machine.add_child(area)
 	var shape_node := CollisionShape3D.new()
 	shape_node.name = "CollisionShape3D"

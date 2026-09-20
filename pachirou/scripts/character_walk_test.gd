@@ -31,10 +31,10 @@ func _begin_walk_test() -> void:
 	_visual = _character.get_node_or_null("Visual") as Node3D
 	_character_ready = _visual != null
 	if _visual != null:
-		_arm_l = _visual.get_node_or_null("ArmL") as Node3D
-		_arm_r = _visual.get_node_or_null("ArmR") as Node3D
-		_leg_l = _visual.get_node_or_null("LegL") as Node3D
-		_leg_r = _visual.get_node_or_null("LegR") as Node3D
+		_arm_l = _visual.get_node_or_null("ArmLPivot") as Node3D
+		_arm_r = _visual.get_node_or_null("ArmRPivot") as Node3D
+		_leg_l = _visual.get_node_or_null("LegLPivot") as Node3D
+		_leg_r = _visual.get_node_or_null("LegRPivot") as Node3D
 	_grid = get_tree().current_scene.get_node_or_null("GridRules") as PachirouGridRules
 	if _grid == null:
 		return

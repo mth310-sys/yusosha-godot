@@ -118,38 +118,43 @@ func _add_loft_part(label: String, center: Vector3, silhouette: Array[Vector3], 
 	visual_root.add_child(mesh_instance)
 
 func _loft_mesh(silhouette: Array[Vector3], depth_segments: int) -> ArrayMesh:
-	# Build a rounded volume without wrapping the silhouette's last point back
-	# to the first as a side strip. Front/back caps are explicit triangle fans.
+	# Rounded closed volume. The previous sweep used a single strip across a
+	# closed 2D silhouette, which still folded across the face/body.
+	# Instead create front/back copies and bevel them through intermediate depth.
 	var vertices := PackedVector3Array()
-	var normals := PackedVector3Array()
 	var indices := PackedInt32Array()
-	var ring: int = depth_segments + 1
 	var rows: int = silhouette.size()
-	for s in silhouette:
-		for d in range(ring):
-			var angle: float = -PI * 0.5 + PI * float(d) / float(depth_segments)
-			var z: float = sin(angle) * s.z
-			vertices.append(Vector3(s.x, s.y, z))
-			var side_x: float = sign(s.x) * 0.35
-			normals.append(Vector3(side_x, 0.12, sin(angle)).normalized())
-	# Connect only neighboring silhouette rows. Closing i=last to i=0 caused
-	# the large black diagonal self-intersection seen in the validation capture.
-	for i in range(rows - 1):
-		for d in range(depth_segments):
-			var a: int = i * ring + d
-			var b: int = (i + 1) * ring + d
-			indices.append_array(PackedInt32Array([a, b, a + 1, a + 1, b, b + 1]))
-	# Close the silhouette seam along depth, not across the whole surface.
+	var layers: int = depth_segments + 1
+	for d in range(layers):
+		var t: float = float(d) / float(depth_segments)
+		var angle: float = -PI * 0.5 + PI * t
+		var z_factor: float = sin(angle)
+		var edge_factor: float = 0.88 + 0.12 * abs(z_factor)
+		for s in silhouette:
+			vertices.append(Vector3(s.x * edge_factor, s.y, s.z * z_factor))
+	# Connect each depth layer around the CLOSED silhouette perimeter.
 	for d in range(depth_segments):
-		var first_a: int = d
-		var first_b: int = d + 1
-		var last_a: int = (rows - 1) * ring + d
-		var last_b: int = last_a + 1
-		indices.append_array(PackedInt32Array([last_a, first_a, last_b, last_b, first_a, first_b]))
+		for i in range(rows):
+			var j: int = (i + 1) % rows
+			var a: int = d * rows + i
+			var b: int = d * rows + j
+			var c0: int = (d + 1) * rows + i
+			var d0: int = (d + 1) * rows + j
+			indices.append_array(PackedInt32Array([a, c0, b, b, c0, d0]))
+	# Cap front and back using center vertices and perimeter fans.
+	var back_center: int = vertices.size()
+	vertices.append(Vector3.ZERO)
+	var front_center: int = vertices.size()
+	vertices.append(Vector3.ZERO)
+	for i in range(rows):
+		var j: int = (i + 1) % rows
+		indices.append_array(PackedInt32Array([back_center, j, i]))
+		var fi: int = depth_segments * rows + i
+		var fj: int = depth_segments * rows + j
+		indices.append_array(PackedInt32Array([front_center, fi, fj]))
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices
-	arrays[Mesh.ARRAY_NORMAL] = normals
 	arrays[Mesh.ARRAY_INDEX] = indices
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)

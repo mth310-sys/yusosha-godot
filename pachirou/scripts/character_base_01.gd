@@ -1,7 +1,9 @@
 extends Node3D
 
 # Character Base 01 — visual prototype only.
-# Authored at equipment-relative scale. Existing stool seat top is ~0.605 and machine top is ~1.18.\n# Standing top is ~1.14 so the character fits the hall and can later seat against the existing stool geometry.\nconst EQUIPMENT_SCALE := 0.58
+# Authored at equipment-relative scale. Existing stool seat top is ~0.605 and machine top is ~1.18.
+# Standing top is ~1.14 so the character fits the hall and can later seat against the existing stool geometry.
+const EQUIPMENT_SCALE := 0.58
 const SKIN := Color("d7a47f")
 const HAIR := Color("342b28")
 const SHIRT := Color("f3f2ed")
@@ -64,7 +66,9 @@ func _sphere(n:String,s:Vector3,p:Vector3,c:Color) -> void:
 	node.scale=s
 	node.position=p
 	node.material_override=_material(c)
-	var visual := get_node_or_null("Visual") as Node3D\n\tif visual != null:\n\t\tvisual.add_child(node)
+	var visual := get_node_or_null("Visual") as Node3D
+	if visual != null:
+		visual.add_child(node)
 
 func _capsule(n:String,r:float,h:float,p:Vector3,c:Color) -> void:
 	var node:=MeshInstance3D.new()
@@ -77,7 +81,9 @@ func _capsule(n:String,r:float,h:float,p:Vector3,c:Color) -> void:
 	node.mesh=mesh
 	node.position=p
 	node.material_override=_material(c)
-	var visual := get_node_or_null("Visual") as Node3D\n\tif visual != null:\n\t\tvisual.add_child(node)
+	var visual := get_node_or_null("Visual") as Node3D
+	if visual != null:
+		visual.add_child(node)
 
 func _box(n:String,s:Vector3,p:Vector3,c:Color,rot:Vector3) -> void:
 	var node:=MeshInstance3D.new()
@@ -88,4 +94,6 @@ func _box(n:String,s:Vector3,p:Vector3,c:Color,rot:Vector3) -> void:
 	node.position=p
 	node.rotation_degrees=rot
 	node.material_override=_material(c)
-	var visual := get_node_or_null("Visual") as Node3D\n\tif visual != null:\n\t\tvisual.add_child(node)
+	var visual := get_node_or_null("Visual") as Node3D
+	if visual != null:
+		visual.add_child(node)

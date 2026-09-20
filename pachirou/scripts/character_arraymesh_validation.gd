@@ -77,31 +77,33 @@ func _apply_walk_side(arm_idx: int, forearm_idx: int, thigh_idx: int, shin_idx: 
 	skeleton.set_bone_pose_rotation(foot_idx, Quaternion(Vector3.RIGHT, foot_angle))
 
 func _build_environment() -> void:
-	var world := WorldEnvironment.new()
-	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.12, 0.14, 0.17)
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.9, 0.92, 1.0)
-	env.ambient_light_energy = 0.75
-	world.environment = env
-	add_child(world)
-
+	# Match Pachirou hall presentation so character proportions are judged
+	# under the same orthographic camera and lighting conditions.
 	var light := DirectionalLight3D.new()
 	light.rotation_degrees = Vector3(-55, -35, 0)
 	light.shadow_enabled = true
+	light.light_energy = 1.05
 	add_child(light)
 
+	var fill_light := DirectionalLight3D.new()
+	fill_light.rotation_degrees = Vector3(-42, 135, 0)
+	fill_light.light_energy = 0.32
+	fill_light.shadow_enabled = false
+	add_child(fill_light)
+
 	var camera := Camera3D.new()
-	camera.position = Vector3(2.6, 1.9, 3.0)
-	camera.look_at_from_position(camera.position, Vector3(0, 0.58, 0))
+	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camera.size = 2.6
+	camera.position = Vector3(1.85, 2.10, 1.85)
+	camera.rotation_degrees = Vector3(-35.264, 45, 0)
+	camera.current = true
 	add_child(camera)
 
 	var floor := MeshInstance3D.new()
 	var floor_mesh := PlaneMesh.new()
 	floor_mesh.size = Vector2(4, 4)
 	floor.mesh = floor_mesh
-	floor.material_override = _material(Color(0.26, 0.28, 0.31))
+	floor.material_override = _material(Color(0.72, 0.76, 0.82))
 	add_child(floor)
 
 func _build_character() -> void:

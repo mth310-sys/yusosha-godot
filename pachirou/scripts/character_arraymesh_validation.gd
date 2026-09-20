@@ -71,20 +71,21 @@ func _build_character() -> void:
 	# BoneAttachment3D follows the bone GLOBAL pose. Child bones therefore use
 	# local offsets from Root, while Root carries the character's body height.
 	skeleton.set_bone_rest(root, Transform3D(Basis.IDENTITY, Vector3(0, 0.58, 0)))
-	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.215, 0.17, 0)))
-	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.215, 0.17, 0)))
-	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.09, -0.15, 0)))
-	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.09, -0.15, 0)))
+	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.205, 0.17, 0)))
+	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.205, 0.17, 0)))
+	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.100, -0.15, 0)))
+	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.100, -0.15, 0)))
 	skeleton.reset_bone_poses()
 
 	# Character Base 01 v2: fixed 3.7-head stylized human.
 	# Stable authored primitives replace the experimental loft topology.
 	_add_ellipsoid("Head", Vector3(0, 0.985, 0), Vector3(0.158, 0.172, 0.148), Color(0.84, 0.64, 0.50))
+	_add_ellipsoid("Neck", Vector3(0, 0.835, -0.005), Vector3(0.060, 0.065, 0.058), Color(0.84, 0.64, 0.50))
 	_add_hair_v2()
 	_add_face_v2()
 	_add_fixed_part("ShirtBody", Vector3(0, 0.665, 0), _shirt_mesh(), Color(0.96, 0.96, 0.94))
-	_add_ellipsoid("ShoulderL", Vector3(-0.165, 0.755, 0), Vector3(0.068, 0.088, 0.095), Color(0.96, 0.96, 0.94))
-	_add_ellipsoid("ShoulderR", Vector3(0.165, 0.755, 0), Vector3(0.068, 0.088, 0.095), Color(0.96, 0.96, 0.94))
+	_add_ellipsoid("ShoulderL", Vector3(-0.158, 0.748, 0), Vector3(0.064, 0.082, 0.092), Color(0.96, 0.96, 0.94))
+	_add_ellipsoid("ShoulderR", Vector3(0.158, 0.748, 0), Vector3(0.064, 0.082, 0.092), Color(0.96, 0.96, 0.94))
 	_add_fixed_part("PantsHip", Vector3(0, 0.455, 0), _pants_hip_mesh(), Color(0.10, 0.13, 0.18))
 	_add_arm("ArmLMesh", arm_l)
 	_add_arm("ArmRMesh", arm_r)
@@ -120,8 +121,8 @@ func _pants_hip_mesh() -> ArrayMesh:
 	return _fixed_ring_mesh([
 		Vector3(0.142, 0.095, 0.102),
 		Vector3(0.145, 0.035, 0.108),
-		Vector3(0.128, -0.075, 0.096),
-		Vector3(0.105, -0.105, 0.088)
+		Vector3(0.122, -0.075, 0.094),
+		Vector3(0.094, -0.105, 0.082)
 	], 12)
 
 func _fixed_ring_mesh(rings: Array[Vector3], radial_segments: int) -> ArrayMesh:

@@ -130,7 +130,14 @@ func _skin_baked_mesh(source: ArrayMesh) -> ArrayMesh:
 		var arrays: Array = source.surface_get_arrays(surface_index)
 		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 		var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
-		var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+		var raw_indices: Variant = arrays[Mesh.ARRAY_INDEX]
+		var indices := PackedInt32Array()
+		if raw_indices != null:
+			indices = raw_indices as PackedInt32Array
+		if indices.is_empty():
+			indices.resize(vertices.size())
+			for vertex_index in range(vertices.size()):
+				indices[vertex_index] = vertex_index
 		var refined: Array = _refine_joint_topology(vertices,normals,indices)
 		vertices = refined[0]
 		normals = refined[1]

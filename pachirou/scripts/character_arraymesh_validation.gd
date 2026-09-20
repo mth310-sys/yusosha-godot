@@ -139,8 +139,8 @@ func _build_character() -> void:
 	# BoneAttachment3D follows the bone GLOBAL pose. Child bones therefore use
 	# local offsets from Root, while Root carries the character's body height.
 	skeleton.set_bone_rest(root, Transform3D(Basis.IDENTITY, Vector3(0, 0.58, 0)))
-	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.222, 0.150, 0)))
-	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.222, 0.150, 0)))
+	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.205, 0.135, 0)))
+	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.205, 0.135, 0)))
 	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.112, -0.15, 0)))
 	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.112, -0.15, 0)))
 	skeleton.set_bone_rest(forearm_l_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.17, 0)))
@@ -379,15 +379,17 @@ func _add_bone_part(label: String, bone_idx: int, center: Vector3, mesh: ArrayMe
 func _add_upper_arm(label: String, bone_idx: int) -> void:
 	# One continuous arm silhouette: the upper section is shirt fabric and the
 	# lower section is skin. No separate sleeve object or shoulder ring.
-	_add_bone_part(label + "Sleeve", bone_idx, Vector3(0, -0.052, 0), _fixed_ring_mesh([
-		Vector3(0.044, 0.034, 0.043),
-		Vector3(0.046, 0.0, 0.044),
-		Vector3(0.045, -0.034, 0.043)
+	# The pivot sits inside the shirt shoulder. The sleeve deliberately overlaps
+	# the torso and upper arm, so arm swing cannot expose a shoulder seam.
+	_add_bone_part(label + "Sleeve", bone_idx, Vector3(0, -0.045, 0), _fixed_ring_mesh([
+		Vector3(0.058, 0.052, 0.054),
+		Vector3(0.056, 0.012, 0.052),
+		Vector3(0.051, -0.052, 0.048)
 	], 12), Color(0.96, 0.96, 0.94))
-	_add_bone_part(label + "Skin", bone_idx, Vector3(0, -0.125, 0), _fixed_ring_mesh([
-		Vector3(0.047, 0.045, 0.045),
-		Vector3(0.045, 0.0, 0.044),
-		Vector3(0.043, -0.045, 0.042)
+	_add_bone_part(label + "Skin", bone_idx, Vector3(0, -0.112, 0), _fixed_ring_mesh([
+		Vector3(0.047, 0.038, 0.045),
+		Vector3(0.045, -0.006, 0.044),
+		Vector3(0.043, -0.043, 0.042)
 	], 12), Color(0.84, 0.64, 0.50))
 
 func _add_forearm(label: String, bone_idx: int) -> void:

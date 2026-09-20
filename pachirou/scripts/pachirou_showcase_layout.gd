@@ -138,6 +138,10 @@ func _add_machine_click_area(node: Node3D) -> void:
 	area.name = "PlayClickArea"
 	area.set_meta("machine_id","zelvolt")
 	area.set_meta("play_scene","res://machines/zelvolt/zelvolt.tscn")
+	area.input_ray_pickable = true
+	area.collision_layer = 1
+	area.collision_mask = 1
+	area.input_event.connect(_on_zelvolt_input_event)
 	machine.add_child(area)
 	var shape_node := CollisionShape3D.new()
 	shape_node.name = "CollisionShape3D"
@@ -146,3 +150,9 @@ func _add_machine_click_area(node: Node3D) -> void:
 	shape_node.shape = shape
 	shape_node.position = Vector3(0,0.46,0)
 	area.add_child(shape_node)
+
+func _on_zelvolt_input_event(_camera: Node,event: InputEvent,_event_position: Vector3,_normal: Vector3,_shape_idx: int) -> void:
+	if event is InputEventMouseButton:
+		var click := event as InputEventMouseButton
+		if click.button_index == MOUSE_BUTTON_LEFT and click.pressed:
+			get_tree().change_scene_to_file("res://machines/zelvolt/zelvolt.tscn")

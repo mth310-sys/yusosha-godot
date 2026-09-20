@@ -230,3 +230,28 @@ func _cylinder(parent: Node3D,node_name: String,radius: float,height: float,pos:
 	node.position = pos
 	node.material_override = _material(color)
 	parent.add_child(node)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not event is InputEventMouseButton:
+		return
+	var click := event as InputEventMouseButton
+	if click.button_index != MOUSE_BUTTON_LEFT or not click.pressed:
+		return
+	var camera := get_viewport().get_camera_3d()
+	if camera == null:
+		return
+	var origin: Vector3 = camera.project_ray_origin(click.position)
+	var direction: Vector3 = camera.project_ray_normal(click.position)
+	var query := PhysicsRayQueryParameters3D.create(origin,origin+direction*100.0)
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return
+	var node := hit.get("collider") as Node
+	while node != null:
+		if node.has_meta("play_scene"):
+			var scene_path: String = str(node.get_meta("play_scene"))
+			if not scene_path.is_empty():
+				get_tree().change_scene_to_file(scene_path)
+			get_viewport().set_input_as_handled()
+			return
+		node = node.get_parent()

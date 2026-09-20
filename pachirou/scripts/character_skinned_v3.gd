@@ -132,13 +132,13 @@ func _skin_baked_mesh(source: ArrayMesh) -> ArrayMesh:
 		var bone_array := PackedInt32Array()
 		var weight_array := PackedFloat32Array()
 		for vertex in vertices:
-			var pair: Array = _nearest_bones(vertex)
-			bone_array.append(int(pair[0]))
-			bone_array.append(int(pair[1]))
+			var influence: Array = _body_weights(vertex)
+			bone_array.append(int(influence[0]))
+			bone_array.append(int(influence[1]))
 			bone_array.append(0)
 			bone_array.append(0)
-			weight_array.append(float(pair[2]))
-			weight_array.append(1.0-float(pair[2]))
+			weight_array.append(float(influence[2]))
+			weight_array.append(1.0-float(influence[2]))
 			weight_array.append(0.0)
 			weight_array.append(0.0)
 		arrays[Mesh.ARRAY_BONES] = bone_array
@@ -146,31 +146,66 @@ func _skin_baked_mesh(source: ArrayMesh) -> ArrayMesh:
 		result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
 	return result
 
-func _nearest_bones(vertex: Vector3) -> Array:
-	var candidates: Array[String] = [
-		"Hips","Spine","Chest","Head",
-		"ShoulderL","UpperArmL","LowerArmL","HandL",
-		"ShoulderR","UpperArmR","LowerArmR","HandR",
-		"UpperLegL","LowerLegL","FootL",
-		"UpperLegR","LowerLegR","FootR"
-	]
-	var first_name: String = "Hips"
-	var second_name: String = "Spine"
-	var first_dist: float = INF
-	var second_dist: float = INF
-	for name in candidates:
-		var d: float = vertex.distance_squared_to(skeleton.get_bone_global_rest(int(bones[name])).origin)
-		if d < first_dist:
-			second_dist = first_dist
-			second_name = first_name
-			first_dist = d
-			first_name = name
-		elif d < second_dist:
-			second_dist = d
-			second_name = name
-	var total: float = max(0.000001,first_dist+second_dist)
-	var first_weight: float = clamp(second_dist/total,0.55,0.95)
-	return [int(bones[first_name]),int(bones[second_name]),first_weight]
+func _weight_pair(a: String, b: String, wa: float) -> Array:
+	return [int(bones[a]),int(bones[b]),clamp(wa,0.0,1.0)]
+
+func _body_weights(v: Vector3) -> Array:
+	# Anatomical zones prevent unrelated nearby bones from stealing vertices.
+	var side_left: bool = v.x < 0.0
+	var upper_arm: String = "UpperArmL" if side_left else "UpperArmR"
+	var lower_arm: String = "LowerArmL" if side_left else "LowerArmR"
+	var hand: String = "HandL" if side_left else "HandR"
+	var shoulder: String = "ShoulderL" if side_left else "ShoulderR"
+	var upper_leg: String = "UpperLegL" if side_left else "UpperLegR"
+	var lower_leg: String = "LowerLegL" if side_left else "LowerLegR"
+	var foot: String = "FootL" if side_left else "FootR"
+	var ax: float = abs(v.x)
+
+	# Head and neck.
+	if v.y >= 0.86:
+		return _weight_pair("Head","Chest",0.96)
+	if v.y >= 0.79 and ax < 0.105:
+		var neck_t: float = inverse_lerp(0.79,0.86,v.y)
+		return _weight_pair("Chest","Head",1.0-neck_t*0.72)
+
+	# Arms: shoulder blend -> upper arm -> elbow blend -> forearm -> hand.
+	if ax >= 0.145 and v.y >= 0.34:
+		if v.y >= 0.70:
+			var shoulder_t: float = clamp(inverse_lerp(0.145,0.235,ax),0.0,1.0)
+			return _weight_pair("Chest",shoulder,1.0-shoulder_t*0.78)
+		if v.y >= 0.57:
+			return _weight_pair(upper_arm,shoulder,0.88)
+		if v.y >= 0.49:
+			var elbow_t: float = inverse_lerp(0.49,0.57,v.y)
+			return _weight_pair(lower_arm,upper_arm,1.0-elbow_t)
+		if v.y >= 0.40:
+			return _weight_pair(lower_arm,hand,0.88)
+		return _weight_pair(hand,lower_arm,0.94)
+
+	# Pelvis and legs: each side stays on its own leg chain.
+	if v.y <= 0.45:
+		if v.y >= 0.36:
+			var hip_t: float = clamp(inverse_lerp(0.035,0.135,ax),0.0,1.0)
+			return _weight_pair("Hips",upper_leg,1.0-hip_t*0.72)
+		if v.y >= 0.27:
+			return _weight_pair(upper_leg,"Hips",0.90)
+		if v.y >= 0.19:
+			var knee_t: float = inverse_lerp(0.19,0.27,v.y)
+			return _weight_pair(lower_leg,upper_leg,1.0-knee_t)
+		if v.y >= 0.075:
+			return _weight_pair(lower_leg,foot,0.90)
+		return _weight_pair(foot,lower_leg,0.97)
+
+	# Torso vertical gradient.
+	if v.y >= 0.70:
+		return _weight_pair("Chest","Spine",0.90)
+	if v.y >= 0.58:
+		var chest_t: float = inverse_lerp(0.58,0.70,v.y)
+		return _weight_pair("Spine","Chest",1.0-chest_t)
+	if v.y >= 0.49:
+		return _weight_pair("Spine","Hips",0.82)
+	var hips_t: float = inverse_lerp(0.45,0.49,v.y)
+	return _weight_pair("Hips","Spine",1.0-hips_t*0.45)
 
 func _build_environment() -> void:
 	var light := DirectionalLight3D.new()

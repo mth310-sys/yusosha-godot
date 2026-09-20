@@ -86,12 +86,12 @@ func _build_character() -> void:
 	_add_ellipsoid("ShoulderL", Vector3(-0.165, 0.755, 0), Vector3(0.068, 0.088, 0.095), Color(0.96, 0.96, 0.94))
 	_add_ellipsoid("ShoulderR", Vector3(0.165, 0.755, 0), Vector3(0.068, 0.088, 0.095), Color(0.96, 0.96, 0.94))
 	_add_fixed_part("PantsHip", Vector3(0, 0.455, 0), _pants_hip_mesh(), Color(0.10, 0.13, 0.18))
-	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.15, 0), 0.054, 0.30, Color(0.84, 0.64, 0.50))
-	_add_limb("ArmRMesh", arm_r, Vector3(0, -0.15, 0), 0.050, 0.30, Color(0.84, 0.64, 0.50))
+	_add_arm("ArmLMesh", arm_l)
+	_add_arm("ArmRMesh", arm_r)
 	_add_sleeve("SleeveL", arm_l, Vector3(0, -0.055, 0))
 	_add_sleeve("SleeveR", arm_r, Vector3(0, -0.055, 0))
-	_add_hand("HandL", arm_l, Vector3(0, -0.325, 0))
-	_add_hand("HandR", arm_r, Vector3(0, -0.325, 0))
+	_add_hand("HandL", arm_l, Vector3(0, -0.320, 0))
+	_add_hand("HandR", arm_r, Vector3(0, -0.320, 0))
 	_add_trouser_leg("TrouserLegL", leg_l)
 	_add_trouser_leg("TrouserLegR", leg_r)
 	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.365, 0.045))
@@ -282,6 +282,24 @@ func _extruded_profile_mesh(profile: Array[Vector2], depth: float) -> ArrayMesh:
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return mesh
 
+func _add_arm(label: String, bone_idx: int) -> void:
+	var attachment := BoneAttachment3D.new()
+	attachment.name = label + "Attachment"
+	attachment.bone_name = skeleton.get_bone_name(bone_idx)
+	skeleton.add_child(attachment)
+	var arm := MeshInstance3D.new()
+	arm.name = label
+	arm.position = Vector3(0, -0.185, 0)
+	arm.mesh = _fixed_ring_mesh([
+		Vector3(0.052, 0.145, 0.050),
+		Vector3(0.050, 0.075, 0.048),
+		Vector3(0.045, 0.005, 0.044),
+		Vector3(0.042, -0.070, 0.041),
+		Vector3(0.038, -0.145, 0.038)
+	], 10)
+	arm.material_override = _material(Color(0.84, 0.64, 0.50))
+	attachment.add_child(arm)
+
 func _add_limb(label: String, bone_idx: int, local_center: Vector3, radius: float, height: float, color: Color) -> void:
 	var attachment := BoneAttachment3D.new()
 	attachment.name = label + "Attachment"
@@ -363,6 +381,15 @@ func _add_hand(label: String, bone_idx: int, local_center: Vector3) -> void:
 	hand.mesh = _ellipsoid_mesh(Vector3(0.058, 0.065, 0.052), 10, 6)
 	hand.material_override = _material(Color(0.84, 0.64, 0.50))
 	attachment.add_child(hand)
+	var thumb := MeshInstance3D.new()
+	thumb.name = label + "Thumb"
+	var thumb_x: float = 0.044 if label.ends_with("L") else -0.044
+	thumb.position = local_center + Vector3(thumb_x, 0.004, 0.010)
+	var thumb_angle: float = -28.0 if label.ends_with("L") else 28.0
+	thumb.rotation_degrees = Vector3(0, 0, thumb_angle)
+	thumb.mesh = _ellipsoid_mesh(Vector3(0.021, 0.034, 0.020), 8, 5)
+	thumb.material_override = _material(Color(0.84, 0.64, 0.50))
+	attachment.add_child(thumb)
 
 func _add_trouser_leg(label: String, bone_idx: int) -> void:
 	var attachment := BoneAttachment3D.new()

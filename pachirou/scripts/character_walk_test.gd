@@ -9,12 +9,17 @@ var _path: Array[Vector2i] = []
 var _path_index: int = 0
 var _step_time: float = 0.0
 var _visual: Node3D
+var _character_ready: bool = false
 
 func _ready() -> void:
-	_visual = get_node_or_null("Visual") as Node3D
 	call_deferred("_begin_walk_test")
 
 func _begin_walk_test() -> void:
+	# CharacterBase01 builds Visual in its own _ready(). Wait until that has completed.
+	for wait_index in range(2):
+		await get_tree().process_frame
+	_visual = get_node_or_null("Visual") as Node3D
+	_character_ready = _visual != null
 	_grid = get_tree().current_scene.get_node_or_null("GridRules") as PachirouGridRules
 	if _grid == null:
 		return
@@ -29,7 +34,7 @@ func _begin_walk_test() -> void:
 	_path_index = 1 if _path.size() > 1 else 0
 
 func _process(delta: float) -> void:
-	if _grid == null or _path_index >= _path.size():
+	if not _character_ready or _grid == null or _path_index >= _path.size():
 		_reset_bob()
 		return
 	var target := _grid.cell_to_world(_path[_path_index])

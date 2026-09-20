@@ -21,36 +21,12 @@ func _collect_machines(node: Node) -> void:
 			if item.has_meta("grid_cell"):
 				machines[item.get_instance_id()] = {
 					"root": item,
-					"state": MachineState.IDLE,
-					"customer": null
+					"state": MachineState.IDLE
 				}
 				item.set_meta("machine_state",MachineState.IDLE)
 			_collect_machines(item)
 
-func activate_machine(machine: Node3D,customer: Node) -> bool:
-	var id: int = machine.get_instance_id()
-	if not machines.has(id): return false
-	var data: Dictionary = machines[id]
-	if data["state"] == MachineState.ACTIVE and data["customer"] != customer: return false
-	data["state"] = MachineState.ACTIVE
-	data["customer"] = customer
-	machines[id] = data
-	machine.set_meta("machine_state",MachineState.ACTIVE)
-	machine.set_meta("active_customer",customer)
-	return true
-
-func deactivate_machine(machine: Node3D,customer: Node) -> void:
-	var id: int = machine.get_instance_id()
-	if not machines.has(id): return
-	var data: Dictionary = machines[id]
-	if data["customer"] != customer: return
-	data["state"] = MachineState.IDLE
-	data["customer"] = null
-	machines[id] = data
-	machine.set_meta("machine_state",MachineState.IDLE)
-	machine.remove_meta("active_customer")
-
-func is_active(machine: Node3D) -> bool:
+func activate_machine(machine: Node3D) -> bool:\n\tvar id: int = machine.get_instance_id()\n\tif not machines.has(id): return false\n\tvar data: Dictionary = machines[id]\n\tdata["state"] = MachineState.ACTIVE\n\tmachines[id] = data\n\tmachine.set_meta("machine_state",MachineState.ACTIVE)\n\treturn true\n\nfunc deactivate_machine(machine: Node3D) -> void:\n\tvar id: int = machine.get_instance_id()\n\tif not machines.has(id): return\n\tvar data: Dictionary = machines[id]\n\tdata["state"] = MachineState.IDLE\n\tmachines[id] = data\n\tmachine.set_meta("machine_state",MachineState.IDLE)\n\nfunc is_active(machine: Node3D) -> bool:
 	var id: int = machine.get_instance_id()
 	if not machines.has(id): return false
 	return machines[id]["state"] == MachineState.ACTIVE

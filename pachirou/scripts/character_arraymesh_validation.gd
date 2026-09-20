@@ -139,8 +139,8 @@ func _build_character() -> void:
 	# BoneAttachment3D follows the bone GLOBAL pose. Child bones therefore use
 	# local offsets from Root, while Root carries the character's body height.
 	skeleton.set_bone_rest(root, Transform3D(Basis.IDENTITY, Vector3(0, 0.58, 0)))
-	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.184, 0.138, 0)))
-	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.184, 0.138, 0)))
+	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.205, 0.132, 0)))
+	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.205, 0.132, 0)))
 	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.112, -0.15, 0)))
 	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.112, -0.15, 0)))
 	skeleton.set_bone_rest(forearm_l_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.17, 0)))
@@ -184,15 +184,18 @@ func _add_fixed_part(label: String, center: Vector3, mesh: ArrayMesh, color: Col
 func _shirt_mesh() -> ArrayMesh:
 	# Fixed convex T-shirt torso: narrower waist/hem, broader chest.
 	return _fixed_ring_mesh([
-		# Neck line starts narrow, then the shirt itself forms the shoulders.
-		Vector3(0.118, 0.225, 0.098),
-		Vector3(0.178, 0.205, 0.112),
-		Vector3(0.218, 0.160, 0.126),
-		Vector3(0.204, 0.105, 0.130),
-		Vector3(0.180, 0.020, 0.124),
-		Vector3(0.165, -0.190, 0.114),
+		# Strong T silhouette: narrow neck, broad shoulder shelf, quick taper
+		# at the armpits, then an almost vertical torso.
+		Vector3(0.116, 0.225, 0.098),
+		Vector3(0.190, 0.205, 0.110),
+		Vector3(0.242, 0.172, 0.122),
+		Vector3(0.246, 0.145, 0.126),
+		Vector3(0.218, 0.105, 0.128),
+		Vector3(0.184, 0.055, 0.126),
+		Vector3(0.174, -0.050, 0.120),
+		Vector3(0.166, -0.190, 0.114),
 		Vector3(0.168, -0.220, 0.116)
-	], 14)
+	], 16)
 
 func _pants_hip_mesh() -> ArrayMesh:
 	# Compact pelvis volume with a flatter waist and tapered lower edge.

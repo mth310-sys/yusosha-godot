@@ -14,8 +14,37 @@ var bone_leg_l: int
 var bone_leg_r: int
 
 func _ready() -> void:
+	_build_validation_environment()
 	_build_skeleton()
 	_build_skinned_character()
+
+func _build_validation_environment() -> void:
+	var light := DirectionalLight3D.new()
+	light.rotation_degrees = Vector3(-55, -35, 0)
+	light.light_energy = 1.05
+	light.shadow_enabled = true
+	add_child(light)
+
+	var fill_light := DirectionalLight3D.new()
+	fill_light.rotation_degrees = Vector3(-42, 135, 0)
+	fill_light.light_energy = 0.32
+	fill_light.shadow_enabled = false
+	add_child(fill_light)
+
+	var camera := Camera3D.new()
+	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camera.size = 1.65
+	camera.position = Vector3(1.85, 2.10, 1.85)
+	camera.rotation_degrees = Vector3(-35.264, 45, 0)
+	camera.current = true
+	add_child(camera)
+
+	var floor := MeshInstance3D.new()
+	var floor_mesh := PlaneMesh.new()
+	floor_mesh.size = Vector2(3.0, 3.0)
+	floor.mesh = floor_mesh
+	floor.material_override = _mat(Color(0.72, 0.76, 0.82))
+	add_child(floor)
 
 func _process(delta: float) -> void:
 	if not animate_walk:

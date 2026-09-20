@@ -139,8 +139,8 @@ func _build_character() -> void:
 	# BoneAttachment3D follows the bone GLOBAL pose. Child bones therefore use
 	# local offsets from Root, while Root carries the character's body height.
 	skeleton.set_bone_rest(root, Transform3D(Basis.IDENTITY, Vector3(0, 0.58, 0)))
-	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.184, 0.138, 0)))
-	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.184, 0.138, 0)))
+	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.176, 0.125, 0)))
+	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.176, 0.125, 0)))
 	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.112, -0.15, 0)))
 	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.112, -0.15, 0)))
 	skeleton.set_bone_rest(forearm_l_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.17, 0)))
@@ -164,8 +164,6 @@ func _build_character() -> void:
 	_add_upper_arm("UpperArmR", arm_r)
 	_add_forearm("ForearmLMesh", forearm_l_idx)
 	_add_forearm("ForearmRMesh", forearm_r_idx)
-	_add_fixed_sleeve("SleeveL", Vector3(-0.198, 0.747, 0), -11.0)
-	_add_fixed_sleeve("SleeveR", Vector3(0.198, 0.747, 0), 11.0)
 	_add_hand("HandL", forearm_l_idx, Vector3(0, -0.155, 0))
 	_add_hand("HandR", forearm_r_idx, Vector3(0, -0.155, 0))
 	_add_thigh("ThighL", leg_l)
@@ -190,8 +188,10 @@ func _shirt_mesh() -> ArrayMesh:
 		Vector3(0.118, 0.225, 0.098),
 		Vector3(0.178, 0.205, 0.112),
 		Vector3(0.218, 0.160, 0.126),
-		Vector3(0.204, 0.105, 0.130),
-		Vector3(0.180, 0.020, 0.124),
+		# Shoulder edge continues downward as the T-shirt's short sleeve.
+		Vector3(0.220, 0.125, 0.128),
+		Vector3(0.207, 0.085, 0.128),
+		Vector3(0.184, 0.020, 0.124),
 		Vector3(0.165, -0.190, 0.114),
 		Vector3(0.168, -0.220, 0.116)
 	], 14)
@@ -466,23 +466,6 @@ func _add_face_v2() -> void:
 		eye.mesh = _ellipsoid_mesh(Vector3(0.010, 0.013, 0.007), 10, 6)
 		eye.material_override = _material(Color(0.025, 0.025, 0.025))
 		visual_root.add_child(eye)
-
-func _add_fixed_sleeve(label: String, center: Vector3, z_rotation: float) -> void:
-	# Sleeve belongs to the shirt silhouette. The animated arm begins inside
-	# the cuff, avoiding a detached shoulder ring during the walk cycle.
-	var sleeve := MeshInstance3D.new()
-	sleeve.name = label
-	sleeve.position = center
-	sleeve.rotation_degrees = Vector3(0, 0, z_rotation)
-	sleeve.mesh = _fixed_ring_mesh([
-		# Compact rounded short sleeve: broad at shoulder, soft taper at cuff.
-		Vector3(0.053, 0.042, 0.052),
-		Vector3(0.055, 0.022, 0.054),
-		Vector3(0.051, -0.004, 0.050),
-		Vector3(0.045, -0.036, 0.044)
-	], 14)
-	sleeve.material_override = _material(Color(0.96, 0.96, 0.94))
-	visual_root.add_child(sleeve)
 
 func _add_hair() -> void:
 	_add_loft_part("Hair", Vector3(0, 1.055, -0.018), [

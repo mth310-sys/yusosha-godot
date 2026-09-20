@@ -139,8 +139,8 @@ func _build_character() -> void:
 	# BoneAttachment3D follows the bone GLOBAL pose. Child bones therefore use
 	# local offsets from Root, while Root carries the character's body height.
 	skeleton.set_bone_rest(root, Transform3D(Basis.IDENTITY, Vector3(0, 0.58, 0)))
-	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.205, 0.132, 0)))
-	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.205, 0.132, 0)))
+	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.238, 0.158, 0)))
+	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.238, 0.158, 0)))
 	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.112, -0.15, 0)))
 	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.112, -0.15, 0)))
 	skeleton.set_bone_rest(forearm_l_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.17, 0)))
@@ -379,10 +379,10 @@ func _add_bone_part(label: String, bone_idx: int, center: Vector3, mesh: ArrayMe
 func _add_upper_arm(label: String, bone_idx: int) -> void:
 	# One continuous arm silhouette: the upper section is shirt fabric and the
 	# lower section is skin. No separate sleeve object or shoulder ring.
-	_add_bone_part(label + "Sleeve", bone_idx, Vector3(0, -0.035, 0), _fixed_ring_mesh([
-		Vector3(0.051, 0.045, 0.049),
-		Vector3(0.049, 0.0, 0.047),
-		Vector3(0.047, -0.045, 0.045)
+	_add_bone_part(label + "Sleeve", bone_idx, Vector3(0, -0.040, 0), _fixed_ring_mesh([
+		Vector3(0.050, 0.040, 0.048),
+		Vector3(0.048, 0.0, 0.046),
+		Vector3(0.046, -0.040, 0.044)
 	], 12), Color(0.96, 0.96, 0.94))
 	_add_bone_part(label + "Skin", bone_idx, Vector3(0, -0.125, 0), _fixed_ring_mesh([
 		Vector3(0.047, 0.045, 0.045),

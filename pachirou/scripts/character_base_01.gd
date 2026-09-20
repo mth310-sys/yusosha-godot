@@ -21,8 +21,8 @@ func _build_body() -> void:
 	add_child(visual)
 	# Approx. 3-head adult silhouette; no visible neck.
 	# Feet / shoes
-	_box("ShoeL", Vector3(0.28,0.14,0.40), Vector3(-0.18,0.09,0.07), SHOES, Vector3(0,0,0))
-	_box("ShoeR", Vector3(0.28,0.14,0.40), Vector3(0.18,0.09,0.07), SHOES, Vector3(0,0,0))
+	_box_child("ShoeL", Vector3(0.28,0.14,0.40), Vector3(0,-0.56,0.07), SHOES, get_node("Visual/LegLPivot"))
+	_box_child("ShoeR", Vector3(0.28,0.14,0.40), Vector3(0,-0.56,0.07), SHOES, get_node("Visual/LegRPivot"))
 	# Straight trousers, separate modules.
 	_limb_with_pivot("LegLPivot","LegL",0.13,0.58,Vector3(-0.17,0.69,0),Vector3(0,-0.27,0),PANTS)
 	_limb_with_pivot("LegRPivot","LegR",0.13,0.58,Vector3(0.17,0.69,0),Vector3(0,-0.27,0),PANTS)
@@ -35,10 +35,10 @@ func _build_body() -> void:
 	_limb_with_pivot("ArmLPivot","ArmL",0.105,0.43,Vector3(-0.47,1.00,0),Vector3(0,-0.21,0),SKIN)
 	_limb_with_pivot("ArmRPivot","ArmR",0.105,0.43,Vector3(0.47,1.00,0),Vector3(0,-0.21,0),SKIN)
 	# Mitten hands + separated thumbs.
-	_sphere("HandL",Vector3(0.13,0.15,0.11),Vector3(-0.47,0.53,0),SKIN)
-	_sphere("HandR",Vector3(0.13,0.15,0.11),Vector3(0.47,0.53,0),SKIN)
-	_sphere("ThumbL",Vector3(0.055,0.075,0.055),Vector3(-0.38,0.55,0.07),SKIN)
-	_sphere("ThumbR",Vector3(0.055,0.075,0.055),Vector3(0.38,0.55,0.07),SKIN)
+	_sphere_child("HandL",Vector3(0.13,0.15,0.11),Vector3(0,-0.47,0),SKIN,get_node("Visual/ArmLPivot"))
+	_sphere_child("HandR",Vector3(0.13,0.15,0.11),Vector3(0,-0.47,0),SKIN,get_node("Visual/ArmRPivot"))
+	_sphere_child("ThumbL",Vector3(0.055,0.075,0.055),Vector3(0.09,-0.45,0.07),SKIN,get_node("Visual/ArmLPivot"))
+	_sphere_child("ThumbR",Vector3(0.055,0.075,0.055),Vector3(-0.09,-0.45,0.07),SKIN,get_node("Visual/ArmRPivot"))
 	# Wide, slightly vertically compressed head.
 	_sphere("Head",Vector3(0.48,0.40,0.40),Vector3(0,1.50,0),SKIN)
 	# Small simplified ears.
@@ -57,6 +57,30 @@ func _material(c: Color) -> StandardMaterial3D:
 	m.albedo_color = c
 	m.roughness = 0.9
 	return m
+
+func _sphere_child(n:String,s:Vector3,p:Vector3,c:Color,parent:Node3D) -> void:
+	var node:=MeshInstance3D.new()
+	node.name=n
+	var mesh:=SphereMesh.new()
+	mesh.radius=1.0
+	mesh.height=2.0
+	mesh.radial_segments=16
+	mesh.rings=8
+	node.mesh=mesh
+	node.scale=s
+	node.position=p
+	node.material_override=_material(c)
+	parent.add_child(node)
+
+func _box_child(n:String,s:Vector3,p:Vector3,c:Color,parent:Node3D) -> void:
+	var node:=MeshInstance3D.new()
+	node.name=n
+	var mesh:=BoxMesh.new()
+	mesh.size=s
+	node.mesh=mesh
+	node.position=p
+	node.material_override=_material(c)
+	parent.add_child(node)
 
 func _sphere(n:String,s:Vector3,p:Vector3,c:Color) -> void:
 	var node:=MeshInstance3D.new()

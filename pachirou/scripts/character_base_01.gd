@@ -21,8 +21,7 @@ func _build_body() -> void:
 	add_child(visual)
 	# Approx. 3-head adult silhouette; no visible neck.
 	# Feet / shoes
-	_box_child("ShoeL", Vector3(0.28,0.14,0.40), Vector3(0,-0.56,0.07), SHOES, get_node("Visual/LegLPivot"))
-	_box_child("ShoeR", Vector3(0.28,0.14,0.40), Vector3(0,-0.56,0.07), SHOES, get_node("Visual/LegRPivot"))
+
 	# Straight trousers, separate modules.
 	_limb_with_pivot("LegLPivot","LegL",0.13,0.58,Vector3(-0.17,0.69,0),Vector3(0,-0.27,0),PANTS)
 	_limb_with_pivot("LegRPivot","LegR",0.13,0.58,Vector3(0.17,0.69,0),Vector3(0,-0.27,0),PANTS)
@@ -35,10 +34,7 @@ func _build_body() -> void:
 	_limb_with_pivot("ArmLPivot","ArmL",0.105,0.43,Vector3(-0.47,1.00,0),Vector3(0,-0.21,0),SKIN)
 	_limb_with_pivot("ArmRPivot","ArmR",0.105,0.43,Vector3(0.47,1.00,0),Vector3(0,-0.21,0),SKIN)
 	# Mitten hands + separated thumbs.
-	_sphere_child("HandL",Vector3(0.13,0.15,0.11),Vector3(0,-0.47,0),SKIN,get_node("Visual/ArmLPivot"))
-	_sphere_child("HandR",Vector3(0.13,0.15,0.11),Vector3(0,-0.47,0),SKIN,get_node("Visual/ArmRPivot"))
-	_sphere_child("ThumbL",Vector3(0.055,0.075,0.055),Vector3(0.09,-0.45,0.07),SKIN,get_node("Visual/ArmLPivot"))
-	_sphere_child("ThumbR",Vector3(0.055,0.075,0.055),Vector3(-0.09,-0.45,0.07),SKIN,get_node("Visual/ArmRPivot"))
+
 	# Wide, slightly vertically compressed head.
 	_sphere("Head",Vector3(0.48,0.40,0.40),Vector3(0,1.50,0),SKIN)
 	# Small simplified ears.
@@ -117,6 +113,11 @@ func _limb_with_pivot(pivot_name:String,n:String,r:float,h:float,pivot_pos:Vecto
 	node.position = local_pos
 	node.material_override = _material(c)
 	pivot.add_child(node)
+	if n == "LegL" or n == "LegR":
+		_box_child("ShoeL" if n == "LegL" else "ShoeR", Vector3(0.28,0.14,0.40), Vector3(0,-0.56,0.07), SHOES, pivot)
+	elif n == "ArmL" or n == "ArmR":
+		_sphere_child("HandL" if n == "ArmL" else "HandR", Vector3(0.13,0.15,0.11), Vector3(0,-0.47,0), SKIN, pivot)
+		_sphere_child("ThumbL" if n == "ArmL" else "ThumbR", Vector3(0.055,0.075,0.055), Vector3(0.09 if n == "ArmL" else -0.09,-0.45,0.07), SKIN, pivot)
 
 func _capsule(n:String,r:float,h:float,p:Vector3,c:Color) -> void:
 	var node:=MeshInstance3D.new()

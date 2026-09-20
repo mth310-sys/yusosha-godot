@@ -1,5 +1,7 @@
 extends Node3D
 
+@export var build_validation_environment: bool = true
+
 # Standalone Godot-only character pipeline validation.
 # Uses ArrayMesh for authored geometry and Skeleton3D bone poses for animation.
 
@@ -14,7 +16,8 @@ var foot_r_idx: int = -1
 var t := 0.0
 
 func _ready() -> void:
-	_build_environment()
+	if build_validation_environment:
+		_build_environment()
 	_build_character()
 
 func _process(delta: float) -> void:

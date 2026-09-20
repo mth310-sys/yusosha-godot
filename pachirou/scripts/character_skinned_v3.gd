@@ -80,99 +80,88 @@ func _build_body() -> void:
 	add_child(body)
 
 func _build_body_mesh() -> ArrayMesh:
+	# Stage 3: one indexed skin. No overlapping tubes and no internal caps.
+	# A single front/back silhouette supplies shared shoulder, crotch and neck vertices.
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	st.set_skin_weight_count(SurfaceTool.SKIN_4_WEIGHTS)
 
-	# Stage 2: closed continuous body volume. Torso, neck/head and the limb roots
-	# overlap inside the volume and every open end is capped, so no holes remain.
-	var torso: Array = [
-		[Vector3(0,0.40,0),0.145,0.095,"Hips","Spine",0.85],
-		[Vector3(0,0.52,0),0.155,0.095,"Hips","Spine",0.45],
-		[Vector3(0,0.65,0),0.170,0.100,"Spine","Chest",0.55],
-		[Vector3(0,0.76,0),0.195,0.105,"Chest","Spine",0.90],
-		[Vector3(0,0.83,0),0.165,0.095,"Chest","Spine",0.95]
+	var z: float = 0.085
+	var front: Array = [
+		[Vector3(-0.075,1.105,z),"Head","Chest",1.0], # 0 crown L
+		[Vector3(0.075,1.105,z),"Head","Chest",1.0],  # 1 crown R
+		[Vector3(-0.140,1.020,z),"Head","Chest",1.0], # 2 head L
+		[Vector3(0.140,1.020,z),"Head","Chest",1.0],  # 3 head R
+		[Vector3(-0.105,0.900,z),"Head","Chest",0.90],# 4 jaw L
+		[Vector3(0.105,0.900,z),"Head","Chest",0.90], # 5 jaw R
+		[Vector3(-0.070,0.840,z),"Chest","Head",0.65],# 6 neck L
+		[Vector3(0.070,0.840,z),"Chest","Head",0.65], # 7 neck R
+		[Vector3(-0.190,0.780,z),"Chest","ShoulderL",0.70], # 8 shoulder L
+		[Vector3(0.190,0.780,z),"Chest","ShoulderR",0.70],  # 9 shoulder R
+		[Vector3(-0.245,0.720,z),"ShoulderL","UpperArmL",0.45], # 10 upper arm L
+		[Vector3(0.245,0.720,z),"ShoulderR","UpperArmR",0.45],  # 11 upper arm R
+		[Vector3(-0.245,0.540,z),"UpperArmL","LowerArmL",0.55], # 12 elbow L
+		[Vector3(0.245,0.540,z),"UpperArmR","LowerArmR",0.55],  # 13 elbow R
+		[Vector3(-0.235,0.390,z),"LowerArmL","HandL",0.75], # 14 hand L
+		[Vector3(0.235,0.390,z),"LowerArmR","HandR",0.75],  # 15 hand R
+		[Vector3(-0.155,0.650,z),"Chest","Spine",0.65], # 16 armpit/chest L
+		[Vector3(0.155,0.650,z),"Chest","Spine",0.65],  # 17 armpit/chest R
+		[Vector3(-0.145,0.500,z),"Spine","Hips",0.55], # 18 waist L
+		[Vector3(0.145,0.500,z),"Spine","Hips",0.55],  # 19 waist R
+		[Vector3(-0.135,0.420,z),"Hips","UpperLegL",0.70], # 20 hip L
+		[Vector3(0.135,0.420,z),"Hips","UpperLegR",0.70],  # 21 hip R
+		[Vector3(-0.025,0.390,z),"Hips","UpperLegL",0.55], # 22 crotch L
+		[Vector3(0.025,0.390,z),"Hips","UpperLegR",0.55],  # 23 crotch R
+		[Vector3(-0.090,0.240,z),"UpperLegL","LowerLegL",0.55], # 24 knee L
+		[Vector3(0.090,0.240,z),"UpperLegR","LowerLegR",0.55],  # 25 knee R
+		[Vector3(-0.080,0.080,z),"LowerLegL","FootL",0.75], # 26 ankle L
+		[Vector3(0.080,0.080,z),"LowerLegR","FootR",0.75],  # 27 ankle R
+		[Vector3(-0.080,0.020,z+0.055),"FootL","LowerLegL",0.95], # 28 foot L
+		[Vector3(0.080,0.020,z+0.055),"FootR","LowerLegR",0.95]   # 29 foot R
 	]
-	_add_weighted_tube(st,torso,12,true,true)
-	_add_limb(st,-1.0,"ShoulderL","UpperArmL","LowerArmL","HandL")
-	_add_limb(st,1.0,"ShoulderR","UpperArmR","LowerArmR","HandR")
-	_add_leg(st,-1.0,"UpperLegL","LowerLegL","FootL")
-	_add_leg(st,1.0,"UpperLegR","LowerLegR","FootR")
-	_add_head(st)
+	var back: Array = []
+	for data in front:
+		var p: Vector3 = data[0]
+		back.append([Vector3(p.x,p.y,-z),data[1],data[2],data[3]])
+
+	var tris := PackedInt32Array([
+		0,2,1,1,2,3, 2,4,3,3,4,5, 4,6,5,5,6,7,
+		6,8,7,7,8,9, 8,16,9,9,16,17,
+		8,10,16, 10,12,16, 12,14,16,
+		9,17,11, 11,17,13, 13,17,15,
+		16,18,17,17,18,19, 18,20,19,19,20,21,
+		20,22,21,21,22,23,
+		20,24,22, 22,24,26, 22,26,28,
+		21,23,25, 23,27,25, 23,29,27
+	])
+	for i in range(0,tris.size(),3):
+		_emit_indexed_triangle(st,front,tris[i],tris[i+1],tris[i+2])
+		_emit_indexed_triangle(st,back,tris[i+2],tris[i+1],tris[i])
+
+	# Close only the true outside silhouette. These are exterior side faces,
+	# not internal joint caps.
+	var outline := PackedInt32Array([0,1,3,5,7,9,11,15,13,17,19,21,25,27,29,23,22,28,26,24,20,18,16,14,12,10,8,6,4,2])
+	for i in range(outline.size()):
+		var n: int = (i+1)%outline.size()
+		var a_idx: int = outline[i]
+		var b_idx: int = outline[n]
+		_emit_side_quad(st,front[a_idx],front[b_idx],back[a_idx],back[b_idx])
+
 	st.generate_normals()
 	return st.commit()
 
-func _add_weighted_tube(st: SurfaceTool, rings: Array, segments: int, cap_top: bool = false, cap_bottom: bool = false) -> void:
-	var points: Array[Array] = []
-	for ring_data in rings:
-		var ring: Array = []
-		var center: Vector3 = ring_data[0]
-		var rx: float = float(ring_data[1])
-		var rz: float = float(ring_data[2])
-		for s in range(segments):
-			var angle: float = TAU*float(s)/float(segments)
-			ring.append([Vector3(center.x+cos(angle)*rx,center.y,center.z+sin(angle)*rz),ring_data[3],ring_data[4],float(ring_data[5])])
-		points.append(ring)
-	for r in range(points.size()-1):
-		for s in range(segments):
-			var n: int = (s+1)%segments
-			_emit_quad(st,points[r][s],points[r+1][s],points[r][n],points[r+1][n])
-	if cap_bottom:
-		_cap_ring(st,points[0],false)
-	if cap_top:
-		_cap_ring(st,points[points.size()-1],true)
+func _emit_indexed_triangle(st: SurfaceTool, data: Array, ia: int, ib: int, ic: int) -> void:
+	_emit_vertex(st,data[ia])
+	_emit_vertex(st,data[ib])
+	_emit_vertex(st,data[ic])
 
-func _cap_ring(st: SurfaceTool, ring: Array, top: bool) -> void:
-	var center_pos := Vector3.ZERO
-	for data in ring:
-		center_pos += data[0]
-	center_pos /= float(ring.size())
-	var center: Array = [center_pos,ring[0][1],ring[0][2],ring[0][3]]
-	for s in range(ring.size()):
-		var n: int = (s+1)%ring.size()
-		if top:
-			_emit_vertex(st,center)
-			_emit_vertex(st,ring[s])
-			_emit_vertex(st,ring[n])
-		else:
-			_emit_vertex(st,center)
-			_emit_vertex(st,ring[n])
-			_emit_vertex(st,ring[s])
-
-func _add_limb(st: SurfaceTool, side: float, shoulder: String, upper: String, lower: String, hand: String) -> void:
-	# Root ring sits inside the chest volume; the exterior therefore reads as
-	# one closed body instead of an arm tube ending at the shoulder.
-	var rings: Array = [
-		[Vector3(side*0.165,0.765,0),0.072,0.068,"Chest",shoulder,0.70],
-		[Vector3(side*0.205,0.735,0),0.060,0.058,shoulder,upper,0.55],
-		[Vector3(side*0.220,0.625,0),0.050,0.049,upper,lower,0.90],
-		[Vector3(side*0.220,0.535,0),0.046,0.045,upper,lower,0.50],
-		[Vector3(side*0.220,0.445,0),0.042,0.041,lower,hand,0.85],
-		[Vector3(side*0.220,0.395,0),0.050,0.046,hand,lower,0.95]
-	]
-	_add_weighted_tube(st,rings,12,true,false)
-
-func _add_leg(st: SurfaceTool, side: float, upper: String, lower: String, foot: String) -> void:
-	var rings: Array = [
-		[Vector3(side*0.080,0.430,0),0.082,0.075,"Hips",upper,0.65],
-		[Vector3(side*0.080,0.350,0),0.072,0.068,upper,lower,0.90],
-		[Vector3(side*0.080,0.240,0),0.062,0.060,upper,lower,0.55],
-		[Vector3(side*0.080,0.130,0),0.054,0.053,lower,foot,0.85],
-		[Vector3(side*0.080,0.055,0.020),0.058,0.085,foot,lower,0.95],
-		[Vector3(side*0.080,0.025,0.050),0.060,0.105,foot,lower,1.0]
-	]
-	_add_weighted_tube(st,rings,12,true,false)
-
-func _add_head(st: SurfaceTool) -> void:
-	# Neck starts inside upper torso and head is capped at the crown.
-	var rings: Array = [
-		[Vector3(0,0.805,0),0.075,0.070,"Chest","Head",0.65],
-		[Vector3(0,0.865,0),0.080,0.074,"Chest","Head",0.30],
-		[Vector3(0,0.925,0),0.130,0.115,"Head","Chest",0.95],
-		[Vector3(0,1.025,0),0.145,0.130,"Head","Chest",1.0],
-		[Vector3(0,1.105,0),0.100,0.095,"Head","Chest",1.0]
-	]
-	_add_weighted_tube(st,rings,14,true,false)
+func _emit_side_quad(st: SurfaceTool, fa: Array, fb: Array, ba: Array, bb: Array) -> void:
+	_emit_vertex(st,fa)
+	_emit_vertex(st,ba)
+	_emit_vertex(st,fb)
+	_emit_vertex(st,fb)
+	_emit_vertex(st,ba)
+	_emit_vertex(st,bb)
 
 func _emit_quad(st: SurfaceTool, a: Array, b: Array, c: Array, d: Array) -> void:
 	_emit_vertex(st,a)

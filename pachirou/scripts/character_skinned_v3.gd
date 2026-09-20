@@ -3,7 +3,7 @@ extends Node3D
 # Pachirou Character Generator - Stage 1
 # Skeleton and joint-weight validation only. Clothing/hair are intentionally absent.
 
-@export var animate_walk: bool = true
+@export var animate_walk: bool = false
 
 var skeleton: Skeleton3D
 var skin: Skin
@@ -95,12 +95,12 @@ func _build_body() -> void:
 	if baked.get_surface_count() == 0:
 		push_error("Pachirou CSG body bake returned no surfaces.")
 		return
-	var skinned: ArrayMesh = _skin_baked_mesh(baked)
+	# Stage 6A: validate and preserve the boolean-unioned rest body first.
+	# Do not skin this preview yet; deformation is reintroduced only after the
+	# base silhouette is accepted as Pachirou's permanent template.
 	var body := MeshInstance3D.new()
-	body.name = "BaseHumanTopology"
-	body.mesh = skinned
-	body.skin = skin
-	body.skeleton = NodePath("../Skeleton3D")
+	body.name = "BaseHumanRestTemplate"
+	body.mesh = baked
 	body.material_override = _material(Color(0.84,0.64,0.50))
 	add_child(body)
 	csg.queue_free()

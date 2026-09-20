@@ -164,8 +164,8 @@ func _build_character() -> void:
 	_add_upper_arm("UpperArmR", arm_r)
 	_add_forearm("ForearmLMesh", forearm_l_idx)
 	_add_forearm("ForearmRMesh", forearm_r_idx)
-	_add_fixed_sleeve("SleeveL", Vector3(-0.202, 0.745, 0), -7.0)
-	_add_fixed_sleeve("SleeveR", Vector3(0.202, 0.745, 0), 7.0)
+	_add_fixed_sleeve("SleeveL", Vector3(-0.198, 0.747, 0), -11.0)
+	_add_fixed_sleeve("SleeveR", Vector3(0.198, 0.747, 0), 11.0)
 	_add_hand("HandL", forearm_l_idx, Vector3(0, -0.155, 0))
 	_add_hand("HandR", forearm_r_idx, Vector3(0, -0.155, 0))
 	_add_thigh("ThighL", leg_l)
@@ -475,10 +475,12 @@ func _add_fixed_sleeve(label: String, center: Vector3, z_rotation: float) -> voi
 	sleeve.position = center
 	sleeve.rotation_degrees = Vector3(0, 0, z_rotation)
 	sleeve.mesh = _fixed_ring_mesh([
-		Vector3(0.057, 0.050, 0.055),
-		Vector3(0.052, 0.010, 0.051),
-		Vector3(0.043, -0.052, 0.043)
-	], 10)
+		# Compact rounded short sleeve: broad at shoulder, soft taper at cuff.
+		Vector3(0.053, 0.042, 0.052),
+		Vector3(0.055, 0.022, 0.054),
+		Vector3(0.051, -0.004, 0.050),
+		Vector3(0.045, -0.036, 0.044)
+	], 14)
 	sleeve.material_override = _material(Color(0.96, 0.96, 0.94))
 	visual_root.add_child(sleeve)
 

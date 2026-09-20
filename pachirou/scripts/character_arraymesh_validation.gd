@@ -139,8 +139,8 @@ func _build_character() -> void:
 	# BoneAttachment3D follows the bone GLOBAL pose. Child bones therefore use
 	# local offsets from Root, while Root carries the character's body height.
 	skeleton.set_bone_rest(root, Transform3D(Basis.IDENTITY, Vector3(0, 0.58, 0)))
-	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.188, 0.158, 0)))
-	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.188, 0.158, 0)))
+	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.190, 0.142, 0)))
+	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.190, 0.142, 0)))
 	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.112, -0.15, 0)))
 	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.112, -0.15, 0)))
 	skeleton.set_bone_rest(forearm_l_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.17, 0)))
@@ -159,8 +159,6 @@ func _build_character() -> void:
 	_add_hair_v2()
 	_add_face_v2()
 	_add_fixed_part("ShirtBody", Vector3(0, 0.665, 0), _shirt_mesh(), Color(0.96, 0.96, 0.94))
-	_add_ellipsoid("ShoulderL", Vector3(-0.151, 0.739, 0), Vector3(0.052, 0.067, 0.078), Color(0.96, 0.96, 0.94))
-	_add_ellipsoid("ShoulderR", Vector3(0.151, 0.739, 0), Vector3(0.052, 0.067, 0.078), Color(0.96, 0.96, 0.94))
 	_add_fixed_part("PantsHip", Vector3(0, 0.455, 0), _pants_hip_mesh(), Color(0.10, 0.13, 0.18))
 	_add_upper_arm("UpperArmL", arm_l)
 	_add_upper_arm("UpperArmR", arm_r)
@@ -188,12 +186,15 @@ func _add_fixed_part(label: String, center: Vector3, mesh: ArrayMesh, color: Col
 func _shirt_mesh() -> ArrayMesh:
 	# Fixed convex T-shirt torso: narrower waist/hem, broader chest.
 	return _fixed_ring_mesh([
-		Vector3(0.155, 0.215, 0.105),
-		Vector3(0.190, 0.145, 0.125),
-		Vector3(0.178, 0.020, 0.124),
-		Vector3(0.164, -0.190, 0.114),
+		# Neck line starts narrow, then the shirt itself forms the shoulders.
+		Vector3(0.118, 0.225, 0.098),
+		Vector3(0.168, 0.205, 0.112),
+		Vector3(0.205, 0.160, 0.126),
+		Vector3(0.196, 0.105, 0.130),
+		Vector3(0.180, 0.020, 0.124),
+		Vector3(0.165, -0.190, 0.114),
 		Vector3(0.168, -0.220, 0.116)
-	], 12)
+	], 14)
 
 func _pants_hip_mesh() -> ArrayMesh:
 	# Compact pelvis volume with a flatter waist and tapered lower edge.

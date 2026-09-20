@@ -182,19 +182,67 @@ func _add_fixed_part(label: String, center: Vector3, mesh: ArrayMesh, color: Col
 	visual_root.add_child(mesh_instance)
 
 func _shirt_mesh() -> ArrayMesh:
-	# Fixed convex T-shirt torso: narrower waist/hem, broader chest.
-	return _fixed_ring_mesh([
-		# Neck line starts narrow, then the shirt itself forms the shoulders.
-		Vector3(0.118, 0.225, 0.098),
-		Vector3(0.178, 0.205, 0.112),
-		Vector3(0.218, 0.160, 0.126),
-		# Shoulder edge continues downward as the T-shirt's short sleeve.
-		Vector3(0.220, 0.125, 0.128),
-		Vector3(0.207, 0.085, 0.128),
-		Vector3(0.184, 0.020, 0.124),
-		Vector3(0.165, -0.190, 0.114),
-		Vector3(0.168, -0.220, 0.116)
-	], 14)
+	# Dedicated T-shirt volume. Unlike the old radial torso, shoulder width is
+	# authored independently from front/back depth so the sleeves do not bulge.
+	var sections: Array[Vector3] = [
+		# Vector3 = half width, local y, half depth.
+		Vector3(0.120, 0.225, 0.098),
+		Vector3(0.172, 0.205, 0.108),
+		Vector3(0.205, 0.165, 0.116),
+		Vector3(0.218, 0.125, 0.116),
+		Vector3(0.204, 0.082, 0.116),
+		Vector3(0.181, 0.020, 0.120),
+		Vector3(0.165, -0.190, 0.112),
+		Vector3(0.168, -0.220, 0.114)
+	]
+	return _shirt_section_mesh(sections)
+
+func _shirt_section_mesh(sections: Array[Vector3]) -> ArrayMesh:
+	# Eight perimeter points per horizontal section: front/back faces remain
+	# comparatively flat while the side points carry the shoulder/sleeve width.
+	var vertices := PackedVector3Array()
+	var indices := PackedInt32Array()
+	for section in sections:
+		var hx: float = section.x
+		var y: float = section.y
+		var hz: float = section.z
+		vertices.append_array(PackedVector3Array([
+			Vector3(-hx * 0.72, y, hz),
+			Vector3(hx * 0.72, y, hz),
+			Vector3(hx, y, hz * 0.48),
+			Vector3(hx, y, -hz * 0.48),
+			Vector3(hx * 0.72, y, -hz),
+			Vector3(-hx * 0.72, y, -hz),
+			Vector3(-hx, y, -hz * 0.48),
+			Vector3(-hx, y, hz * 0.48)
+		]))
+	var perimeter: int = 8
+	for row in range(sections.size() - 1):
+		for side in range(perimeter):
+			var next_side: int = (side + 1) % perimeter
+			var p0: int = row * perimeter + side
+			var p1: int = row * perimeter + next_side
+			var p2: int = (row + 1) * perimeter + side
+			var p3: int = (row + 1) * perimeter + next_side
+			indices.append_array(PackedInt32Array([p0, p2, p1, p1, p2, p3]))
+	var top_center: int = vertices.size()
+	vertices.append(Vector3(0, sections[0].y, 0))
+	var bottom_center: int = vertices.size()
+	vertices.append(Vector3(0, sections[sections.size() - 1].y, 0))
+	for side in range(perimeter):
+		var next_side: int = (side + 1) % perimeter
+		indices.append_array(PackedInt32Array([top_center, side, next_side]))
+		var last: int = (sections.size() - 1) * perimeter
+		indices.append_array(PackedInt32Array([bottom_center, last + next_side, last + side]))
+	var normals := _smooth_normals(vertices, indices)
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
 
 func _pants_hip_mesh() -> ArrayMesh:
 	# Compact pelvis volume with a flatter waist and tapered lower edge.
@@ -204,6 +252,24 @@ func _pants_hip_mesh() -> ArrayMesh:
 		Vector3(0.122, -0.075, 0.094),
 		Vector3(0.094, -0.105, 0.082)
 	], 12)
+
+func _smooth_normals(vertices: PackedVector3Array, indices: PackedInt32Array) -> PackedVector3Array:
+	var normals := PackedVector3Array()
+	normals.resize(vertices.size())
+	for i in range(0, indices.size(), 3):
+		var ia: int = indices[i]
+		var ib: int = indices[i + 1]
+		var ic: int = indices[i + 2]
+		var normal: Vector3 = (vertices[ib] - vertices[ia]).cross(vertices[ic] - vertices[ia])
+		if normal.length_squared() > 0.000001:
+			normal = normal.normalized()
+		normals[ia] += normal
+		normals[ib] += normal
+		normals[ic] += normal
+	for i in range(normals.size()):
+		if normals[i].length_squared() > 0.000001:
+			normals[i] = normals[i].normalized()
+	return normals
 
 func _fixed_ring_mesh(rings: Array[Vector3], radial_segments: int) -> ArrayMesh:
 	# Vector3 = x radius, local y, z radius. Fixed topology, no silhouette sweep.

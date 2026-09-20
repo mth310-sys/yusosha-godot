@@ -106,89 +106,117 @@ func _build_skinned_character() -> void:
 	add_child(pants)
 
 func _body_mesh() -> ArrayMesh:
-	# First proof: torso + both full arms are one continuous weighted surface.
-	var verts := PackedVector3Array([
-		Vector3(-0.15,0.78,0.09), Vector3(0.15,0.78,0.09),
-		Vector3(-0.16,0.43,0.09), Vector3(0.16,0.43,0.09),
-		Vector3(-0.15,0.78,-0.09), Vector3(0.15,0.78,-0.09),
-		Vector3(-0.16,0.43,-0.09), Vector3(0.16,0.43,-0.09),
-		Vector3(-0.20,0.74,0.055), Vector3(-0.24,0.54,0.045), Vector3(-0.22,0.36,0.04),
-		Vector3(-0.20,0.74,-0.055), Vector3(-0.24,0.54,-0.045), Vector3(-0.22,0.36,-0.04),
-		Vector3(0.20,0.74,0.055), Vector3(0.24,0.54,0.045), Vector3(0.22,0.36,0.04),
-		Vector3(0.20,0.74,-0.055), Vector3(0.24,0.54,-0.045), Vector3(0.22,0.36,-0.04)
-	])
-	var idx := PackedInt32Array([
-		0,2,1,1,2,3, 5,7,4,4,7,6, 0,4,2,2,4,6, 1,3,5,5,3,7,
-		0,8,4,4,8,11, 8,9,11,11,9,12, 9,10,12,12,10,13,
-		1,5,14,14,5,17, 14,17,15,15,17,18, 15,18,16,16,18,19
-	])
-	var bones := PackedInt32Array()
-	var weights := PackedFloat32Array()
-	for i in range(verts.size()):
-		var b: int = bone_root
-		if i >= 8 and i <= 13:
-			b = bone_arm_l
-		elif i >= 14:
-			b = bone_arm_r
-		bones.append_array(PackedInt32Array([b,0,0,0]))
-		weights.append_array(PackedFloat32Array([1.0,0.0,0.0,0.0]))
-	return _mesh(verts, idx, bones, weights)
+	# Continuous torso with shoulder loops. Arm weights blend from Root to Arm.
+	return _build_upper_mesh(false)
 
 func _shirt_mesh() -> ArrayMesh:
-	# Clothing is a separate weighted mesh using the exact same skeleton.
-	var verts := PackedVector3Array([
-		Vector3(-0.18,0.80,0.105),Vector3(0.18,0.80,0.105),
-		Vector3(-0.17,0.44,0.105),Vector3(0.17,0.44,0.105),
-		Vector3(-0.18,0.80,-0.105),Vector3(0.18,0.80,-0.105),
-		Vector3(-0.17,0.44,-0.105),Vector3(0.17,0.44,-0.105),
-		Vector3(-0.22,0.76,0.065),Vector3(-0.23,0.66,0.06),
-		Vector3(-0.22,0.76,-0.065),Vector3(-0.23,0.66,-0.06),
-		Vector3(0.22,0.76,0.065),Vector3(0.23,0.66,0.06),
-		Vector3(0.22,0.76,-0.065),Vector3(0.23,0.66,-0.06)
-	])
-	var idx := PackedInt32Array([
-		0,2,1,1,2,3, 5,7,4,4,7,6, 0,4,2,2,4,6, 1,3,5,5,3,7,
-		0,8,4,4,8,10, 8,9,10,10,9,11,
-		1,5,12,12,5,14, 12,14,13,13,14,15
-	])
+	# Same topology as the body, expanded slightly as clothing.
+	return _build_upper_mesh(true)
+
+func _build_upper_mesh(clothing: bool) -> ArrayMesh:
+	var vertices := PackedVector3Array()
 	var bones := PackedInt32Array()
 	var weights := PackedFloat32Array()
-	for i in range(verts.size()):
-		var b: int = bone_root
-		if i >= 8 and i <= 11:
-			b = bone_arm_l
-		elif i >= 12:
-			b = bone_arm_r
-		bones.append_array(PackedInt32Array([b,0,0,0]))
-		weights.append_array(PackedFloat32Array([1.0,0.0,0.0,0.0]))
-	return _mesh(verts, idx, bones, weights)
+	var indices := PackedInt32Array()
+	var torso_rings: Array[Vector3] = [
+		Vector3(0.145, 0.80, 0.090),
+		Vector3(0.190, 0.74, 0.100),
+		Vector3(0.175, 0.62, 0.100),
+		Vector3(0.160, 0.44, 0.090)
+	]
+	if clothing:
+		torso_rings = [
+			Vector3(0.158, 0.81, 0.102),
+			Vector3(0.205, 0.75, 0.112),
+			Vector3(0.188, 0.62, 0.112),
+			Vector3(0.173, 0.43, 0.102)
+		]
+	_append_vertical_tube(vertices, bones, weights, indices, torso_rings, bone_root, 12)
+
+	# Arms are proper tubes with four loops. The shoulder loop blends Root/Arm,
+	# so rotation bends the surface instead of opening a gap.
+	_append_arm_tube(vertices, bones, weights, indices, -1.0, clothing)
+	_append_arm_tube(vertices, bones, weights, indices, 1.0, clothing)
+	return _mesh(vertices, indices, bones, weights)
+
+func _append_vertical_tube(vertices: PackedVector3Array, bones: PackedInt32Array, weights: PackedFloat32Array, indices: PackedInt32Array, rings: Array[Vector3], bone: int, segments: int) -> void:
+	var base: int = vertices.size()
+	for ring in rings:
+		for s in range(segments):
+			var angle: float = TAU * float(s) / float(segments)
+			vertices.append(Vector3(cos(angle) * ring.x, ring.y, sin(angle) * ring.z))
+			_append_weight(bones, weights, bone, 1.0, bone_root, 0.0)
+	_connect_rings(indices, base, rings.size(), segments)
+
+func _append_arm_tube(vertices: PackedVector3Array, bones: PackedInt32Array, weights: PackedFloat32Array, indices: PackedInt32Array, side: float, clothing: bool) -> void:
+	var arm_bone: int = bone_arm_l if side < 0.0 else bone_arm_r
+	var base: int = vertices.size()
+	var segments: int = 10
+	var shoulder_x: float = 0.190 if not clothing else 0.205
+	var radius: float = 0.048 if not clothing else 0.055
+	var ys: Array[float] = [0.75, 0.70, 0.60, 0.47]
+	if clothing:
+		ys = [0.76, 0.71, 0.66, 0.61]
+	for r in range(ys.size()):
+		var root_weight: float = 0.0
+		if r == 0:
+			root_weight = 0.70
+		elif r == 1:
+			root_weight = 0.35
+		var arm_weight: float = 1.0 - root_weight
+		var x_center: float = side * (shoulder_x + float(r) * 0.014)
+		var rr: float = radius - float(r) * 0.002
+		for s in range(segments):
+			var angle: float = TAU * float(s) / float(segments)
+			vertices.append(Vector3(x_center + cos(angle) * rr, ys[r], sin(angle) * rr))
+			_append_weight(bones, weights, bone_root, root_weight, arm_bone, arm_weight)
+	_connect_rings(indices, base, ys.size(), segments)
+
+func _connect_rings(indices: PackedInt32Array, base: int, ring_count: int, segments: int) -> void:
+	for r in range(ring_count - 1):
+		for s in range(segments):
+			var n: int = (s + 1) % segments
+			var a: int = base + r * segments + s
+			var b: int = base + r * segments + n
+			var c0: int = base + (r + 1) * segments + s
+			var d: int = base + (r + 1) * segments + n
+			indices.append_array(PackedInt32Array([a, c0, b, b, c0, d]))
+
+func _append_weight(bones: PackedInt32Array, weights: PackedFloat32Array, bone_a: int, weight_a: float, bone_b: int, weight_b: float) -> void:
+	bones.append_array(PackedInt32Array([bone_a, bone_b, 0, 0]))
+	weights.append_array(PackedFloat32Array([weight_a, weight_b, 0.0, 0.0]))
 
 func _pants_mesh() -> ArrayMesh:
-	var verts := PackedVector3Array([
-		Vector3(-0.15,0.45,0.10),Vector3(0.15,0.45,0.10),Vector3(-0.13,0.28,0.08),Vector3(0.13,0.28,0.08),
-		Vector3(-0.15,0.45,-0.10),Vector3(0.15,0.45,-0.10),Vector3(-0.13,0.28,-0.08),Vector3(0.13,0.28,-0.08)
-	])
-	var idx := PackedInt32Array([0,2,1,1,2,3,5,7,4,4,7,6,0,4,2,2,4,6,1,3,5,5,3,7])
+	var vertices := PackedVector3Array()
 	var bones := PackedInt32Array()
 	var weights := PackedFloat32Array()
-	for i in range(verts.size()):
-		bones.append_array(PackedInt32Array([bone_root,0,0,0]))
-		weights.append_array(PackedFloat32Array([1.0,0.0,0.0,0.0]))
-	return _mesh(verts,idx,bones,weights)
+	var indices := PackedInt32Array()
+	var rings: Array[Vector3] = [
+		Vector3(0.15,0.45,0.10),
+		Vector3(0.14,0.36,0.09),
+		Vector3(0.13,0.28,0.08)
+	]
+	_append_vertical_tube(vertices,bones,weights,indices,rings,bone_root,12)
+	return _mesh(vertices,indices,bones,weights)
 
 func _mesh(vertices: PackedVector3Array, indices: PackedInt32Array, bones: PackedInt32Array, weights: PackedFloat32Array) -> ArrayMesh:
 	var normals := PackedVector3Array()
 	normals.resize(vertices.size())
 	for i in range(0, indices.size(), 3):
 		var a: int = indices[i]
-		var b: int = indices[i+1]
-		var c: int = indices[i+2]
-		var n: Vector3 = (vertices[b]-vertices[a]).cross(vertices[c]-vertices[a]).normalized()
-		normals[a] += n
-		normals[b] += n
-		normals[c] += n
+		var b: int = indices[i + 1]
+		var c0: int = indices[i + 2]
+		var edge1: Vector3 = vertices[b] - vertices[a]
+		var edge2: Vector3 = vertices[c0] - vertices[a]
+		var normal: Vector3 = edge1.cross(edge2)
+		if normal.length_squared() > 0.000001:
+			normal = normal.normalized()
+		normals[a] += normal
+		normals[b] += normal
+		normals[c0] += normal
 	for i in range(normals.size()):
-		normals[i] = normals[i].normalized()
+		if normals[i].length_squared() > 0.000001:
+			normals[i] = normals[i].normalized()
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices

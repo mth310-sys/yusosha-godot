@@ -11,7 +11,8 @@ func _ready() -> void:
 func _register_machines() -> void:
 	await get_tree().process_frame
 	var world := get_parent().get_node_or_null("World") as Node3D
-	if world == null: return
+	if world == null:
+		return
 	_collect_machines(world)
 
 func _collect_machines(node: Node) -> void:
@@ -23,10 +24,31 @@ func _collect_machines(node: Node) -> void:
 					"root": item,
 					"state": MachineState.IDLE
 				}
-				item.set_meta("machine_state",MachineState.IDLE)
+				item.set_meta("machine_state", MachineState.IDLE)
 			_collect_machines(item)
 
-func activate_machine(machine: Node3D) -> bool:\n\tvar id: int = machine.get_instance_id()\n\tif not machines.has(id): return false\n\tvar data: Dictionary = machines[id]\n\tdata["state"] = MachineState.ACTIVE\n\tmachines[id] = data\n\tmachine.set_meta("machine_state",MachineState.ACTIVE)\n\treturn true\n\nfunc deactivate_machine(machine: Node3D) -> void:\n\tvar id: int = machine.get_instance_id()\n\tif not machines.has(id): return\n\tvar data: Dictionary = machines[id]\n\tdata["state"] = MachineState.IDLE\n\tmachines[id] = data\n\tmachine.set_meta("machine_state",MachineState.IDLE)\n\nfunc is_active(machine: Node3D) -> bool:
+func activate_machine(machine: Node3D) -> bool:
 	var id: int = machine.get_instance_id()
-	if not machines.has(id): return false
-	return machines[id]["state"] == MachineState.ACTIVE
+	if not machines.has(id):
+		return false
+	var data: Dictionary = machines[id]
+	data["state"] = MachineState.ACTIVE
+	machines[id] = data
+	machine.set_meta("machine_state", MachineState.ACTIVE)
+	return true
+
+func deactivate_machine(machine: Node3D) -> void:
+	var id: int = machine.get_instance_id()
+	if not machines.has(id):
+		return
+	var data: Dictionary = machines[id]
+	data["state"] = MachineState.IDLE
+	machines[id] = data
+	machine.set_meta("machine_state", MachineState.IDLE)
+
+func is_active(machine: Node3D) -> bool:
+	var id: int = machine.get_instance_id()
+	if not machines.has(id):
+		return false
+	var data: Dictionary = machines[id]
+	return data["state"] == MachineState.ACTIVE

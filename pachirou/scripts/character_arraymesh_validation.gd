@@ -9,6 +9,8 @@ var forearm_l_idx: int = -1
 var forearm_r_idx: int = -1
 var shin_l_idx: int = -1
 var shin_r_idx: int = -1
+var foot_l_idx: int = -1
+var foot_r_idx: int = -1
 var t := 0.0
 
 func _ready() -> void:
@@ -34,10 +36,10 @@ func _process(delta: float) -> void:
 		skeleton.set_bone_pose_rotation(forearm_r_idx, Quaternion(Vector3.RIGHT, -elbow_r))
 		skeleton.set_bone_pose_rotation(shin_l_idx, Quaternion(Vector3.RIGHT, knee_l))
 		skeleton.set_bone_pose_rotation(shin_r_idx, Quaternion(Vector3.RIGHT, knee_r))
-		var contact_l: float = maxf(0.0, phase) * deg_to_rad(5.0)
-		var contact_r: float = maxf(0.0, -phase) * deg_to_rad(5.0)
-		skeleton.set_bone_pose_rotation(shin_l_idx, Quaternion(Vector3.RIGHT, knee_l - contact_l))
-		skeleton.set_bone_pose_rotation(shin_r_idx, Quaternion(Vector3.RIGHT, knee_r - contact_r))
+		var foot_l: float = -maxf(0.0, phase) * deg_to_rad(8.0) + maxf(0.0, -phase) * deg_to_rad(4.0)
+		var foot_r: float = -maxf(0.0, -phase) * deg_to_rad(8.0) + maxf(0.0, phase) * deg_to_rad(4.0)
+		skeleton.set_bone_pose_rotation(foot_l_idx, Quaternion(Vector3.RIGHT, foot_l))
+		skeleton.set_bone_pose_rotation(foot_r_idx, Quaternion(Vector3.RIGHT, foot_r))
 	visual_root.position.y = abs(sin(t * 4.0)) * 0.005
 
 func _build_environment() -> void:
@@ -86,6 +88,8 @@ func _build_character() -> void:
 	forearm_r_idx = skeleton.add_bone("ForearmR")
 	shin_l_idx = skeleton.add_bone("ShinL")
 	shin_r_idx = skeleton.add_bone("ShinR")
+	foot_l_idx = skeleton.add_bone("FootL")
+	foot_r_idx = skeleton.add_bone("FootR")
 	skeleton.set_bone_parent(arm_l, root)
 	skeleton.set_bone_parent(arm_r, root)
 	skeleton.set_bone_parent(leg_l, root)
@@ -94,6 +98,8 @@ func _build_character() -> void:
 	skeleton.set_bone_parent(forearm_r_idx, arm_r)
 	skeleton.set_bone_parent(shin_l_idx, leg_l)
 	skeleton.set_bone_parent(shin_r_idx, leg_r)
+	skeleton.set_bone_parent(foot_l_idx, shin_l_idx)
+	skeleton.set_bone_parent(foot_r_idx, shin_r_idx)
 	# BoneAttachment3D follows the bone GLOBAL pose. Child bones therefore use
 	# local offsets from Root, while Root carries the character's body height.
 	skeleton.set_bone_rest(root, Transform3D(Basis.IDENTITY, Vector3(0, 0.58, 0)))
@@ -105,6 +111,8 @@ func _build_character() -> void:
 	skeleton.set_bone_rest(forearm_r_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.17, 0)))
 	skeleton.set_bone_rest(shin_l_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.18, 0)))
 	skeleton.set_bone_rest(shin_r_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.18, 0)))
+	skeleton.set_bone_rest(foot_l_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.17, 0.045)))
+	skeleton.set_bone_rest(foot_r_idx, Transform3D(Basis.IDENTITY, Vector3(0, -0.17, 0.045)))
 	skeleton.reset_bone_poses()
 
 	# Character Base 01 v2: fixed 3.7-head stylized human.
@@ -130,8 +138,8 @@ func _build_character() -> void:
 	_add_thigh("ThighR", leg_r)
 	_add_shin("ShinLMesh", shin_l_idx)
 	_add_shin("ShinRMesh", shin_r_idx)
-	_add_shoe_to_bone("ShoeL", shin_l_idx, Vector3(0, -0.185, 0.045))
-	_add_shoe_to_bone("ShoeR", shin_r_idx, Vector3(0, -0.185, 0.045))
+	_add_shoe_to_bone("ShoeL", foot_l_idx, Vector3(0, -0.015, 0.050))
+	_add_shoe_to_bone("ShoeR", foot_r_idx, Vector3(0, -0.015, 0.050))
 
 func _add_fixed_part(label: String, center: Vector3, mesh: ArrayMesh, color: Color) -> void:
 	var mesh_instance := MeshInstance3D.new()

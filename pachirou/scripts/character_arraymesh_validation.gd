@@ -60,29 +60,29 @@ func _build_character() -> void:
 	visual_root.add_child(skeleton)
 
 	var root := skeleton.add_bone("Root")
-	var arm_l := skeleton.add_bone("ArmL")
-	var arm_r := skeleton.add_bone("ArmR")
-	var leg_l := skeleton.add_bone("LegL")
-	var leg_r := skeleton.add_bone("LegR")
+	var arm_l: int = skeleton.add_bone("ArmL")
+	var arm_r: int = skeleton.add_bone("ArmR")
+	var leg_l: int = skeleton.add_bone("LegL")
+	var leg_r: int = skeleton.add_bone("LegR")
 	skeleton.set_bone_parent(arm_l, root)
 	skeleton.set_bone_parent(arm_r, root)
 	skeleton.set_bone_parent(leg_l, root)
 	skeleton.set_bone_parent(leg_r, root)
 	skeleton.set_bone_rest(root, Transform3D(Basis.IDENTITY, Vector3.ZERO))
-	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.22, 0.70, 0)))
-	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.22, 0.70, 0)))
-	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.10, 0.38, 0)))
-	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.10, 0.38, 0)))
+	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.255, 0.76, 0)))
+	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.255, 0.76, 0)))
+	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.105, 0.39, 0)))
+	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.105, 0.39, 0)))
 
 	_add_ellipsoid("Head", Vector3(0, 0.94, 0), Vector3(0.235, 0.205, 0.215), Color(0.84, 0.64, 0.50))
 	_add_hair()
-	_add_ellipsoid("Torso", Vector3(0, 0.60, 0), Vector3(0.23, 0.28, 0.15), Color(0.95, 0.95, 0.93))
-	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.18, 0), 0.075, 0.36, Color(0.84, 0.64, 0.50))
-	_add_limb("ArmRMesh", arm_r, Vector3(0, -0.18, 0), 0.075, 0.36, Color(0.84, 0.64, 0.50))
-	_add_limb("LegLMesh", leg_l, Vector3(0, -0.20, 0), 0.09, 0.40, Color(0.10, 0.13, 0.18))
-	_add_limb("LegRMesh", leg_r, Vector3(0, -0.20, 0), 0.09, 0.40, Color(0.10, 0.13, 0.18))
-	_add_shoe("ShoeL", Vector3(-0.10, 0.08, 0.035))
-	_add_shoe("ShoeR", Vector3(0.10, 0.08, 0.035))
+	_add_ellipsoid("Torso", Vector3(0, 0.61, 0), Vector3(0.225, 0.275, 0.145), Color(0.95, 0.95, 0.93))
+	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.17, 0), 0.065, 0.34, Color(0.84, 0.64, 0.50))
+	_add_limb("ArmRMesh", arm_r, Vector3(0, -0.17, 0), 0.065, 0.34, Color(0.84, 0.64, 0.50))
+	_add_limb("LegLMesh", leg_l, Vector3(0, -0.18, 0), 0.082, 0.36, Color(0.10, 0.13, 0.18))
+	_add_limb("LegRMesh", leg_r, Vector3(0, -0.18, 0), 0.082, 0.36, Color(0.10, 0.13, 0.18))
+	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.39, 0.045))
+	_add_shoe_to_bone("ShoeR", leg_r, Vector3(0, -0.39, 0.045))
 
 func _add_limb(label: String, bone_idx: int, local_center: Vector3, radius: float, height: float, color: Color) -> void:
 	var attachment := BoneAttachment3D.new()
@@ -112,13 +112,17 @@ func _add_hair() -> void:
 	m.material_override = _material(Color(0.16, 0.10, 0.07))
 	visual_root.add_child(m)
 
-func _add_shoe(label: String, center: Vector3) -> void:
+func _add_shoe_to_bone(label: String, bone_idx: int, local_center: Vector3) -> void:
+	var attachment := BoneAttachment3D.new()
+	attachment.name = label + "Attachment"
+	attachment.bone_name = skeleton.get_bone_name(bone_idx)
+	skeleton.add_child(attachment)
 	var m := MeshInstance3D.new()
 	m.name = label
-	m.position = center
+	m.position = local_center
 	m.mesh = _box_mesh(Vector3(0.15, 0.075, 0.22))
 	m.material_override = _material(Color(0.97, 0.97, 0.95))
-	visual_root.add_child(m)
+	attachment.add_child(m)
 
 func _ellipsoid_mesh(radii: Vector3, radial: int, rings: int, phi_min: float = 0.0, phi_max: float = PI) -> ArrayMesh:
 	var vertices := PackedVector3Array()

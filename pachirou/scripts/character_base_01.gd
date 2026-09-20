@@ -26,10 +26,8 @@ func _build_body() -> void:
 
 	# T-shirt: tapered shell + separate hem and sleeves.
 	_tapered_cylinder("Torso", 0.305, 0.365, 0.565, Vector3(0,0.865,0), SHIRT, visual, 32)
-	_tapered_cylinder("ShirtHem", 0.305, 0.320, 0.075, Vector3(0,0.575,0), SHIRT, visual, 24)
 	_sphere_child("SleeveL", Vector3(0.135,0.155,0.135), Vector3(-0.335,1.035,0), SHIRT, visual, 20, 10)
 	_sphere_child("SleeveR", Vector3(0.135,0.155,0.135), Vector3(0.335,1.035,0), SHIRT, visual, 20, 10)
-	_torus_child("Collar", 0.115, 0.018, Vector3(0,1.225,0.015), SHIRT, visual)
 
 	# Arms / mitten hands. Pivots are retained for animation.
 	_make_arm("ArmLPivot", -0.415, true)
@@ -43,11 +41,11 @@ func _build_body() -> void:
 	_sphere_child("EyeR", Vector3(0.026,0.033,0.016), Vector3(0.125,1.490,0.360), EYES, visual, 12, 6)
 
 	# Short hair: one clean cap with a restrained modular fringe.
-	_sphere_child("HairCap", Vector3(0.442,0.215,0.365), Vector3(0,1.680,-0.025), HAIR, visual, 32, 16)
-	_sphere_child("HairBack", Vector3(0.390,0.135,0.080), Vector3(0,1.585,-0.325), HAIR, visual, 24, 12)
-	_prism_child("FringeL", Vector3(0.22,0.13,0.08), Vector3(-0.19,1.605,0.345), Vector3(-8,0,-12), HAIR, visual)
-	_prism_child("FringeC", Vector3(0.24,0.14,0.08), Vector3(0,1.595,0.352), Vector3(-10,0,0), HAIR, visual)
-	_prism_child("FringeR", Vector3(0.22,0.13,0.08), Vector3(0.19,1.605,0.345), Vector3(-8,0,12), HAIR, visual)
+	_sphere_child("HairCap", Vector3(0.420,0.165,0.345), Vector3(0,1.675,-0.035), HAIR, visual, 32, 16)
+	_sphere_child("HairBack", Vector3(0.355,0.105,0.060), Vector3(0,1.600,-0.315), HAIR, visual, 24, 12)
+	_prism_child("FringeL", Vector3(0.18,0.10,0.055), Vector3(-0.17,1.610,0.338), Vector3(-8,0,-12), HAIR, visual)
+	_prism_child("FringeC", Vector3(0.19,0.105,0.055), Vector3(0,1.602,0.342), Vector3(-10,0,0), HAIR, visual)
+	_prism_child("FringeR", Vector3(0.18,0.10,0.055), Vector3(0.17,1.610,0.338), Vector3(-8,0,12), HAIR, visual)
 
 func _make_leg(pivot_name:String, x:float) -> void:
 	var visual := get_node_or_null("Visual") as Node3D

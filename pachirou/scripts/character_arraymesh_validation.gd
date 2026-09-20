@@ -125,7 +125,7 @@ func _ellipsoid_mesh(radii: Vector3, radial: int, rings: int, phi_min: float = 0
 	var normals := PackedVector3Array()
 	var indices := PackedInt32Array()
 	for y in range(rings + 1):
-		var phi := lerp(phi_min, phi_max, float(y) / float(rings))
+		var phi: float = lerpf(phi_min, phi_max, float(y) / float(rings))
 		for x in range(radial + 1):
 			var theta := TAU * float(x) / float(radial)
 			var unit := Vector3(sin(phi) * cos(theta), cos(phi), sin(phi) * sin(theta))

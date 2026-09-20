@@ -41,11 +41,11 @@ func _build_body() -> void:
 	_sphere_child("EyeR", Vector3(0.026,0.033,0.016), Vector3(0.125,1.490,0.360), EYES, visual, 12, 6)
 
 	# Short hair: one clean cap with a restrained modular fringe.
-	_sphere_child("HairCap", Vector3(0.420,0.165,0.345), Vector3(0,1.675,-0.035), HAIR, visual, 32, 16)
+	_sphere_child("HairCap", Vector3(0.420,0.205,0.345), Vector3(0,1.715,-0.035), HAIR, visual, 32, 16)
 	_sphere_child("HairBack", Vector3(0.355,0.105,0.060), Vector3(0,1.600,-0.315), HAIR, visual, 24, 12)
-	_prism_child("FringeL", Vector3(0.18,0.10,0.055), Vector3(-0.17,1.610,0.338), Vector3(-8,0,-12), HAIR, visual)
-	_prism_child("FringeC", Vector3(0.19,0.105,0.055), Vector3(0,1.602,0.342), Vector3(-10,0,0), HAIR, visual)
-	_prism_child("FringeR", Vector3(0.18,0.10,0.055), Vector3(0.17,1.610,0.338), Vector3(-8,0,12), HAIR, visual)
+	_prism_child("FringeL", Vector3(0.18,0.10,0.055), Vector3(-0.17,1.590,0.338), Vector3(-8,0,-12), HAIR, visual)
+	_prism_child("FringeC", Vector3(0.19,0.105,0.055), Vector3(0,1.582,0.342), Vector3(-10,0,0), HAIR, visual)
+	_prism_child("FringeR", Vector3(0.18,0.10,0.055), Vector3(0.17,1.590,0.338), Vector3(-8,0,12), HAIR, visual)
 
 func _make_leg(pivot_name:String, x:float) -> void:
 	var visual := get_node_or_null("Visual") as Node3D

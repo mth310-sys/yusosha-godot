@@ -82,11 +82,10 @@ func _build_character() -> void:
 	_add_ellipsoid("Head", Vector3(0, 0.985, 0), Vector3(0.158, 0.172, 0.148), Color(0.84, 0.64, 0.50))
 	_add_hair_v2()
 	_add_face_v2()
-	_add_ellipsoid("ShirtBody", Vector3(0, 0.665, 0), Vector3(0.190, 0.215, 0.128), Color(0.96, 0.96, 0.94))
+	_add_fixed_part("ShirtBody", Vector3(0, 0.665, 0), _shirt_mesh(), Color(0.96, 0.96, 0.94))
 	_add_ellipsoid("ShoulderL", Vector3(-0.165, 0.755, 0), Vector3(0.068, 0.088, 0.095), Color(0.96, 0.96, 0.94))
 	_add_ellipsoid("ShoulderR", Vector3(0.165, 0.755, 0), Vector3(0.068, 0.088, 0.095), Color(0.96, 0.96, 0.94))
-	_add_ellipsoid("ShirtHem", Vector3(0, 0.515, 0), Vector3(0.182, 0.045, 0.124), Color(0.96, 0.96, 0.94))
-	_add_ellipsoid("PantsHip", Vector3(0, 0.455, 0), Vector3(0.145, 0.105, 0.105), Color(0.10, 0.13, 0.18))
+	_add_fixed_part("PantsHip", Vector3(0, 0.455, 0), _pants_hip_mesh(), Color(0.10, 0.13, 0.18))
 	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.15, 0), 0.054, 0.30, Color(0.84, 0.64, 0.50))
 	_add_limb("ArmRMesh", arm_r, Vector3(0, -0.15, 0), 0.050, 0.30, Color(0.84, 0.64, 0.50))
 	_add_sleeve("SleeveL", arm_l, Vector3(0, -0.055, 0))
@@ -99,6 +98,74 @@ func _build_character() -> void:
 	_add_upper_leg("UpperLegR", leg_r)
 	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.365, 0.045))
 	_add_shoe_to_bone("ShoeR", leg_r, Vector3(0, -0.365, 0.045))
+
+func _add_fixed_part(label: String, center: Vector3, mesh: ArrayMesh, color: Color) -> void:
+	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.name = label
+	mesh_instance.position = center
+	mesh_instance.mesh = mesh
+	mesh_instance.material_override = _material(color)
+	visual_root.add_child(mesh_instance)
+
+func _shirt_mesh() -> ArrayMesh:
+	# Fixed convex T-shirt torso: narrower waist/hem, broader chest.
+	return _fixed_ring_mesh([
+		Vector3(0.155, 0.215, 0.105),
+		Vector3(0.188, 0.145, 0.125),
+		Vector3(0.182, 0.020, 0.128),
+		Vector3(0.170, -0.190, 0.118),
+		Vector3(0.168, -0.220, 0.116)
+	], 12)
+
+func _pants_hip_mesh() -> ArrayMesh:
+	# Compact pelvis volume with a flatter waist and tapered lower edge.
+	return _fixed_ring_mesh([
+		Vector3(0.142, 0.095, 0.102),
+		Vector3(0.145, 0.035, 0.108),
+		Vector3(0.128, -0.075, 0.096),
+		Vector3(0.105, -0.105, 0.088)
+	], 12)
+
+func _fixed_ring_mesh(rings: Array[Vector3], radial_segments: int) -> ArrayMesh:
+	# Vector3 = x radius, local y, z radius. Fixed topology, no silhouette sweep.
+	var vertices := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var indices := PackedInt32Array()
+	for ring_data in rings:
+		for s in range(radial_segments):
+			var angle: float = TAU * float(s) / float(radial_segments)
+			var ca: float = cos(angle)
+			var sa: float = sin(angle)
+			vertices.append(Vector3(ca * ring_data.x, ring_data.y, sa * ring_data.z))
+			normals.append(Vector3(ca / ring_data.x, 0.0, sa / ring_data.z).normalized())
+	for r in range(rings.size() - 1):
+		for s in range(radial_segments):
+			var n: int = (s + 1) % radial_segments
+			var a: int = r * radial_segments + s
+			var b: int = r * radial_segments + n
+			var c0: int = (r + 1) * radial_segments + s
+			var d: int = (r + 1) * radial_segments + n
+			indices.append_array(PackedInt32Array([a, c0, b, b, c0, d]))
+	# Close top and bottom with center fans.
+	var top_center: int = vertices.size()
+	vertices.append(Vector3(0, rings[0].y, 0))
+	normals.append(Vector3.UP)
+	var bottom_center: int = vertices.size()
+	vertices.append(Vector3(0, rings[rings.size() - 1].y, 0))
+	normals.append(Vector3.DOWN)
+	for s in range(radial_segments):
+		var n: int = (s + 1) % radial_segments
+		indices.append_array(PackedInt32Array([top_center, s, n]))
+		var last: int = (rings.size() - 1) * radial_segments
+		indices.append_array(PackedInt32Array([bottom_center, last + n, last + s]))
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
 
 func _add_loft_part(label: String, center: Vector3, silhouette: Array[Vector3], color: Color) -> void:
 	var mesh_instance := MeshInstance3D.new()

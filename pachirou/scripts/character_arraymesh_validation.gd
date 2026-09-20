@@ -71,43 +71,29 @@ func _build_character() -> void:
 	# BoneAttachment3D follows the bone GLOBAL pose. Child bones therefore use
 	# local offsets from Root, while Root carries the character's body height.
 	skeleton.set_bone_rest(root, Transform3D(Basis.IDENTITY, Vector3(0, 0.58, 0)))
-	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.255, 0.18, 0)))
-	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.255, 0.18, 0)))
-	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.105, -0.19, 0)))
-	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.105, -0.19, 0)))
+	skeleton.set_bone_rest(arm_l, Transform3D(Basis.IDENTITY, Vector3(-0.205, 0.17, 0)))
+	skeleton.set_bone_rest(arm_r, Transform3D(Basis.IDENTITY, Vector3(0.205, 0.17, 0)))
+	skeleton.set_bone_rest(leg_l, Transform3D(Basis.IDENTITY, Vector3(-0.085, -0.16, 0)))
+	skeleton.set_bone_rest(leg_r, Transform3D(Basis.IDENTITY, Vector3(0.085, -0.16, 0)))
 	skeleton.reset_bone_poses()
 
-	# Character Base 01: young male / about three heads tall.
-	_add_loft_part("Head", Vector3(0, 0.945, 0), [
-		Vector3(-0.19, 0.10, 0.10), Vector3(-0.14, 0.18, 0.15),
-		Vector3(-0.04, 0.215, 0.19), Vector3(0.07, 0.205, 0.205),
-		Vector3(0.15, 0.15, 0.195), Vector3(0.19, 0.06, 0.18),
-		Vector3(0.18, -0.06, 0.165), Vector3(0.13, -0.14, 0.145),
-		Vector3(0.04, -0.185, 0.13), Vector3(-0.08, -0.18, 0.13),
-		Vector3(-0.16, -0.10, 0.145)
-	], Color(0.84, 0.64, 0.50))
-	_add_hair()
-	_add_face()
-	_add_loft_part("Shirt", Vector3(0, 0.615, 0), [
-		Vector3(-0.17, 0.245, 0.10), Vector3(-0.205, 0.17, 0.135),
-		Vector3(-0.215, 0.07, 0.15), Vector3(-0.205, -0.08, 0.145),
-		Vector3(-0.19, -0.225, 0.125), Vector3(0.19, -0.225, 0.125),
-		Vector3(0.205, -0.08, 0.145), Vector3(0.215, 0.07, 0.15),
-		Vector3(0.205, 0.17, 0.135), Vector3(0.17, 0.245, 0.10)
-	], Color(0.96, 0.96, 0.94))
-	_add_loft_part("PantsHip", Vector3(0, 0.405, 0), [
-		Vector3(-0.17, 0.10, 0.115), Vector3(-0.175, 0.02, 0.125),
-		Vector3(-0.16, -0.105, 0.105), Vector3(0.16, -0.105, 0.105),
-		Vector3(0.175, 0.02, 0.125), Vector3(0.17, 0.10, 0.115)
-	], Color(0.10, 0.13, 0.18))
-	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.155, 0), 0.058, 0.31, Color(0.84, 0.64, 0.50))
-	_add_limb("ArmRMesh", arm_r, Vector3(0, -0.155, 0), 0.058, 0.31, Color(0.84, 0.64, 0.50))
-	_add_hand("HandL", arm_l, Vector3(0, -0.335, 0))
-	_add_hand("HandR", arm_r, Vector3(0, -0.335, 0))
-	_add_limb("LegLMesh", leg_l, Vector3(0, -0.155, 0), 0.073, 0.31, Color(0.10, 0.13, 0.18))
-	_add_limb("LegRMesh", leg_r, Vector3(0, -0.155, 0), 0.073, 0.31, Color(0.10, 0.13, 0.18))
-	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.335, 0.055))
-	_add_shoe_to_bone("ShoeR", leg_r, Vector3(0, -0.335, 0.055))
+	# Character Base 01 v2: fixed 3.7-head stylized human.
+	# Stable authored primitives replace the experimental loft topology.
+	_add_ellipsoid("Head", Vector3(0, 0.985, 0), Vector3(0.165, 0.175, 0.155), Color(0.84, 0.64, 0.50))
+	_add_hair_v2()
+	_add_face_v2()
+	_add_ellipsoid("ShirtBody", Vector3(0, 0.665, 0), Vector3(0.19, 0.205, 0.125), Color(0.96, 0.96, 0.94))
+	_add_ellipsoid("PantsHip", Vector3(0, 0.465, 0), Vector3(0.145, 0.105, 0.105), Color(0.10, 0.13, 0.18))
+	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.15, 0), 0.050, 0.30, Color(0.84, 0.64, 0.50))
+	_add_limb("ArmRMesh", arm_r, Vector3(0, -0.15, 0), 0.050, 0.30, Color(0.84, 0.64, 0.50))
+	_add_sleeve("SleeveL", arm_l, Vector3(0, -0.055, 0))
+	_add_sleeve("SleeveR", arm_r, Vector3(0, -0.055, 0))
+	_add_hand("HandL", arm_l, Vector3(0, -0.325, 0))
+	_add_hand("HandR", arm_r, Vector3(0, -0.325, 0))
+	_add_limb("LegLMesh", leg_l, Vector3(0, -0.17, 0), 0.060, 0.34, Color(0.10, 0.13, 0.18))
+	_add_limb("LegRMesh", leg_r, Vector3(0, -0.17, 0), 0.060, 0.34, Color(0.10, 0.13, 0.18))
+	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.365, 0.045))
+	_add_shoe_to_bone("ShoeR", leg_r, Vector3(0, -0.365, 0.045))
 
 func _add_loft_part(label: String, center: Vector3, silhouette: Array[Vector3], color: Color) -> void:
 	var mesh_instance := MeshInstance3D.new()
@@ -245,6 +231,34 @@ func _add_ellipsoid(label: String, center: Vector3, radii: Vector3, color: Color
 	m.mesh = _ellipsoid_mesh(radii, 16, 10)
 	m.material_override = _material(color)
 	visual_root.add_child(m)
+
+func _add_hair_v2() -> void:
+	# Short dark-brown hair: crown/back volume plus restrained front fringe.
+	_add_ellipsoid("HairCrown", Vector3(0, 1.095, -0.018), Vector3(0.172, 0.105, 0.158), Color(0.16, 0.10, 0.07))
+	_add_ellipsoid("HairBack", Vector3(0, 1.025, -0.115), Vector3(0.145, 0.095, 0.055), Color(0.16, 0.10, 0.07))
+	_add_ellipsoid("FringeL", Vector3(-0.072, 1.064, 0.132), Vector3(0.075, 0.050, 0.025), Color(0.16, 0.10, 0.07))
+	_add_ellipsoid("FringeR", Vector3(0.068, 1.070, 0.132), Vector3(0.080, 0.045, 0.025), Color(0.16, 0.10, 0.07))
+
+func _add_face_v2() -> void:
+	for x in [-0.057, 0.057]:
+		var eye := MeshInstance3D.new()
+		eye.name = "EyeL" if x < 0.0 else "EyeR"
+		eye.position = Vector3(x, 0.995, 0.151)
+		eye.mesh = _ellipsoid_mesh(Vector3(0.010, 0.013, 0.007), 10, 6)
+		eye.material_override = _material(Color(0.025, 0.025, 0.025))
+		visual_root.add_child(eye)
+
+func _add_sleeve(label: String, bone_idx: int, local_center: Vector3) -> void:
+	var attachment := BoneAttachment3D.new()
+	attachment.name = label + "Attachment"
+	attachment.bone_name = skeleton.get_bone_name(bone_idx)
+	skeleton.add_child(attachment)
+	var sleeve := MeshInstance3D.new()
+	sleeve.name = label
+	sleeve.position = local_center
+	sleeve.mesh = _ellipsoid_mesh(Vector3(0.072, 0.085, 0.068), 10, 6)
+	sleeve.material_override = _material(Color(0.96, 0.96, 0.94))
+	attachment.add_child(sleeve)
 
 func _add_hair() -> void:
 	_add_loft_part("Hair", Vector3(0, 1.055, -0.018), [

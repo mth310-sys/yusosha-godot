@@ -1,4 +1,4 @@
-extends Node3D
+extends Node
 
 @export var move_speed: float = 1.35
 @export var step_bob: float = 0.018
@@ -10,25 +10,29 @@ var _path_index: int = 0
 var _step_time: float = 0.0
 var _visual: Node3D
 var _character_ready: bool = false
+var _character: Node3D
 
 func _ready() -> void:
 	call_deferred("_begin_walk_test")
 
 func _begin_walk_test() -> void:
+	_character = get_parent() as Node3D
+	if _character == null:
+		return
 	# CharacterBase01 builds Visual in its own _ready(). Wait until that has completed.
 	for wait_index in range(2):
 		await get_tree().process_frame
-	_visual = get_node_or_null("Visual") as Node3D
+	_visual = _character.get_node_or_null("Visual") as Node3D
 	_character_ready = _visual != null
 	_grid = get_tree().current_scene.get_node_or_null("GridRules") as PachirouGridRules
 	if _grid == null:
 		return
 	while not _grid.layout_ready:
 		await get_tree().process_frame
-	var start := _grid.world_to_cell(global_position)
+	var start := _grid.world_to_cell(_character.global_position)
 	if not _grid.is_walkable(start):
 		start = _nearest_walkable(start)
-		global_position = _grid.cell_to_world(start)
+		_character.global_position = _grid.cell_to_world(start)
 	var goal := _choose_goal(start)
 	_path = _grid.find_path(start, goal, self)
 	_path_index = 1 if _path.size() > 1 else 0
@@ -38,23 +42,23 @@ func _process(delta: float) -> void:
 		_reset_bob()
 		return
 	var target := _grid.cell_to_world(_path[_path_index])
-	var offset := target - global_position
+	var offset := target - _character.global_position
 	offset.y = 0.0
 	if offset.length() < 0.035:
-		global_position.x = target.x
-		global_position.z = target.z
+		_character.global_position.x = target.x
+		_character.global_position.z = target.z
 		_path_index += 1
 		if _path_index >= _path.size():
 			_reset_bob()
 		return
 		target = _grid.cell_to_world(_path[_path_index])
-		offset = target - global_position
+		offset = target - _character.global_position
 		offset.y = 0.0
 	if offset.length_squared() <= 0.0001:
 		return
 	var direction := offset.normalized()
-	global_position += direction * minf(move_speed * delta, offset.length())
-	rotation.y = atan2(direction.x, direction.z)
+	_character.global_position += direction * minf(move_speed * delta, offset.length())
+	_character.rotation.y = atan2(direction.x, direction.z)
 	_step_time += delta * step_frequency
 	if _visual != null:
 		_visual.position.y = absf(sin(_step_time)) * step_bob

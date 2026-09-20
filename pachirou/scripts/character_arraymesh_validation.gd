@@ -20,11 +20,11 @@ func _process(delta: float) -> void:
 	if skeleton == null:
 		return
 	var phase: float = sin(t * 4.0)
-	var swing: float = phase * deg_to_rad(18.0)
-	var knee_l: float = maxf(0.0, -phase) * deg_to_rad(32.0)
-	var knee_r: float = maxf(0.0, phase) * deg_to_rad(32.0)
-	var elbow_l: float = deg_to_rad(10.0) + maxf(0.0, phase) * deg_to_rad(12.0)
-	var elbow_r: float = deg_to_rad(10.0) + maxf(0.0, -phase) * deg_to_rad(12.0)
+	var swing: float = phase * deg_to_rad(14.0)
+	var knee_l: float = maxf(0.0, -phase) * deg_to_rad(22.0)
+	var knee_r: float = maxf(0.0, phase) * deg_to_rad(22.0)
+	var elbow_l: float = deg_to_rad(13.0) + maxf(0.0, phase) * deg_to_rad(10.0)
+	var elbow_r: float = deg_to_rad(13.0) + maxf(0.0, -phase) * deg_to_rad(10.0)
 	skeleton.set_bone_pose_rotation(1, Quaternion(Vector3.RIGHT, swing))
 	skeleton.set_bone_pose_rotation(2, Quaternion(Vector3.RIGHT, -swing))
 	skeleton.set_bone_pose_rotation(3, Quaternion(Vector3.RIGHT, -swing))
@@ -34,7 +34,7 @@ func _process(delta: float) -> void:
 		skeleton.set_bone_pose_rotation(forearm_r_idx, Quaternion(Vector3.RIGHT, -elbow_r))
 		skeleton.set_bone_pose_rotation(shin_l_idx, Quaternion(Vector3.RIGHT, knee_l))
 		skeleton.set_bone_pose_rotation(shin_r_idx, Quaternion(Vector3.RIGHT, knee_r))
-	visual_root.position.y = abs(sin(t * 4.0)) * 0.008
+	visual_root.position.y = abs(sin(t * 4.0)) * 0.005
 
 func _build_environment() -> void:
 	var world := WorldEnvironment.new()

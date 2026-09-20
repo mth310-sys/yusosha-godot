@@ -78,12 +78,12 @@ func _build_character() -> void:
 	skeleton.reset_bone_poses()
 
 	# Character Base 01: young male / about three heads tall.
-	_add_ellipsoid("Head", Vector3(0, 0.945, 0), Vector3(0.225, 0.190, 0.205), Color(0.84, 0.64, 0.50))
+	_add_profile_part("Head", Vector3(0, 0.945, 0), [Vector2(-0.18, 0.10), Vector2(-0.12, 0.205), Vector2(0.05, 0.225), Vector2(0.15, 0.17), Vector2(0.19, 0.06), Vector2(0.18, -0.09), Vector2(0.10, -0.18), Vector2(-0.08, -0.19), Vector2(-0.17, -0.11)], 0.19, Color(0.84, 0.64, 0.50))
 	_add_hair()
 	_add_face()
-	# Shirt and pants are independent meshes so they can become replaceable modules.
-	_add_ellipsoid("Shirt", Vector3(0, 0.615, 0), Vector3(0.205, 0.245, 0.135), Color(0.96, 0.96, 0.94))
-	_add_ellipsoid("PantsHip", Vector3(0, 0.405, 0), Vector3(0.175, 0.105, 0.125), Color(0.10, 0.13, 0.18))
+	# Dedicated clothing silhouettes instead of ellipsoid primitives.
+	_add_profile_part("Shirt", Vector3(0, 0.615, 0), [Vector2(-0.18, 0.245), Vector2(0.18, 0.245), Vector2(0.215, 0.12), Vector2(0.19, -0.225), Vector2(-0.19, -0.225), Vector2(-0.215, 0.12)], 0.13, Color(0.96, 0.96, 0.94))
+	_add_profile_part("PantsHip", Vector3(0, 0.405, 0), [Vector2(-0.17, 0.10), Vector2(0.17, 0.10), Vector2(0.16, -0.105), Vector2(-0.16, -0.105)], 0.12, Color(0.10, 0.13, 0.18))
 	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.155, 0), 0.058, 0.31, Color(0.84, 0.64, 0.50))
 	_add_limb("ArmRMesh", arm_r, Vector3(0, -0.155, 0), 0.058, 0.31, Color(0.84, 0.64, 0.50))
 	_add_hand("HandL", arm_l, Vector3(0, -0.335, 0))
@@ -92,6 +92,40 @@ func _build_character() -> void:
 	_add_limb("LegRMesh", leg_r, Vector3(0, -0.155, 0), 0.073, 0.31, Color(0.10, 0.13, 0.18))
 	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.335, 0.055))
 	_add_shoe_to_bone("ShoeR", leg_r, Vector3(0, -0.335, 0.055))
+
+func _add_profile_part(label: String, center: Vector3, profile: Array[Vector2], depth: float, color: Color) -> void:
+	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.name = label
+	mesh_instance.position = center
+	mesh_instance.mesh = _extruded_profile_mesh(profile, depth)
+	mesh_instance.material_override = _material(color)
+	visual_root.add_child(mesh_instance)
+
+func _extruded_profile_mesh(profile: Array[Vector2], depth: float) -> ArrayMesh:
+	var vertices := PackedVector3Array()
+	var indices := PackedInt32Array()
+	var half_depth := depth * 0.5
+	var count := profile.size()
+	# Front and back vertices.
+	for p in profile:
+		vertices.append(Vector3(p.x, p.y, half_depth))
+	for p in profile:
+		vertices.append(Vector3(p.x, p.y, -half_depth))
+	# Convex profile fan faces.
+	for i in range(1, count - 1):
+		indices.append_array(PackedInt32Array([0, i, i + 1]))
+		indices.append_array(PackedInt32Array([count, count + i + 1, count + i]))
+	# Side wall.
+	for i in range(count):
+		var j := (i + 1) % count
+		indices.append_array(PackedInt32Array([i, count + i, j, j, count + i, count + j]))
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
 
 func _add_limb(label: String, bone_idx: int, local_center: Vector3, radius: float, height: float, color: Color) -> void:
 	var attachment := BoneAttachment3D.new()
@@ -114,12 +148,8 @@ func _add_ellipsoid(label: String, center: Vector3, radii: Vector3, color: Color
 	visual_root.add_child(m)
 
 func _add_hair() -> void:
-	var m := MeshInstance3D.new()
-	m.name = "Hair"
-	m.position = Vector3(0, 1.018, -0.012)
-	m.mesh = _ellipsoid_mesh(Vector3(0.229, 0.142, 0.209), 20, 10, 0.0, PI * 0.64)
-	m.material_override = _material(Color(0.16, 0.10, 0.07))
-	visual_root.add_child(m)
+	# Short hair built as a dedicated cap profile, leaving the lower face exposed.
+	_add_profile_part("Hair", Vector3(0, 1.055, -0.018), [Vector2(-0.205, 0.095), Vector2(-0.14, 0.155), Vector2(0.02, 0.17), Vector2(0.17, 0.125), Vector2(0.215, 0.035), Vector2(0.19, -0.055), Vector2(0.08, -0.085), Vector2(-0.08, -0.075), Vector2(-0.19, -0.035)], 0.195, Color(0.16, 0.10, 0.07))
 
 func _add_face() -> void:
 	# Base face specification: tiny black dot eyes only.

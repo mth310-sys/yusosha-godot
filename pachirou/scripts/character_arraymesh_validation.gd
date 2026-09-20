@@ -78,23 +78,27 @@ func _build_character() -> void:
 	skeleton.reset_bone_poses()
 
 	# Character Base 01: young male / about three heads tall.
-	_add_section_part("Head", Vector3(0, 0.945, 0), [
-		Vector3(-0.18, 0.13, 0.14), Vector3(-0.10, 0.205, 0.18),
-		Vector3(0.02, 0.225, 0.195), Vector3(0.13, 0.17, 0.19),
-		Vector3(0.18, 0.06, 0.175), Vector3(0.17, -0.08, 0.16),
-		Vector3(0.10, -0.17, 0.13), Vector3(-0.07, -0.19, 0.125),
-		Vector3(-0.16, -0.10, 0.14)
+	_add_loft_part("Head", Vector3(0, 0.945, 0), [
+		Vector3(-0.19, 0.10, 0.10), Vector3(-0.14, 0.18, 0.15),
+		Vector3(-0.04, 0.215, 0.19), Vector3(0.07, 0.205, 0.205),
+		Vector3(0.15, 0.15, 0.195), Vector3(0.19, 0.06, 0.18),
+		Vector3(0.18, -0.06, 0.165), Vector3(0.13, -0.14, 0.145),
+		Vector3(0.04, -0.185, 0.13), Vector3(-0.08, -0.18, 0.13),
+		Vector3(-0.16, -0.10, 0.145)
 	], Color(0.84, 0.64, 0.50))
 	_add_hair()
 	_add_face()
-	_add_section_part("Shirt", Vector3(0, 0.615, 0), [
-		Vector3(-0.17, 0.245, 0.105), Vector3(0.17, 0.245, 0.105),
-		Vector3(0.215, 0.12, 0.145), Vector3(0.19, -0.225, 0.125),
-		Vector3(-0.19, -0.225, 0.125), Vector3(-0.215, 0.12, 0.145)
+	_add_loft_part("Shirt", Vector3(0, 0.615, 0), [
+		Vector3(-0.17, 0.245, 0.10), Vector3(-0.205, 0.17, 0.135),
+		Vector3(-0.215, 0.07, 0.15), Vector3(-0.205, -0.08, 0.145),
+		Vector3(-0.19, -0.225, 0.125), Vector3(0.19, -0.225, 0.125),
+		Vector3(0.205, -0.08, 0.145), Vector3(0.215, 0.07, 0.15),
+		Vector3(0.205, 0.17, 0.135), Vector3(0.17, 0.245, 0.10)
 	], Color(0.96, 0.96, 0.94))
-	_add_section_part("PantsHip", Vector3(0, 0.405, 0), [
-		Vector3(-0.17, 0.10, 0.12), Vector3(0.17, 0.10, 0.12),
-		Vector3(0.16, -0.105, 0.105), Vector3(-0.16, -0.105, 0.105)
+	_add_loft_part("PantsHip", Vector3(0, 0.405, 0), [
+		Vector3(-0.17, 0.10, 0.115), Vector3(-0.175, 0.02, 0.125),
+		Vector3(-0.16, -0.105, 0.105), Vector3(0.16, -0.105, 0.105),
+		Vector3(0.175, 0.02, 0.125), Vector3(0.17, 0.10, 0.115)
 	], Color(0.10, 0.13, 0.18))
 	_add_limb("ArmLMesh", arm_l, Vector3(0, -0.155, 0), 0.058, 0.31, Color(0.84, 0.64, 0.50))
 	_add_limb("ArmRMesh", arm_r, Vector3(0, -0.155, 0), 0.058, 0.31, Color(0.84, 0.64, 0.50))
@@ -104,6 +108,45 @@ func _build_character() -> void:
 	_add_limb("LegRMesh", leg_r, Vector3(0, -0.155, 0), 0.073, 0.31, Color(0.10, 0.13, 0.18))
 	_add_shoe_to_bone("ShoeL", leg_l, Vector3(0, -0.335, 0.055))
 	_add_shoe_to_bone("ShoeR", leg_r, Vector3(0, -0.335, 0.055))
+
+func _add_loft_part(label: String, center: Vector3, silhouette: Array[Vector3], color: Color) -> void:
+	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.name = label
+	mesh_instance.position = center
+	mesh_instance.mesh = _loft_mesh(silhouette, 10)
+	mesh_instance.material_override = _material(color)
+	visual_root.add_child(mesh_instance)
+
+func _loft_mesh(silhouette: Array[Vector3], depth_segments: int) -> ArrayMesh:
+	# Curved front/back surface: every silhouette point is swept through a
+	# half-ellipse in Z instead of using a flat front/back wall.
+	var vertices := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var indices := PackedInt32Array()
+	var ring: int = depth_segments + 1
+	for s in silhouette:
+		for d in range(ring):
+			var angle: float = -PI * 0.5 + PI * float(d) / float(depth_segments)
+			var z: float = sin(angle) * s.z
+			var bulge: float = cos(angle)
+			vertices.append(Vector3(s.x, s.y, z))
+			var nx: float = sign(s.x) * 0.35
+			normals.append(Vector3(nx, 0.15 * bulge, sin(angle)).normalized())
+	var rows: int = silhouette.size()
+	for i in range(rows):
+		var j: int = (i + 1) % rows
+		for d in range(depth_segments):
+			var a: int = i * ring + d
+			var b: int = j * ring + d
+			indices.append_array(PackedInt32Array([a, b, a + 1, a + 1, b, b + 1]))
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
 
 func _add_section_part(label: String, center: Vector3, sections: Array[Vector3], color: Color) -> void:
 	var mesh_instance := MeshInstance3D.new()
@@ -192,13 +235,12 @@ func _add_ellipsoid(label: String, center: Vector3, radii: Vector3, color: Color
 	visual_root.add_child(m)
 
 func _add_hair() -> void:
-	# Multi-section cap: rounded front, fuller crown and back.
-	_add_section_part("Hair", Vector3(0, 1.055, -0.018), [
-		Vector3(-0.195, 0.08, 0.15), Vector3(-0.13, 0.145, 0.19),
-		Vector3(0.02, 0.165, 0.205), Vector3(0.16, 0.115, 0.195),
-		Vector3(0.205, 0.025, 0.17), Vector3(0.18, -0.05, 0.145),
-		Vector3(0.07, -0.075, 0.13), Vector3(-0.08, -0.07, 0.135),
-		Vector3(-0.18, -0.03, 0.145)
+	_add_loft_part("Hair", Vector3(0, 1.055, -0.018), [
+		Vector3(-0.19, 0.075, 0.14), Vector3(-0.15, 0.13, 0.175),
+		Vector3(-0.06, 0.16, 0.205), Vector3(0.05, 0.158, 0.215),
+		Vector3(0.15, 0.115, 0.205), Vector3(0.205, 0.035, 0.18),
+		Vector3(0.19, -0.045, 0.155), Vector3(0.09, -0.075, 0.135),
+		Vector3(-0.07, -0.07, 0.14), Vector3(-0.18, -0.025, 0.145)
 	], Color(0.16, 0.10, 0.07))
 
 func _add_face() -> void:

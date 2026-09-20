@@ -101,6 +101,7 @@ func _place_front(node: Node3D,cell: Vector2i,row: int) -> void:
 	snapped_position.z -= REAR_EDGE_OFFSET
 	node.global_position = snapped_position
 	_set_grid_meta(node,cell,row,"front")
+	_mark_zelvolt_machine(node,cell,row,"front")
 
 func _rotate_then_snap_back(node: Node3D,cell: Vector2i,row: int) -> void:
 	if not _cell_is_valid(cell): return
@@ -109,6 +110,7 @@ func _rotate_then_snap_back(node: Node3D,cell: Vector2i,row: int) -> void:
 	snapped_position.z += REAR_EDGE_OFFSET
 	node.global_position = snapped_position
 	_set_grid_meta(node,cell,row,"back")
+	_mark_zelvolt_machine(node,cell,row,"back")
 
 func _cell_is_valid(cell: Vector2i) -> bool:
 	if cell.x < 0 or cell.x >= GRID_SIZE or cell.y < 0 or cell.y >= GRID_SIZE:
@@ -120,3 +122,9 @@ func _set_grid_meta(node: Node3D,cell: Vector2i,row: int,side: String) -> void:
 	node.set_meta("grid_cell",cell)
 	node.set_meta("showcase_row",row)
 	node.set_meta("island_side",side)
+
+func _mark_zelvolt_machine(node: Node3D,cell: Vector2i,row: int,side: String) -> void:
+	# First row, nearest/front machine: dedicate it to ZELVOLT.
+	if row == 0 and side == "front" and cell == Vector2i(1,ISLAND_FRONT_ROWS[0]):
+		node.set_meta("machine_id","zelvolt")
+		node.set_meta("play_scene","res://pachirou/machines/zelvolt/zelvolt.tscn")

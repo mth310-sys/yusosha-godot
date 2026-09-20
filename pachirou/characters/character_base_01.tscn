@@ -1,89 +1,72 @@
-[gd_scene load_steps=13 format=3]
-
-[ext_resource type="Mesh" path="res://characters/base01_mesh/head.obj" id="1_head"]
-[ext_resource type="Mesh" path="res://characters/base01_mesh/torso.obj" id="2_torso"]
-[ext_resource type="Mesh" path="res://characters/base01_mesh/arm.obj" id="3_arm"]
-[ext_resource type="Mesh" path="res://characters/base01_mesh/leg.obj" id="4_leg"]
-[ext_resource type="Mesh" path="res://characters/base01_mesh/hand.obj" id="5_hand"]
-[ext_resource type="Mesh" path="res://characters/base01_mesh/shoe.obj" id="6_shoe"]
-[ext_resource type="Mesh" path="res://characters/base01_mesh/hair.obj" id="7_hair"]
+[gd_scene load_steps=6 format=3]
 
 [sub_resource type="StandardMaterial3D" id="Skin"]
-cull_mode = 1
-albedo_color = Color(0.843,0.643,0.498,1)
-roughness = 0.88
+shading_mode = 0
+albedo_color = Color(0.84, 0.64, 0.50, 1)
+
 [sub_resource type="StandardMaterial3D" id="Hair"]
-cull_mode = 1
-albedo_color = Color(0.204,0.169,0.157,1)
-roughness = 0.9
+shading_mode = 0
+albedo_color = Color(0.16, 0.11, 0.08, 1)
+
 [sub_resource type="StandardMaterial3D" id="Shirt"]
-cull_mode = 1
-albedo_color = Color(0.953,0.949,0.929,1)
-roughness = 0.92
+shading_mode = 0
+albedo_color = Color(0.96, 0.96, 0.94, 1)
+
 [sub_resource type="StandardMaterial3D" id="Pants"]
-cull_mode = 1
-albedo_color = Color(0.188,0.204,0.227,1)
-roughness = 0.9
+shading_mode = 0
+albedo_color = Color(0.12, 0.15, 0.20, 1)
+
 [sub_resource type="StandardMaterial3D" id="Shoes"]
-cull_mode = 1
-albedo_color = Color(0.961,0.961,0.945,1)
-roughness = 0.86
+shading_mode = 0
+albedo_color = Color(0.98, 0.98, 0.96, 1)
 
 [node name="CharacterBase01" type="Node3D"]
+
 [node name="Visual" type="Node3D" parent="."]
-scale = Vector3(0.58,0.58,0.58)
 
-[node name="Torso" type="MeshInstance3D" parent="Visual"]
-mesh = ExtResource("2_torso")
-position = Vector3(0,0.875,0)
-material_override = SubResource("Shirt")
+[node name="BodySprite" type="Sprite3D" parent="Visual"]
+position = Vector3(0, 0.57, 0)
+pixel_size = 0.006
+billboard = 1
+shaded = false
+no_depth_test = false
+texture_filter = 1
+render_priority = 1
 
-[node name="Head" type="MeshInstance3D" parent="Visual"]
-mesh = ExtResource("1_head")
-position = Vector3(0,1.475,0)
-material_override = SubResource("Skin")
+[node name="Fallback" type="Node3D" parent="Visual"]
 
+[node name="Torso" type="CSGPolygon3D" parent="Visual/Fallback"]
+polygon = PackedVector2Array(-0.20,0.37, 0.20,0.37, 0.17,0.78, -0.17,0.78)
+depth = 0.035
+material = SubResource("Shirt")
 
-[node name="ArmLPivot" type="Node3D" parent="Visual"]
-position = Vector3(-0.405,1.02,0)
-[node name="Arm" type="MeshInstance3D" parent="Visual/ArmLPivot"]
-mesh = ExtResource("3_arm")
-position = Vector3(0,-0.18,0)
-material_override = SubResource("Skin")
-[node name="Hand" type="MeshInstance3D" parent="Visual/ArmLPivot"]
-mesh = ExtResource("5_hand")
-position = Vector3(0,-0.45,0)
-material_override = SubResource("Skin")
+[node name="Head" type="CSGSphere3D" parent="Visual/Fallback"]
+position = Vector3(0, 0.96, 0)
+radius = 0.22
+height = 0.40
+radial_segments = 16
+rings = 8
+material = SubResource("Skin")
 
-[node name="ArmRPivot" type="Node3D" parent="Visual"]
-position = Vector3(0.405,1.02,0)
-[node name="Arm" type="MeshInstance3D" parent="Visual/ArmRPivot"]
-mesh = ExtResource("3_arm")
-position = Vector3(0,-0.18,0)
-material_override = SubResource("Skin")
-[node name="Hand" type="MeshInstance3D" parent="Visual/ArmRPivot"]
-mesh = ExtResource("5_hand")
-position = Vector3(0,-0.45,0)
-material_override = SubResource("Skin")
+[node name="Hair" type="CSGSphere3D" parent="Visual/Fallback"]
+position = Vector3(0, 1.02, -0.006)
+radius = 0.225
+height = 0.31
+radial_segments = 16
+rings = 8
+material = SubResource("Hair")
 
-[node name="LegLPivot" type="Node3D" parent="Visual"]
-position = Vector3(-0.155,0.69,0)
-[node name="Leg" type="MeshInstance3D" parent="Visual/LegLPivot"]
-mesh = ExtResource("4_leg")
-position = Vector3(0,-0.27,0)
-material_override = SubResource("Pants")
-[node name="Shoe" type="MeshInstance3D" parent="Visual/LegLPivot"]
-mesh = ExtResource("6_shoe")
-position = Vector3(0,-0.51,0.11)
-material_override = SubResource("Shoes")
+[node name="Pants" type="CSGBox3D" parent="Visual/Fallback"]
+position = Vector3(0, 0.31, 0)
+size = Vector3(0.31, 0.30, 0.035)
+material = SubResource("Pants")
 
-[node name="LegRPivot" type="Node3D" parent="Visual"]
-position = Vector3(0.155,0.69,0)
-[node name="Leg" type="MeshInstance3D" parent="Visual/LegRPivot"]
-mesh = ExtResource("4_leg")
-position = Vector3(0,-0.27,0)
-material_override = SubResource("Pants")
-[node name="Shoe" type="MeshInstance3D" parent="Visual/LegRPivot"]
-mesh = ExtResource("6_shoe")
-position = Vector3(0,-0.51,0.11)
-material_override = SubResource("Shoes")
+[node name="ShoeL" type="CSGBox3D" parent="Visual/Fallback"]
+position = Vector3(-0.09, 0.11, 0)
+size = Vector3(0.13, 0.08, 0.035)
+material = SubResource("Shoes")
+
+[node name="ShoeR" type="CSGBox3D" parent="Visual/Fallback"]
+position = Vector3(0.09, 0.11, 0)
+size = Vector3(0.13, 0.08, 0.035)
+material = SubResource("Shoes")

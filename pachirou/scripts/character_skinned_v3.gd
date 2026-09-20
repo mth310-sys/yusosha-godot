@@ -80,88 +80,115 @@ func _build_body() -> void:
 	add_child(body)
 
 func _build_body_mesh() -> ArrayMesh:
-	# Stage 3: one indexed skin. No overlapping tubes and no internal caps.
-	# A single front/back silhouette supplies shared shoulder, crotch and neck vertices.
+	# Stage 4: generate the body from the skeleton itself.
+	# Each bone chain supplies its centre line; cross-sections are connected along it.
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	st.set_skin_weight_count(SurfaceTool.SKIN_4_WEIGHTS)
 
-	var z: float = 0.085
-	var front: Array = [
-		[Vector3(-0.075,1.105,z),"Head","Chest",1.0], # 0 crown L
-		[Vector3(0.075,1.105,z),"Head","Chest",1.0],  # 1 crown R
-		[Vector3(-0.140,1.020,z),"Head","Chest",1.0], # 2 head L
-		[Vector3(0.140,1.020,z),"Head","Chest",1.0],  # 3 head R
-		[Vector3(-0.105,0.900,z),"Head","Chest",0.90],# 4 jaw L
-		[Vector3(0.105,0.900,z),"Head","Chest",0.90], # 5 jaw R
-		[Vector3(-0.070,0.840,z),"Chest","Head",0.65],# 6 neck L
-		[Vector3(0.070,0.840,z),"Chest","Head",0.65], # 7 neck R
-		[Vector3(-0.190,0.780,z),"Chest","ShoulderL",0.70], # 8 shoulder L
-		[Vector3(0.190,0.780,z),"Chest","ShoulderR",0.70],  # 9 shoulder R
-		[Vector3(-0.245,0.720,z),"ShoulderL","UpperArmL",0.45], # 10 upper arm L
-		[Vector3(0.245,0.720,z),"ShoulderR","UpperArmR",0.45],  # 11 upper arm R
-		[Vector3(-0.245,0.540,z),"UpperArmL","LowerArmL",0.55], # 12 elbow L
-		[Vector3(0.245,0.540,z),"UpperArmR","LowerArmR",0.55],  # 13 elbow R
-		[Vector3(-0.235,0.390,z),"LowerArmL","HandL",0.75], # 14 hand L
-		[Vector3(0.235,0.390,z),"LowerArmR","HandR",0.75],  # 15 hand R
-		[Vector3(-0.155,0.650,z),"Chest","Spine",0.65], # 16 armpit/chest L
-		[Vector3(0.155,0.650,z),"Chest","Spine",0.65],  # 17 armpit/chest R
-		[Vector3(-0.145,0.500,z),"Spine","Hips",0.55], # 18 waist L
-		[Vector3(0.145,0.500,z),"Spine","Hips",0.55],  # 19 waist R
-		[Vector3(-0.135,0.420,z),"Hips","UpperLegL",0.70], # 20 hip L
-		[Vector3(0.135,0.420,z),"Hips","UpperLegR",0.70],  # 21 hip R
-		[Vector3(-0.025,0.390,z),"Hips","UpperLegL",0.55], # 22 crotch L
-		[Vector3(0.025,0.390,z),"Hips","UpperLegR",0.55],  # 23 crotch R
-		[Vector3(-0.090,0.240,z),"UpperLegL","LowerLegL",0.55], # 24 knee L
-		[Vector3(0.090,0.240,z),"UpperLegR","LowerLegR",0.55],  # 25 knee R
-		[Vector3(-0.080,0.080,z),"LowerLegL","FootL",0.75], # 26 ankle L
-		[Vector3(0.080,0.080,z),"LowerLegR","FootR",0.75],  # 27 ankle R
-		[Vector3(-0.080,0.020,z+0.055),"FootL","LowerLegL",0.95], # 28 foot L
-		[Vector3(0.080,0.020,z+0.055),"FootR","LowerLegR",0.95]   # 29 foot R
-	]
-	var back: Array = []
-	for data in front:
-		var p: Vector3 = data[0]
-		back.append([Vector3(p.x,p.y,-z),data[1],data[2],data[3]])
+	# Torso is the hub. Shoulder and hip roots are intentionally broad so the
+	# skin follows the skeleton instead of a flat front/back silhouette.
+	_add_bone_chain(st,[
+		_ring(Vector3(0,0.40,0),0.145,0.095,"Hips","Spine",0.82),
+		_ring(Vector3(0,0.50,0),0.155,0.098,"Hips","Spine",0.55),
+		_ring(Vector3(0,0.62,0),0.165,0.102,"Spine","Chest",0.55),
+		_ring(Vector3(0,0.73,0),0.185,0.108,"Chest","Spine",0.82),
+		_ring(Vector3(0,0.79,0),0.175,0.100,"Chest","Spine",0.92)
+	],14,true,true)
 
-	var tris := PackedInt32Array([
-		0,2,1,1,2,3, 2,4,3,3,4,5, 4,6,5,5,6,7,
-		6,8,7,7,8,9, 8,16,9,9,16,17,
-		8,10,16, 10,12,16, 12,14,16,
-		9,17,11, 11,17,13, 13,17,15,
-		16,18,17,17,18,19, 18,20,19,19,20,21,
-		20,22,21,21,22,23,
-		20,24,22, 22,24,26, 22,26,28,
-		21,23,25, 23,27,25, 23,29,27
-	])
-	for i in range(0,tris.size(),3):
-		_emit_indexed_triangle(st,front,tris[i],tris[i+1],tris[i+2])
-		_emit_indexed_triangle(st,back,tris[i+2],tris[i+1],tris[i])
-
-	# Close only the true outside silhouette. These are exterior side faces,
-	# not internal joint caps.
-	var outline := PackedInt32Array([0,1,3,5,7,9,11,15,13,17,19,21,25,27,29,23,22,28,26,24,20,18,16,14,12,10,8,6,4,2])
-	for i in range(outline.size()):
-		var n: int = (i+1)%outline.size()
-		var a_idx: int = outline[i]
-		var b_idx: int = outline[n]
-		_emit_side_quad(st,front[a_idx],front[b_idx],back[a_idx],back[b_idx])
+	_add_arm_from_skeleton(st,-1.0,"ShoulderL","UpperArmL","LowerArmL","HandL")
+	_add_arm_from_skeleton(st,1.0,"ShoulderR","UpperArmR","LowerArmR","HandR")
+	_add_leg_from_skeleton(st,-1.0,"UpperLegL","LowerLegL","FootL")
+	_add_leg_from_skeleton(st,1.0,"UpperLegR","LowerLegR","FootR")
+	_add_head_from_skeleton(st)
 
 	st.generate_normals()
 	return st.commit()
 
-func _emit_indexed_triangle(st: SurfaceTool, data: Array, ia: int, ib: int, ic: int) -> void:
-	_emit_vertex(st,data[ia])
-	_emit_vertex(st,data[ib])
-	_emit_vertex(st,data[ic])
+func _ring(center: Vector3, rx: float, rz: float, bone_a: String, bone_b: String, weight_a: float) -> Array:
+	return [center,rx,rz,bone_a,bone_b,weight_a]
 
-func _emit_side_quad(st: SurfaceTool, fa: Array, fb: Array, ba: Array, bb: Array) -> void:
-	_emit_vertex(st,fa)
-	_emit_vertex(st,ba)
-	_emit_vertex(st,fb)
-	_emit_vertex(st,fb)
-	_emit_vertex(st,ba)
-	_emit_vertex(st,bb)
+func _bone_rest_position(name: String) -> Vector3:
+	return skeleton.get_bone_global_rest(int(bones[name])).origin
+
+func _add_arm_from_skeleton(st: SurfaceTool, side: float, shoulder: String, upper: String, lower: String, hand: String) -> void:
+	var shoulder_p: Vector3 = _bone_rest_position(shoulder)
+	var upper_p: Vector3 = _bone_rest_position(upper)
+	var lower_p: Vector3 = _bone_rest_position(lower)
+	var hand_p: Vector3 = _bone_rest_position(hand)
+	var root_x: float = side*0.145
+	var rings: Array = [
+		_ring(Vector3(root_x,shoulder_p.y-0.015,0),0.070,0.070,"Chest",shoulder,0.72),
+		_ring(Vector3((root_x+upper_p.x)*0.5,upper_p.y,0),0.061,0.061,shoulder,upper,0.55),
+		_ring(Vector3(upper_p.x,upper_p.y-0.055,0),0.054,0.054,upper,shoulder,0.82),
+		_ring(Vector3(lower_p.x,lower_p.y+0.045,0),0.048,0.048,upper,lower,0.55),
+		_ring(Vector3(lower_p.x,lower_p.y-0.035,0),0.044,0.044,lower,upper,0.82),
+		_ring(Vector3(hand_p.x,hand_p.y+0.025,0),0.042,0.042,lower,hand,0.55),
+		_ring(Vector3(hand_p.x,hand_p.y-0.035,0),0.050,0.045,hand,lower,0.95)
+	]
+	_add_bone_chain(st,rings,10,true,true)
+
+func _add_leg_from_skeleton(st: SurfaceTool, side: float, upper: String, lower: String, foot: String) -> void:
+	var upper_p: Vector3 = _bone_rest_position(upper)
+	var lower_p: Vector3 = _bone_rest_position(lower)
+	var foot_p: Vector3 = _bone_rest_position(foot)
+	var rings: Array = [
+		_ring(Vector3(side*0.075,0.43,0),0.078,0.073,"Hips",upper,0.62),
+		_ring(Vector3(upper_p.x,upper_p.y-0.055,0),0.072,0.068,upper,"Hips",0.82),
+		_ring(Vector3(lower_p.x,lower_p.y+0.050,0),0.064,0.060,upper,lower,0.55),
+		_ring(Vector3(lower_p.x,lower_p.y-0.040,0),0.058,0.055,lower,upper,0.82),
+		_ring(Vector3(foot_p.x,foot_p.y+0.045,0),0.052,0.050,lower,foot,0.55),
+		_ring(Vector3(foot_p.x,0.035,0.035),0.058,0.095,foot,lower,0.96)
+	]
+	_add_bone_chain(st,rings,10,true,true)
+
+func _add_head_from_skeleton(st: SurfaceTool) -> void:
+	var head_p: Vector3 = _bone_rest_position("Head")
+	var rings: Array = [
+		_ring(Vector3(0,0.795,0),0.070,0.067,"Chest","Head",0.68),
+		_ring(Vector3(0,head_p.y-0.035,0),0.080,0.074,"Head","Chest",0.58),
+		_ring(Vector3(0,head_p.y+0.035,0),0.125,0.112,"Head","Chest",0.92),
+		_ring(Vector3(0,head_p.y+0.115,0),0.145,0.128,"Head","Chest",0.98),
+		_ring(Vector3(0,head_p.y+0.195,0),0.105,0.095,"Head","Chest",1.0)
+	]
+	_add_bone_chain(st,rings,14,true,true)
+
+func _add_bone_chain(st: SurfaceTool, rings: Array, segments: int, cap_first: bool, cap_last: bool) -> void:
+	var loops: Array = []
+	for data in rings:
+		var loop: Array = []
+		var center: Vector3 = data[0]
+		var rx: float = float(data[1])
+		var rz: float = float(data[2])
+		for s in range(segments):
+			var angle: float = TAU*float(s)/float(segments)
+			loop.append([Vector3(center.x+cos(angle)*rx,center.y,center.z+sin(angle)*rz),data[3],data[4],data[5]])
+		loops.append(loop)
+	for r in range(loops.size()-1):
+		for s in range(segments):
+			var n: int = (s+1)%segments
+			_emit_quad(st,loops[r][s],loops[r+1][s],loops[r][n],loops[r+1][n])
+	if cap_first:
+		_emit_cap(st,loops[0],false)
+	if cap_last:
+		_emit_cap(st,loops[loops.size()-1],true)
+
+func _emit_cap(st: SurfaceTool, loop: Array, top: bool) -> void:
+	var center_pos := Vector3.ZERO
+	for data in loop:
+		center_pos += data[0]
+	center_pos /= float(loop.size())
+	var center: Array = [center_pos,loop[0][1],loop[0][2],loop[0][3]]
+	for s in range(loop.size()):
+		var n: int = (s+1)%loop.size()
+		if top:
+			_emit_vertex(st,center)
+			_emit_vertex(st,loop[s])
+			_emit_vertex(st,loop[n])
+		else:
+			_emit_vertex(st,center)
+			_emit_vertex(st,loop[n])
+			_emit_vertex(st,loop[s])
 
 func _emit_quad(st: SurfaceTool, a: Array, b: Array, c: Array, d: Array) -> void:
 	_emit_vertex(st,a)

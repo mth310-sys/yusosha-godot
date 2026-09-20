@@ -118,27 +118,34 @@ func _add_loft_part(label: String, center: Vector3, silhouette: Array[Vector3], 
 	visual_root.add_child(mesh_instance)
 
 func _loft_mesh(silhouette: Array[Vector3], depth_segments: int) -> ArrayMesh:
-	# Curved front/back surface: every silhouette point is swept through a
-	# half-ellipse in Z instead of using a flat front/back wall.
+	# Build a rounded volume without wrapping the silhouette's last point back
+	# to the first as a side strip. Front/back caps are explicit triangle fans.
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var indices := PackedInt32Array()
 	var ring: int = depth_segments + 1
+	var rows: int = silhouette.size()
 	for s in silhouette:
 		for d in range(ring):
 			var angle: float = -PI * 0.5 + PI * float(d) / float(depth_segments)
 			var z: float = sin(angle) * s.z
-			var bulge: float = cos(angle)
 			vertices.append(Vector3(s.x, s.y, z))
-			var nx: float = sign(s.x) * 0.35
-			normals.append(Vector3(nx, 0.15 * bulge, sin(angle)).normalized())
-	var rows: int = silhouette.size()
-	for i in range(rows):
-		var j: int = (i + 1) % rows
+			var side_x: float = sign(s.x) * 0.35
+			normals.append(Vector3(side_x, 0.12, sin(angle)).normalized())
+	# Connect only neighboring silhouette rows. Closing i=last to i=0 caused
+	# the large black diagonal self-intersection seen in the validation capture.
+	for i in range(rows - 1):
 		for d in range(depth_segments):
 			var a: int = i * ring + d
-			var b: int = j * ring + d
+			var b: int = (i + 1) * ring + d
 			indices.append_array(PackedInt32Array([a, b, a + 1, a + 1, b, b + 1]))
+	# Close the silhouette seam along depth, not across the whole surface.
+	for d in range(depth_segments):
+		var first_a: int = d
+		var first_b: int = d + 1
+		var last_a: int = (rows - 1) * ring + d
+		var last_b: int = last_a + 1
+		indices.append_array(PackedInt32Array([last_a, first_a, last_b, last_b, first_a, first_b]))
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices

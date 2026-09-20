@@ -164,8 +164,8 @@ func _build_character() -> void:
 	_add_upper_arm("UpperArmR", arm_r)
 	_add_forearm("ForearmLMesh", forearm_l_idx)
 	_add_forearm("ForearmRMesh", forearm_r_idx)
-	_add_fixed_sleeve("SleeveL", Vector3(-0.190, 0.745, 0), -7.0)
-	_add_fixed_sleeve("SleeveR", Vector3(0.190, 0.745, 0), 7.0)
+	_add_fixed_sleeve("SleeveL", Vector3(-0.202, 0.745, 0), -7.0)
+	_add_fixed_sleeve("SleeveR", Vector3(0.202, 0.745, 0), 7.0)
 	_add_hand("HandL", forearm_l_idx, Vector3(0, -0.155, 0))
 	_add_hand("HandR", forearm_r_idx, Vector3(0, -0.155, 0))
 	_add_thigh("ThighL", leg_l)
@@ -188,9 +188,9 @@ func _shirt_mesh() -> ArrayMesh:
 	return _fixed_ring_mesh([
 		# Neck line starts narrow, then the shirt itself forms the shoulders.
 		Vector3(0.118, 0.225, 0.098),
-		Vector3(0.168, 0.205, 0.112),
-		Vector3(0.205, 0.160, 0.126),
-		Vector3(0.196, 0.105, 0.130),
+		Vector3(0.178, 0.205, 0.112),
+		Vector3(0.218, 0.160, 0.126),
+		Vector3(0.204, 0.105, 0.130),
 		Vector3(0.180, 0.020, 0.124),
 		Vector3(0.165, -0.190, 0.114),
 		Vector3(0.168, -0.220, 0.116)

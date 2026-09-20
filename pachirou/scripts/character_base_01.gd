@@ -30,6 +30,7 @@ func _build_body() -> void:
 	_tapered_cylinder("ShirtHem", 0.350, 0.365, 0.105, Vector3(0,0.555,0), SHIRT, visual, 24)
 	_sphere_child("SleeveL", Vector3(0.135,0.155,0.135), Vector3(-0.370,1.035,0), SHIRT, visual, 20, 10)
 	_sphere_child("SleeveR", Vector3(0.135,0.155,0.135), Vector3(0.370,1.035,0), SHIRT, visual, 20, 10)
+	_torus_child("Collar", 0.115, 0.018, Vector3(0,1.225,0.015), SHIRT, visual)
 
 	# Arms / mitten hands. Pivots are retained for animation.
 	_make_arm("ArmLPivot", -0.415, true)
@@ -45,10 +46,9 @@ func _build_body() -> void:
 	# Short hair: one clean cap with a restrained modular fringe.
 	_sphere_child("HairCap", Vector3(0.442,0.215,0.365), Vector3(0,1.680,-0.025), HAIR, visual, 32, 16)
 	_sphere_child("HairBack", Vector3(0.390,0.135,0.080), Vector3(0,1.585,-0.325), HAIR, visual, 24, 12)
-	for i in range(5):
-		var fx := -0.22 + float(i) * 0.11
-		var fy := 1.590 + (0.018 if i % 2 == 0 else 0.0)
-		_sphere_child("Fringe%d" % i, Vector3(0.075,0.060,0.030), Vector3(fx,fy,0.350), HAIR, visual, 18, 9)
+	_prism_child("FringeL", Vector3(0.22,0.13,0.08), Vector3(-0.19,1.605,0.345), Vector3(-8,0,-12), HAIR, visual)
+	_prism_child("FringeC", Vector3(0.24,0.14,0.08), Vector3(0,1.595,0.352), Vector3(-10,0,0), HAIR, visual)
+	_prism_child("FringeR", Vector3(0.22,0.13,0.08), Vector3(0.19,1.605,0.345), Vector3(-8,0,12), HAIR, visual)
 
 func _make_leg(pivot_name:String, x:float) -> void:
 	var visual := get_node_or_null("Visual") as Node3D
@@ -61,8 +61,8 @@ func _make_leg(pivot_name:String, x:float) -> void:
 	_tapered_cylinder("LegL" if x < 0.0 else "LegR", 0.105, 0.125, 0.52, Vector3(0,-0.27,0), PANTS, pivot, 18)
 	# Low-cut sneaker: rounded upper, toe and thin sole.
 	_box_child("Sole", Vector3(0.245,0.045,0.350), Vector3(0,-0.555,0.070), SOLE, pivot)
-	_box_child("ShoeUpper", Vector3(0.215,0.095,0.285), Vector3(0,-0.500,0.055), SHOES, pivot)
-	_sphere_child("Toe", Vector3(0.108,0.065,0.115), Vector3(0,-0.500,0.175), SHOES, pivot, 16, 8)
+	_sphere_child("ShoeUpper", Vector3(0.118,0.080,0.175), Vector3(0,-0.500,0.075), SHOES, pivot, 20, 10)
+	_sphere_child("Toe", Vector3(0.115,0.070,0.120), Vector3(0,-0.505,0.185), SHOES, pivot, 20, 10)
 
 func _make_arm(pivot_name:String, x:float, left:bool) -> void:
 	var visual := get_node_or_null("Visual") as Node3D
@@ -81,6 +81,31 @@ func _material(c:Color) -> StandardMaterial3D:
 	m.albedo_color = c
 	m.roughness = 0.88
 	return m
+
+func _prism_child(n:String,s:Vector3,p:Vector3,rot:Vector3,c:Color,parent:Node3D) -> void:
+	var node := MeshInstance3D.new()
+	node.name = n
+	var mesh := PrismMesh.new()
+	mesh.size = s
+	node.mesh = mesh
+	node.position = p
+	node.rotation_degrees = rot
+	node.material_override = _material(c)
+	parent.add_child(node)
+
+func _torus_child(n:String,ring_r:float,pipe_r:float,p:Vector3,c:Color,parent:Node3D) -> void:
+	var node := MeshInstance3D.new()
+	node.name = n
+	var mesh := TorusMesh.new()
+	mesh.inner_radius = ring_r - pipe_r
+	mesh.outer_radius = ring_r + pipe_r
+	mesh.rings = 24
+	mesh.ring_segments = 12
+	node.mesh = mesh
+	node.position = p
+	node.rotation_degrees = Vector3(90,0,0)
+	node.material_override = _material(c)
+	parent.add_child(node)
 
 func _sphere_child(n:String,s:Vector3,p:Vector3,c:Color,parent:Node3D,segments:int=20,rings:int=10) -> void:
 	var node := MeshInstance3D.new()

@@ -12,6 +12,11 @@ const ROAD_MARK_COLOR := Color(0.95, 0.82, 0.30, 0.92)
 const LOT_COLOR := Color(0.20, 0.62, 0.92, 0.26)
 const LOT_BORDER_COLOR := Color(0.38, 0.78, 1.0, 0.82)
 const LOT_PREVIEW_COLOR := Color(0.30, 0.78, 1.0, 0.18)
+const BUILDING_COLOR := Color(0.72, 0.36, 0.20, 0.88)
+const BUILDING_PREVIEW_OK := Color(0.25, 0.90, 0.45, 0.38)
+const BUILDING_PREVIEW_BAD := Color(0.95, 0.25, 0.25, 0.38)
+const BUILDING_WIDTH := 6
+const BUILDING_HEIGHT := 5
 
 @onready var camera: Camera2D = $Camera2D
 @onready var tile_info: Label = $UI/TilePanel/Margin/Text
@@ -28,6 +33,8 @@ var demolishing := false
 var lot_mode := false
 var lot_start := Vector2i(-1, -1)
 var next_lot_id := 1
+var building_mode := false
+var next_building_id := 1
 
 func _ready() -> void:
 	build_map("land")
@@ -49,11 +56,15 @@ func _draw() -> void:
 			if int(cell.get("lot_id", 0)) > 0:
 				draw_colored_polygon(points, LOT_COLOR)
 				draw_polyline(points + PackedVector2Array([points[0]]), LOT_BORDER_COLOR, 1.4, true)
+			if str(cell.get("object_id", "")).begins_with("hall_"):
+				draw_colored_polygon(points, BUILDING_COLOR)
 			if cell["type"] == "road":
 				_draw_road_connections(Vector2i(x, y))
 
 	if lot_mode and is_valid_tile(lot_start) and is_valid_tile(hovered_tile):
 		_draw_lot_preview(lot_start, hovered_tile)
+	if building_mode and is_valid_tile(hovered_tile):
+		_draw_building_preview(hovered_tile)
 
 	if is_valid_tile(hovered_tile) and hovered_tile != selected_tile:
 		draw_colored_polygon(tile_points(hovered_tile.x, hovered_tile.y), HOVER_COLOR)
@@ -113,8 +124,21 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_B:
+			building_mode = true
+			lot_mode = false
+			road_mode = false
+			demolition_mode = false
+			painting_road = false
+			demolishing = false
+			lot_start = Vector2i(-1, -1)
+			_update_mode_info()
+			_update_tile_info()
+			queue_redraw()
+			return
 		if event.keycode == KEY_L:
 			lot_mode = true
+			building_mode = false
 			road_mode = false
 			demolition_mode = false
 			painting_road = false
@@ -127,6 +151,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_R:
 			road_mode = true
 			lot_mode = false
+			building_mode = false
 			lot_start = Vector2i(-1, -1)
 			demolition_mode = false
 			painting_road = false
@@ -138,6 +163,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_X:
 			demolition_mode = true
 			lot_mode = false
+			building_mode = false
 			lot_start = Vector2i(-1, -1)
 			road_mode = false
 			painting_road = false
@@ -150,6 +176,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			road_mode = false
 			demolition_mode = false
 			lot_mode = false
+			building_mode = false
 			lot_start = Vector2i(-1, -1)
 			painting_road = false
 			demolishing = false
@@ -163,7 +190,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			dragging = event.pressed
 			last_mouse_position = event.position
 		elif event.button_index == MOUSE_BUTTON_LEFT:
-			if lot_mode and event.pressed:
+			if building_mode and event.pressed:
+				_place_building(_tile_under_mouse())
+			elif lot_mode and event.pressed:
 				_handle_lot_click(_tile_under_mouse())
 			elif road_mode:
 				painting_road = event.pressed
@@ -274,15 +303,60 @@ func _create_lot(a: Vector2i, b: Vector2i) -> void:
 	if placed:
 		next_lot_id += 1
 
+func _building_tiles(origin: Vector2i) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for y in range(BUILDING_HEIGHT):
+		for x in range(BUILDING_WIDTH):
+			result.append(origin + Vector2i(x, y))
+	return result
+
+func _can_place_building(origin: Vector2i) -> bool:
+	var origin_cell: Dictionary = get_cell(origin)
+	if origin_cell.is_empty():
+		return false
+	var required_lot_id: int = int(origin_cell.get("lot_id", 0))
+	if required_lot_id <= 0:
+		return false
+	for tile in _building_tiles(origin):
+		if not is_valid_tile(tile):
+			return false
+		var cell: Dictionary = get_cell(tile)
+		if int(cell.get("lot_id", 0)) != required_lot_id:
+			return false
+		if cell["type"] == "road" or bool(cell.get("occupied", false)):
+			return false
+	return true
+
+func _draw_building_preview(origin: Vector2i) -> void:
+	var preview_color: Color = BUILDING_PREVIEW_OK if _can_place_building(origin) else BUILDING_PREVIEW_BAD
+	for tile in _building_tiles(origin):
+		if is_valid_tile(tile):
+			draw_colored_polygon(tile_points(tile.x, tile.y), preview_color)
+
+func _place_building(origin: Vector2i) -> void:
+	if not _can_place_building(origin):
+		return
+	var building_id := "hall_%d" % next_building_id
+	for tile in _building_tiles(origin):
+		var cell: Dictionary = get_cell(tile)
+		cell["occupied"] = true
+		cell["object_id"] = building_id
+	next_building_id += 1
+	selected_tile = origin
+	_update_tile_info()
+	queue_redraw()
+
 func _update_mode_info() -> void:
-	if lot_mode:
+	if building_mode:
+		mode_info.text = "建物モード: ON\n仮ホール 6×5 / 左クリック: 配置 / Esc: 終了"
+	elif lot_mode:
 		mode_info.text = "敷地モード: ON\n始点 → 終点をクリック / Esc: 終了"
 	elif road_mode:
 		mode_info.text = "道路モード: ON\n左クリック/ドラッグ: 敷設 / X: 撤去 / Esc: 終了"
 	elif demolition_mode:
 		mode_info.text = "撤去モード: ON\n左クリック/ドラッグ: 道路撤去 / R: 敷設 / Esc: 終了"
 	else:
-		mode_info.text = "通常モード\nR: 道路敷設 / X: 道路撤去 / L: 敷地"
+		mode_info.text = "通常モード\nR: 道路 / X: 撤去 / L: 敷地 / B: 建物"
 
 func _tile_under_mouse() -> Vector2i:
 	return world_to_grid(get_global_mouse_position())
@@ -304,7 +378,9 @@ func _update_tile_info() -> void:
 		else:
 			tile_info.text = "選択マス: (%d, %d)\n種別: %s / 使用中: %s" % [selected_tile.x, selected_tile.y, cell["type"], "はい" if cell["occupied"] else "いいえ"]
 	elif is_valid_tile(hovered_tile):
-		if lot_mode:
+		if building_mode:
+			tile_info.text = "カーソル: (%d, %d)\n仮ホール 6×5: %s" % [hovered_tile.x, hovered_tile.y, "配置可能" if _can_place_building(hovered_tile) else "配置不可"]
+		elif lot_mode:
 			tile_info.text = "カーソル: (%d, %d)\n%s" % [hovered_tile.x, hovered_tile.y, "終点を選択" if is_valid_tile(lot_start) else "敷地の始点を選択"]
 		elif road_mode:
 			tile_info.text = "カーソル: (%d, %d)\n道路を敷設できます" % [hovered_tile.x, hovered_tile.y]
@@ -313,7 +389,9 @@ func _update_tile_info() -> void:
 		else:
 			tile_info.text = "カーソル: (%d, %d)\n左クリックで選択" % [hovered_tile.x, hovered_tile.y]
 	else:
-		if lot_mode:
+		if building_mode:
+			tile_info.text = "建物モード中"
+		elif lot_mode:
 			tile_info.text = "敷地モード中"
 		elif road_mode:
 			tile_info.text = "道路モード中"

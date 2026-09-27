@@ -24,12 +24,20 @@ var entrance_tiles: Array[Vector2i] = []
 var island_mode := false
 var hovered_tile := Vector2i(-1, -1)
 var next_island_id := 1
+var island_rotated := false
+var islands: Dictionary = {}
 
 func _ready() -> void:
 	map_width = 32
 	map_height = 24
-	build_map("floor")
-	_build_shell()
+	var saved_hall: Dictionary = GameState.get_hall(GameState.selected_building_id)
+	if saved_hall.is_empty():
+		build_map("floor")
+		_build_shell()
+	else:
+		map_data = saved_hall["map_data"].duplicate(true)
+		islands = saved_hall["islands"].duplicate(true)
+		next_island_id = int(saved_hall["next_island_id"])
 	camera.position = Vector2(0.0, map_height * tile_height * 0.5)
 	camera.zoom = Vector2(0.9, 0.9)
 	_update_info()
@@ -97,10 +105,14 @@ func _draw_wall_tile(tile: Vector2i) -> void:
 	draw_colored_polygon(top, WALL_TOP)
 	draw_polyline(top + PackedVector2Array([top[0]]), BORDER_COLOR, 1.0, true)
 
+func _island_size() -> Vector2i:
+	return Vector2i(ISLAND_HEIGHT, ISLAND_WIDTH) if island_rotated else Vector2i(ISLAND_WIDTH, ISLAND_HEIGHT)
+
 func _island_tiles(origin: Vector2i) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
-	for y in range(ISLAND_HEIGHT):
-		for x in range(ISLAND_WIDTH):
+	var size: Vector2i = _island_size()
+	for y in range(size.y):
+		for x in range(size.x):
 			result.append(origin + Vector2i(x, y))
 	return result
 
@@ -123,6 +135,13 @@ func _place_island(origin: Vector2i) -> void:
 	if not _can_place_island(origin):
 		return
 	var island_id := "island_%d" % next_island_id
+	var size: Vector2i = _island_size()
+	islands[island_id] = {
+		"id": island_id,
+		"origin": origin,
+		"size": size,
+		"direction": "vertical" if island_rotated else "horizontal"
+	}
 	for tile in _island_tiles(origin):
 		var cell: Dictionary = get_cell(tile)
 		cell["type"] = "island"
@@ -139,6 +158,11 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if island_mode and (event.keycode == KEY_Q or event.keycode == KEY_E):
+			island_rotated = not island_rotated
+			_update_info()
+			queue_redraw()
+			return
 		if event.keycode == KEY_I:
 			island_mode = true
 			_update_info()
@@ -150,6 +174,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_update_info()
 				queue_redraw()
 			else:
+				GameState.store_hall(GameState.selected_building_id, map_data, islands, next_island_id)
 				get_tree().change_scene_to_file("res://main.tscn")
 			return
 
@@ -183,9 +208,10 @@ func _refresh_hover() -> void:
 
 func _update_info() -> void:
 	if island_mode:
-		info_text.text = "遊創舎 HALL MAP 02\n島配置モード: I\n6×2マス / 左クリック: 配置 / Esc: 終了"
+		var size: Vector2i = _island_size()
+		info_text.text = "遊創舎 HALL MAP 03\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 02\n店内: 32 × 24 マス\nI: 島配置 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 03\n店内: 32 × 24 マス\nI: 島配置 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

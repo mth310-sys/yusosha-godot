@@ -125,6 +125,9 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ENTER:
+			_enter_selected_building()
+			return
 		if event.keycode == KEY_B:
 			building_mode = true
 			lot_mode = false
@@ -358,6 +361,14 @@ func _place_building(origin: Vector2i) -> void:
 	_update_tile_info()
 	queue_redraw()
 
+func _enter_selected_building() -> void:
+	if not is_valid_tile(selected_tile):
+		return
+	var object_id: String = str(get_cell(selected_tile).get("object_id", ""))
+	if not buildings.has(object_id):
+		return
+	get_tree().change_scene_to_file("res://hall.tscn")
+
 func _update_mode_info() -> void:
 	if building_mode:
 		mode_info.text = "建物モード: ON\n仮ホール 6×5 / 左クリック: 配置 / Esc: 終了"
@@ -391,7 +402,7 @@ func _update_tile_info() -> void:
 			var object_id: String = str(cell.get("object_id", ""))
 			if buildings.has(object_id):
 				var building: Dictionary = buildings[object_id]
-				tile_info.text = "%s\n建物ID: %s / 敷地 #%d" % [building["name"], building["id"], building["lot_id"]]
+				tile_info.text = "%s\n建物ID: %s / Enter: 店内へ" % [building["name"], building["id"]]
 			else:
 				tile_info.text = "選択マス: (%d, %d)\n種別: %s / 使用中: %s" % [selected_tile.x, selected_tile.y, cell["type"], "はい" if cell["occupied"] else "いいえ"]
 	elif is_valid_tile(hovered_tile):

@@ -9,6 +9,9 @@ const SELECT_COLOR := Color(1.0, 0.78, 0.18, 0.48)
 const ROAD_COLOR := Color("4b5058")
 const ROAD_GRID_COLOR := Color(0.72, 0.74, 0.78, 0.45)
 const ROAD_MARK_COLOR := Color(0.95, 0.82, 0.30, 0.92)
+const LOT_COLOR := Color(0.20, 0.62, 0.92, 0.26)
+const LOT_BORDER_COLOR := Color(0.38, 0.78, 1.0, 0.82)
+const LOT_PREVIEW_COLOR := Color(0.30, 0.78, 1.0, 0.18)
 
 @onready var camera: Camera2D = $Camera2D
 @onready var tile_info: Label = $UI/TilePanel/Margin/Text
@@ -22,6 +25,9 @@ var road_mode := false
 var painting_road := false
 var demolition_mode := false
 var demolishing := false
+var lot_mode := false
+var lot_start := Vector2i(-1, -1)
+var next_lot_id := 1
 
 func _ready() -> void:
 	build_map("land")
@@ -40,8 +46,14 @@ func _draw() -> void:
 			var line_color: Color = ROAD_GRID_COLOR if cell["type"] == "road" else GRID_COLOR
 			draw_colored_polygon(points, tile_color)
 			draw_polyline(points + PackedVector2Array([points[0]]), line_color, 1.0, true)
+			if int(cell.get("lot_id", 0)) > 0:
+				draw_colored_polygon(points, LOT_COLOR)
+				draw_polyline(points + PackedVector2Array([points[0]]), LOT_BORDER_COLOR, 1.4, true)
 			if cell["type"] == "road":
 				_draw_road_connections(Vector2i(x, y))
+
+	if lot_mode and is_valid_tile(lot_start) and is_valid_tile(hovered_tile):
+		_draw_lot_preview(lot_start, hovered_tile)
 
 	if is_valid_tile(hovered_tile) and hovered_tile != selected_tile:
 		draw_colored_polygon(tile_points(hovered_tile.x, hovered_tile.y), HOVER_COLOR)
@@ -101,8 +113,23 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_L:
+			lot_mode = true
+			road_mode = false
+			demolition_mode = false
+			lot_mode = false
+			lot_start = Vector2i(-1, -1)
+			painting_road = false
+			demolishing = false
+			lot_start = Vector2i(-1, -1)
+			_update_mode_info()
+			_update_tile_info()
+			queue_redraw()
+			return
 		if event.keycode == KEY_R:
 			road_mode = true
+			lot_mode = false
+			lot_start = Vector2i(-1, -1)
 			demolition_mode = false
 			painting_road = false
 			demolishing = false
@@ -112,6 +139,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if event.keycode == KEY_X:
 			demolition_mode = true
+			lot_mode = false
+			lot_start = Vector2i(-1, -1)
 			road_mode = false
 			painting_road = false
 			demolishing = false
@@ -134,7 +163,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			dragging = event.pressed
 			last_mouse_position = event.position
 		elif event.button_index == MOUSE_BUTTON_LEFT:
-			if road_mode:
+			if lot_mode and event.pressed:
+				_handle_lot_click(_tile_under_mouse())
+			elif road_mode:
 				painting_road = event.pressed
 				if event.pressed:
 					_paint_road(_tile_under_mouse())
@@ -202,8 +233,51 @@ func _update_road_shapes_around(tile: Vector2i) -> void:
 		if _is_road(current):
 			map_data[current.y][current.x]["road_shape"] = _road_shape(current)
 
+func _draw_lot_preview(a: Vector2i, b: Vector2i) -> void:
+	var min_x: int = mini(a.x, b.x)
+	var max_x: int = maxi(a.x, b.x)
+	var min_y: int = mini(a.y, b.y)
+	var max_y: int = maxi(a.y, b.y)
+	for y in range(min_y, max_y + 1):
+		for x in range(min_x, max_x + 1):
+			var tile := Vector2i(x, y)
+			if is_valid_tile(tile) and not _is_road(tile):
+				draw_colored_polygon(tile_points(x, y), LOT_PREVIEW_COLOR)
+
+func _handle_lot_click(tile: Vector2i) -> void:
+	if not is_valid_tile(tile) or _is_road(tile):
+		return
+	if not is_valid_tile(lot_start):
+		lot_start = tile
+		selected_tile = tile
+		_update_tile_info()
+		queue_redraw()
+		return
+	_create_lot(lot_start, tile)
+	lot_start = Vector2i(-1, -1)
+	selected_tile = tile
+	_update_tile_info()
+	queue_redraw()
+
+func _create_lot(a: Vector2i, b: Vector2i) -> void:
+	var min_x: int = mini(a.x, b.x)
+	var max_x: int = maxi(a.x, b.x)
+	var min_y: int = mini(a.y, b.y)
+	var max_y: int = maxi(a.y, b.y)
+	var placed := false
+	for y in range(min_y, max_y + 1):
+		for x in range(min_x, max_x + 1):
+			var tile := Vector2i(x, y)
+			if not _is_road(tile):
+				map_data[y][x]["lot_id"] = next_lot_id
+				placed = true
+	if placed:
+		next_lot_id += 1
+
 func _update_mode_info() -> void:
-	if road_mode:
+	if lot_mode:
+		mode_info.text = "敷地モード: ON\\n始点 → 終点をクリック / Esc: 終了"
+	elif road_mode:
 		mode_info.text = "道路モード: ON\n左クリック/ドラッグ: 敷設 / X: 撤去 / Esc: 終了"
 	elif demolition_mode:
 		mode_info.text = "撤去モード: ON\n左クリック/ドラッグ: 道路撤去 / R: 敷設 / Esc: 終了"
@@ -230,14 +304,18 @@ func _update_tile_info() -> void:
 		else:
 			tile_info.text = "選択マス: (%d, %d)\n種別: %s / 使用中: %s" % [selected_tile.x, selected_tile.y, cell["type"], "はい" if cell["occupied"] else "いいえ"]
 	elif is_valid_tile(hovered_tile):
-		if road_mode:
+		if lot_mode:
+			tile_info.text = "カーソル: (%d, %d)\\n%s" % [hovered_tile.x, hovered_tile.y, "終点を選択" if is_valid_tile(lot_start) else "敷地の始点を選択"]
+		elif road_mode:
 			tile_info.text = "カーソル: (%d, %d)\n道路を敷設できます" % [hovered_tile.x, hovered_tile.y]
 		elif demolition_mode:
 			tile_info.text = "カーソル: (%d, %d)\n道路を撤去できます" % [hovered_tile.x, hovered_tile.y]
 		else:
 			tile_info.text = "カーソル: (%d, %d)\n左クリックで選択" % [hovered_tile.x, hovered_tile.y]
 	else:
-		if road_mode:
+		if lot_mode:
+			tile_info.text = "敷地モード中"
+		elif road_mode:
 			tile_info.text = "道路モード中"
 		elif demolition_mode:
 			tile_info.text = "撤去モード中"

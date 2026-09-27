@@ -14,6 +14,8 @@ const ISLAND_PREVIEW_OK := Color(0.25, 0.90, 0.45, 0.38)
 const ISLAND_PREVIEW_BAD := Color(0.95, 0.25, 0.25, 0.38)
 const MACHINE_SLOT_EMPTY := Color("f4d35e")
 const MACHINE_SLOT_EDGE := Color("fff2b2")
+const MACHINE_BODY := Color("4056a1")
+const MACHINE_SCREEN := Color("9ee7ff")
 const ISLAND_WIDTH := 6
 const ISLAND_HEIGHT := 2
 
@@ -28,6 +30,9 @@ var hovered_tile := Vector2i(-1, -1)
 var next_island_id := 1
 var island_rotated := false
 var islands: Dictionary = {}
+var machine_mode := false
+var machines: Dictionary = {}
+var next_machine_id := 1
 
 func _ready() -> void:
 	map_width = 32
@@ -40,6 +45,8 @@ func _ready() -> void:
 		map_data = saved_hall["map_data"].duplicate(true)
 		islands = saved_hall["islands"].duplicate(true)
 		next_island_id = int(saved_hall["next_island_id"])
+		machines = saved_hall.get("machines", {}).duplicate(true)
+		next_machine_id = int(saved_hall.get("next_machine_id", 1))
 	camera.position = Vector2(0.0, map_height * tile_height * 0.5)
 	camera.zoom = Vector2(0.9, 0.9)
 	_update_info()
@@ -88,6 +95,8 @@ func _draw() -> void:
 
 	for island_id in islands:
 		_draw_machine_slots(islands[island_id])
+	for machine_id in machines:
+		_draw_machine(machines[machine_id])
 
 	if island_mode and is_valid_tile(hovered_tile):
 		_draw_island_preview(hovered_tile)
@@ -148,10 +157,52 @@ func _build_machine_slots(origin: Vector2i, rotated: bool, island_id: String) ->
 func _draw_machine_slots(island: Dictionary) -> void:
 	var slots: Array = island.get("machine_slots", [])
 	for slot in slots:
+		if str(slot.get("machine_id", "")) != "":
+			continue
 		var tile: Vector2i = slot["position"]
 		var center: Vector2 = grid_to_world(tile.x, tile.y)
 		draw_circle(center, 4.5, MACHINE_SLOT_EMPTY)
 		draw_circle(center, 4.5, MACHINE_SLOT_EDGE, false, 1.2, true)
+
+func _draw_machine(machine: Dictionary) -> void:
+	var tile: Vector2i = machine["position"]
+	var center: Vector2 = grid_to_world(tile.x, tile.y)
+	var body := Rect2(center - Vector2(7.0, 12.0), Vector2(14.0, 20.0))
+	draw_rect(body, MACHINE_BODY)
+	draw_rect(Rect2(center - Vector2(4.5, 8.5), Vector2(9.0, 6.0)), MACHINE_SCREEN)
+	draw_string(ThemeDB.fallback_font, center + Vector2(-5.0, 5.0), str(machine["number"]), HORIZONTAL_ALIGNMENT_CENTER, 10.0, 8, Color.WHITE)
+
+func _find_empty_slot_at(tile: Vector2i) -> Dictionary:
+	for island_id in islands:
+		var slots: Array = islands[island_id].get("machine_slots", [])
+		for slot in slots:
+			if slot["position"] == tile and str(slot.get("machine_id", "")) == "":
+				return {"island_id": island_id, "slot_id": slot["slot_id"]}
+	return {}
+
+func _place_machine(tile: Vector2i) -> void:
+	var found: Dictionary = _find_empty_slot_at(tile)
+	if found.is_empty():
+		return
+	var island_id: String = found["island_id"]
+	var slot_id: String = found["slot_id"]
+	var slots: Array = islands[island_id]["machine_slots"]
+	for slot in slots:
+		if slot["slot_id"] == slot_id:
+			var machine_id := "machine_%d" % next_machine_id
+			slot["machine_id"] = machine_id
+			machines[machine_id] = {
+				"id": machine_id,
+				"number": next_machine_id,
+				"type": "prototype_slot",
+				"island_id": island_id,
+				"slot_id": slot_id,
+				"position": slot["position"],
+				"facing": slot["facing"]
+			}
+			next_machine_id += 1
+			queue_redraw()
+			return
 
 func _island_size() -> Vector2i:
 	return Vector2i(ISLAND_HEIGHT, ISLAND_WIDTH) if island_rotated else Vector2i(ISLAND_WIDTH, ISLAND_HEIGHT)
@@ -212,18 +263,26 @@ func _unhandled_input(event: InputEvent) -> void:
 			_update_info()
 			queue_redraw()
 			return
+		if event.keycode == KEY_S:
+			machine_mode = true
+			island_mode = false
+			_update_info()
+			queue_redraw()
+			return
 		if event.keycode == KEY_I:
 			island_mode = true
+			machine_mode = false
 			_update_info()
 			queue_redraw()
 			return
 		if event.keycode == KEY_ESCAPE:
-			if island_mode:
+			if island_mode or machine_mode:
 				island_mode = false
+				machine_mode = false
 				_update_info()
 				queue_redraw()
 			else:
-				GameState.store_hall(GameState.selected_building_id, map_data, islands, next_island_id)
+				GameState.store_hall(GameState.selected_building_id, map_data, islands, next_island_id, machines, next_machine_id)
 				get_tree().change_scene_to_file("res://main.tscn")
 			return
 
@@ -233,6 +292,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			last_mouse_position = event.position
 		elif event.button_index == MOUSE_BUTTON_LEFT and event.pressed and island_mode:
 			_place_island(_tile_under_mouse())
+		elif event.button_index == MOUSE_BUTTON_LEFT and event.pressed and machine_mode:
+			_place_machine(_tile_under_mouse())
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			_set_zoom(camera.zoom.x * 1.12)
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
@@ -256,11 +317,13 @@ func _refresh_hover() -> void:
 		queue_redraw()
 
 func _update_info() -> void:
-	if island_mode:
+	if machine_mode:
+		info_text.text = "遊創舎 HALL MAP 05\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
+	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 04\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 05\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 03\n店内: 32 × 24 マス\nI: 島配置 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 05\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

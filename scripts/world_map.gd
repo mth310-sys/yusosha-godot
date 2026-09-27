@@ -12,7 +12,7 @@ const BORDER_COLOR := Color("d9e7b5")
 const HOVER_COLOR := Color(1.0, 1.0, 1.0, 0.22)
 const SELECT_COLOR := Color(1.0, 0.78, 0.18, 0.48)
 const ROAD_COLOR := Color("4b5058")
-const ROAD_GRID_COLOR := Color(0.72, 0.74, 0.78, 0.45)
+const ROAD_GRID_COLOR := Color(0.72, 0.74, 0.78, 0.45)\nconst ROAD_MARK_COLOR := Color(0.95, 0.82, 0.30, 0.92)
 
 @onready var camera: Camera2D = $Camera2D
 @onready var tile_info: Label = $UI/TilePanel/Margin/Text
@@ -93,6 +93,53 @@ func _draw() -> void:
 	var left: Vector2 = grid_to_world(0, MAP_HEIGHT - 1) + Vector2(-TILE_WIDTH * 0.5, 0.0)
 	draw_polyline(PackedVector2Array([top, right, bottom, left, top]), BORDER_COLOR, 3.0, true)
 
+func _is_road(tile: Vector2i) -> bool:
+	if not is_valid_tile(tile):
+		return false
+	return map_data[tile.y][tile.x]["type"] == "road"
+
+func _road_connections(tile: Vector2i) -> Array[Vector2i]:
+	var connections: Array[Vector2i] = []
+	var directions: Array[Vector2i] = [
+		Vector2i(0, -1),
+		Vector2i(1, 0),
+		Vector2i(0, 1),
+		Vector2i(-1, 0)
+	]
+	for direction in directions:
+		if _is_road(tile + direction):
+			connections.append(direction)
+	return connections
+
+func _road_shape(tile: Vector2i) -> String:
+	var connections: Array[Vector2i] = _road_connections(tile)
+	var count: int = connections.size()
+	if count == 0:
+		return "isolated"
+	if count == 1:
+		return "dead_end"
+	if count == 4:
+		return "cross"
+	if count == 3:
+		return "t_junction"
+	var a: Vector2i = connections[0]
+	var b: Vector2i = connections[1]
+	if a + b == Vector2i.ZERO:
+		return "straight"
+	return "corner"
+
+func _draw_road_connections(tile: Vector2i) -> void:
+	var center: Vector2 = grid_to_world(tile.x, tile.y)
+	var connections: Array[Vector2i] = _road_connections(tile)
+	if connections.is_empty():
+		draw_circle(center, 3.5, ROAD_MARK_COLOR)
+		return
+	for direction in connections:
+		var neighbor_center: Vector2 = grid_to_world(tile.x + direction.x, tile.y + direction.y)
+		var edge: Vector2 = center.lerp(neighbor_center, 0.5)
+		draw_line(center, edge, ROAD_MARK_COLOR, 2.2, true)
+	draw_circle(center, 2.8, ROAD_MARK_COLOR)
+
 func _process(delta: float) -> void:
 	var direction: Vector2 = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	if direction != Vector2.ZERO:
@@ -158,6 +205,18 @@ func _paint_road(tile: Vector2i) -> void:
 	_update_tile_info()
 	queue_redraw()
 
+func _update_road_shapes_around(tile: Vector2i) -> void:
+	var affected: Array[Vector2i] = [
+		tile,
+		tile + Vector2i(0, -1),
+		tile + Vector2i(1, 0),
+		tile + Vector2i(0, 1),
+		tile + Vector2i(-1, 0)
+	]
+	for current in affected:
+		if _is_road(current):
+			map_data[current.y][current.x]["road_shape"] = _road_shape(current)
+
 func _update_mode_info() -> void:
 	if road_mode:
 		mode_info.text = "道路モード: ON\n左クリック/ドラッグ: 敷設  /  Esc: 終了"
@@ -179,12 +238,19 @@ func _refresh_hover() -> void:
 func _update_tile_info() -> void:
 	if is_valid_tile(selected_tile):
 		var cell: Dictionary = map_data[selected_tile.y][selected_tile.x]
-		tile_info.text = "選択マス: (%d, %d)\n種別: %s / 使用中: %s" % [
-			selected_tile.x,
-			selected_tile.y,
-			cell["type"],
-			"はい" if cell["occupied"] else "いいえ"
-		]
+		if cell["type"] == "road":
+			tile_info.text = "選択マス: (%d, %d)\n種別: road / 形状: %s" % [
+				selected_tile.x,
+				selected_tile.y,
+				cell.get("road_shape", _road_shape(selected_tile))
+			]
+		else:
+			tile_info.text = "選択マス: (%d, %d)\n種別: %s / 使用中: %s" % [
+				selected_tile.x,
+				selected_tile.y,
+				cell["type"],
+				"はい" if cell["occupied"] else "いいえ"
+			]
 	elif is_valid_tile(hovered_tile):
 		if road_mode:
 			tile_info.text = "カーソル: (%d, %d)\n道路を敷設できます" % [hovered_tile.x, hovered_tile.y]

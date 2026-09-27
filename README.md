@@ -1,31 +1,33 @@
-# Yusosha — Godot新規プロジェクト
+# Yusosha — Godot Restart
 
-Godot 4.7.2 / GDScript / Compatibility。main.tscnは空の2Dシーンです。
-旧プロジェクトのコードや素材は含みません。F6/F5で空の画面が開けば正常です。
+Godot 4.7.2 / GDScript / GL Compatibility を基準とする新規プロジェクトです。
+旧Godotプロジェクトは持ち込まず、必要な資産だけを後から選別して再利用します。
 
-## 作業の流れ
+## 開発経路
 
-1. ブラウザ版ChatGPTに、変更したい内容と現在の関連ファイルを渡します。
-2. ChatGPTから、保存先の相対パスとファイル全文を受け取ります。
-3. ブラウザ版GitHubで該当ファイルを編集、またはAdd fileからアップロードし、mainへ保存します。
-4. PCのGodotを閉じ、デスクトップの「Yusosha 更新してGodotを開く」を実行します。
-5. GodotでF5を押して動作確認します。
+GitHubを正本とします。
 
-ブラウザ版ChatGPTにはPCのファイルが自動共有されません。必要なファイルを添付してください。
-GitHubへの保存も、自動連携を設定していなければ上記手順で行います。
+1. ChatGPTが mth310-sys/yusosha-godot の設計・コード・シーンを編集します。
+2. PCのGitHub Desktopで Fetch / Pull して変更を取得します。
+3. Godot 4.7.2でプロジェクトを開き、実行・表示・操作を確認します。
+4. PC側で必要な変更を行った場合は、GitHub Desktopで内容を確認してCommit / Pushします。
+5. ChatGPTがGitHub上の最新状態を確認して次の変更を行います。
 
-## PC版Godotで編集した場合
+## 方針
 
-次にGitHubの更新を取り込む前に、PCで変更したファイルをブラウザ版GitHubへアップロードして保存してください。
-更新用ショートカットはPCに未保存のGit変更がある場合に停止します。
-その場合はGitHub Desktopで変更内容を確認し、必要な新規変更だけをコミット・Pushしてから再実行してください。
-古い退避データはアップロードしません。.godotフォルダは保存対象外です。
+- Engine: Godot 4.7.2
+- Language: GDScript
+- Renderer: GL Compatibility
+- GitHub repository: mth310-sys/yusosha-godot
+- main branchを現行の正本とする
+- .godot/ はGit管理しない
+- Chappy5および旧Godotワークスペースには変更を加えない
+- 有料API・有料外部サービスを前提にしない
 
-## ChatGPTへの依頼文
+## Connection Test
 
-このリポジトリはmth310-sys/yusosha-godotです。Godot 4.7.2、GDScript、Compatibilityを使います。
-ブラウザ版GitHubに保存してPC版Godotで実行するため、変更ファイルごとに相対パスと全文を提示してください。
-現在のファイルが不足していたら、想像で置き換えず必要なファイルを確認してください。
-旧Godotプロジェクトは使わず、この最小プロジェクトから制作します。Chappy5には変更を加えません。
+main.tscnを実行して次の表示が出れば、ChatGPT → GitHub → PC → Godot の更新経路は正常です。
 
-参考: https://learn.chatgpt.com/docs/projects
+YUSOSHA GODOT RESTART
+
+ChatGPT → GitHub → Godot : CONNECTED

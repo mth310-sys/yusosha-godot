@@ -1,0 +1,25 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource path="res://scripts/hall_map.gd" type="Script" id="1_hall"]
+
+[node name="HallMap" type="Node2D"]
+script = ExtResource("1_hall")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="InfoPanel" type="PanelContainer" parent="UI"]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 430.0
+offset_bottom = 112.0
+
+[node name="Margin" type="MarginContainer" parent="UI/InfoPanel"]
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="Text" type="Label" parent="UI/InfoPanel/Margin"]
+text = "遊創舎 HALL MAP 01\n店内: 32 × 24 マス\n矢印: 移動 / ホイール: ズーム / Esc: 屋外へ戻る"

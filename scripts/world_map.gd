@@ -26,6 +26,8 @@ var selected_tile := Vector2i(-1, -1)
 var map_data: Array = []
 var road_mode := false
 var painting_road := false
+var demolition_mode := false
+var demolishing := false
 
 func _ready() -> void:
 	_build_map_data()
@@ -134,15 +136,28 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_R:
-			road_mode = not road_mode
+			road_mode = true
+			demolition_mode = false
 			painting_road = false
+			demolishing = false
+			_update_mode_info()
+			_update_tile_info()
+			queue_redraw()
+			return
+		if event.keycode == KEY_X:
+			demolition_mode = true
+			road_mode = false
+			painting_road = false
+			demolishing = false
 			_update_mode_info()
 			_update_tile_info()
 			queue_redraw()
 			return
 		if event.keycode == KEY_ESCAPE:
 			road_mode = false
+			demolition_mode = false
 			painting_road = false
+			demolishing = false
 			_update_mode_info()
 			_update_tile_info()
 			queue_redraw()
@@ -157,6 +172,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				painting_road = event.pressed
 				if event.pressed:
 					_paint_road(_tile_under_mouse())
+			elif demolition_mode:
+				demolishing = event.pressed
+				if event.pressed:
+					_demolish_road(_tile_under_mouse())
 			elif event.pressed:
 				var tile: Vector2i = _tile_under_mouse()
 				if is_valid_tile(tile):
@@ -174,6 +193,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			last_mouse_position = event.position
 		elif road_mode and painting_road:
 			_paint_road(_tile_under_mouse())
+		elif demolition_mode and demolishing:
+			_demolish_road(_tile_under_mouse())
 		_refresh_hover()
 
 func _paint_road(tile: Vector2i) -> void:
@@ -185,6 +206,19 @@ func _paint_road(tile: Vector2i) -> void:
 	cell["type"] = "road"
 	cell["occupied"] = true
 	cell["object_id"] = "road"
+	_update_road_shapes_around(tile)
+	selected_tile = tile
+	_update_tile_info()
+	queue_redraw()
+
+func _demolish_road(tile: Vector2i) -> void:
+	if not _is_road(tile):
+		return
+	var cell: Dictionary = map_data[tile.y][tile.x]
+	cell["type"] = "land"
+	cell["occupied"] = false
+	cell["object_id"] = ""
+	cell["road_shape"] = ""
 	_update_road_shapes_around(tile)
 	selected_tile = tile
 	_update_tile_info()
@@ -204,9 +238,11 @@ func _update_road_shapes_around(tile: Vector2i) -> void:
 
 func _update_mode_info() -> void:
 	if road_mode:
-		mode_info.text = "道路モード: ON\n左クリック/ドラッグ: 敷設  /  Esc: 終了"
+		mode_info.text = "道路モード: ON\n左クリック/ドラッグ: 敷設 / X: 撤去 / Esc: 終了"
+	elif demolition_mode:
+		mode_info.text = "撤去モード: ON\n左クリック/ドラッグ: 道路撤去 / R: 敷設 / Esc: 終了"
 	else:
-		mode_info.text = "通常モード\nR: 道路モード"
+		mode_info.text = "通常モード\nR: 道路敷設 / X: 道路撤去"
 
 func _tile_under_mouse() -> Vector2i:
 	return world_to_grid(get_global_mouse_position())
@@ -230,10 +266,17 @@ func _update_tile_info() -> void:
 	elif is_valid_tile(hovered_tile):
 		if road_mode:
 			tile_info.text = "カーソル: (%d, %d)\n道路を敷設できます" % [hovered_tile.x, hovered_tile.y]
+		elif demolition_mode:
+			tile_info.text = "カーソル: (%d, %d)\n道路を撤去できます" % [hovered_tile.x, hovered_tile.y]
 		else:
 			tile_info.text = "カーソル: (%d, %d)\n左クリックで選択" % [hovered_tile.x, hovered_tile.y]
 	else:
-		tile_info.text = "道路モード中" if road_mode else "マスを選択してください\n左クリック: 選択"
+		if road_mode:
+			tile_info.text = "道路モード中"
+		elif demolition_mode:
+			tile_info.text = "撤去モード中"
+		else:
+			tile_info.text = "マスを選択してください\n左クリック: 選択"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.35, 2.0)

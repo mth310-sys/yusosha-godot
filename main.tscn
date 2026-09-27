@@ -24,7 +24,7 @@ theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 10
 
 [node name="Text" type="Label" parent="UI/InfoPanel/Margin"]
-text = "遊創舎 WORLD MAP 02\n土地: 50 × 50 マス\n矢印: 移動 / ホイール: ズーム / 右・中ドラッグ: 移動"
+text = "遊創舎 WORLD MAP 03\n土地: 50 × 50 マス\n矢印: 移動 / ホイール: ズーム / 右・中ドラッグ: 移動"
 
 [node name="TilePanel" type="PanelContainer" parent="UI"]
 offset_left = 20.0
@@ -40,3 +40,18 @@ theme_override_constants/margin_bottom = 8
 
 [node name="Text" type="Label" parent="UI/TilePanel/Margin"]
 text = "マスを選択してください\n左クリック: 選択"
+
+[node name="ModePanel" type="PanelContainer" parent="UI"]
+offset_left = 20.0
+offset_top = 208.0
+offset_right = 355.0
+offset_bottom = 278.0
+
+[node name="Margin" type="MarginContainer" parent="UI/ModePanel"]
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 8
+
+[node name="Text" type="Label" parent="UI/ModePanel/Margin"]
+text = "通常モード\nR: 道路モード"

@@ -38,7 +38,13 @@ var next_building_id := 1
 var buildings: Dictionary = {}
 
 func _ready() -> void:
-	build_map("land")
+	if GameState.world_initialized:
+		map_data = GameState.world_map_data.duplicate(true)
+		buildings = GameState.world_buildings.duplicate(true)
+		next_lot_id = GameState.next_lot_id
+		next_building_id = GameState.next_building_id
+	else:
+		build_map("land")
 	camera.position = Vector2(0.0, map_height * tile_height * 0.5)
 	camera.zoom = Vector2(0.72, 0.72)
 	_update_tile_info()
@@ -367,6 +373,8 @@ func _enter_selected_building() -> void:
 	var object_id: String = str(get_cell(selected_tile).get("object_id", ""))
 	if not buildings.has(object_id):
 		return
+	GameState.selected_building_id = object_id
+	GameState.store_world(map_data, buildings, next_lot_id, next_building_id)
 	get_tree().change_scene_to_file("res://hall.tscn")
 
 func _update_mode_info() -> void:

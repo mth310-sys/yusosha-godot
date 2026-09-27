@@ -52,6 +52,18 @@ func set_cell_type(tile: Vector2i, cell_type: String, occupied: bool = false, ob
 	cell["occupied"] = occupied
 	cell["object_id"] = object_id
 
+func is_cell_free(tile: Vector2i) -> bool:
+	if not is_valid_tile(tile):
+		return false
+	var cell: Dictionary = get_cell(tile)
+	return not bool(cell.get("occupied", false))
+
+func can_occupy_tiles(tiles: Array[Vector2i]) -> bool:
+	for tile in tiles:
+		if not is_cell_free(tile):
+			return false
+	return true
+
 func neighbors4(tile: Vector2i) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
 	var directions: Array[Vector2i] = [

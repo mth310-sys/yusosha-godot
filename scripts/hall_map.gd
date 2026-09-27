@@ -23,6 +23,8 @@ const ISLAND_HEIGHT := 2
 @onready var info_text: Label = $UI/InfoPanel/Margin/Text
 @onready var machine_panel: PanelContainer = $UI/MachinePanel
 @onready var machine_text: Label = $UI/MachinePanel/Margin/Text
+@onready var daily_panel: PanelContainer = $UI/DailyPanel
+@onready var daily_text: Label = $UI/DailyPanel/Margin/Text
 
 var dragging := false
 var last_mouse_position := Vector2.ZERO
@@ -210,28 +212,55 @@ func _update_machine_panel() -> void:
 	]
 	machine_panel.visible = true
 
-func _run_selected_machine_test() -> void:
-	if selected_machine_id == "" or not machines.has(selected_machine_id):
-		return
-	var machine: Dictionary = machines[selected_machine_id]
+func _simulate_machine(machine: Dictionary, min_games: int, max_games: int) -> Dictionary:
 	if not bool(machine.get("power_on", true)):
-		return
+		return {"games": 0, "coin_in": 0, "coin_out": 0, "net": 0, "sales": 0}
 	var setting: int = clampi(int(machine.get("setting", 1)), 1, 6)
-	var test_games: int = rng.randi_range(180, 320)
-	var coin_in: int = test_games * 3
-	# 仮の営業モデル。設定が高いほど期待払出率を上げる。
+	var games: int = rng.randi_range(min_games, max_games)
+	var coin_in: int = games * 3
 	var payout_rates := [0.965, 0.980, 0.995, 1.015, 1.040, 1.070]
 	var expected_out: float = float(coin_in) * payout_rates[setting - 1]
 	var variance: float = rng.randf_range(-0.12, 0.12)
 	var coin_out: int = maxi(0, int(round(expected_out * (1.0 + variance))))
 	var net: int = coin_out - coin_in
 	var sales: int = maxi(0, -net * 20)
-	machine["operating"] = true
-	machine["games"] = int(machine.get("games", 0)) + test_games
+	machine["games"] = int(machine.get("games", 0)) + games
 	machine["coin_in"] = int(machine.get("coin_in", 0)) + coin_in
 	machine["coin_out"] = int(machine.get("coin_out", 0)) + coin_out
 	machine["net_coins"] = int(machine.get("coin_out", 0)) - int(machine.get("coin_in", 0))
 	machine["sales_yen"] = int(machine.get("sales_yen", 0)) + sales
+	return {"games": games, "coin_in": coin_in, "coin_out": coin_out, "net": net, "sales": sales}
+
+func _run_full_day() -> void:
+	if machines.is_empty():
+		return
+	var total_games := 0
+	var total_in := 0
+	var total_out := 0
+	var total_sales := 0
+	for machine_id in machines:
+		var result: Dictionary = _simulate_machine(machines[machine_id], 1800, 7000)
+		total_games += int(result["games"])
+		total_in += int(result["coin_in"])
+		total_out += int(result["coin_out"])
+		total_sales += int(result["sales"])
+	var total_net: int = total_out - total_in
+	var gross_profit: int = (total_in - total_out) * 20
+	daily_text.text = "1営業日 結果\n設置台数: %d台\n総ゲーム数: %dG\nIN: %d枚 / OUT: %d枚\n差枚: %+d枚\n売上: %d円\n粗利: %+d円" % [
+		machines.size(), total_games, total_in, total_out, total_net, total_sales, gross_profit
+	]
+	daily_panel.visible = true
+	_update_machine_panel()
+	queue_redraw()
+
+func _run_selected_machine_test() -> void:
+	if selected_machine_id == "" or not machines.has(selected_machine_id):
+		return
+	var machine: Dictionary = machines[selected_machine_id]
+	if not bool(machine.get("power_on", true)):
+		return
+	machine["operating"] = true
+	_simulate_machine(machine, 180, 320)
 	machine["operating"] = false
 	_update_machine_panel()
 	queue_redraw()
@@ -338,6 +367,9 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_D:
+			_run_full_day()
+			return
 		if selected_machine_id != "" and event.keycode == KEY_T:
 			_run_selected_machine_test()
 			return
@@ -406,12 +438,12 @@ func _refresh_hover() -> void:
 
 func _update_info() -> void:
 	if machine_mode:
-		info_text.text = "遊創舎 HALL MAP 08\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
+		info_text.text = "遊創舎 HALL MAP 09\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 08\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 09\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 08\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 09\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

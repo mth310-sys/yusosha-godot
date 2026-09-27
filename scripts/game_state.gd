@@ -15,11 +15,13 @@ func store_world(map_data: Array, buildings: Dictionary, lot_id: int, building_i
 	next_building_id = building_id
 	world_initialized = true
 
-func store_hall(building_id: String, map_data: Array, islands: Dictionary, next_island_id: int) -> void:
+func store_hall(building_id: String, map_data: Array, islands: Dictionary, next_island_id: int, machines: Dictionary = {}, next_machine_id: int = 1) -> void:
 	hall_states[building_id] = {
 		"map_data": map_data.duplicate(true),
 		"islands": islands.duplicate(true),
-		"next_island_id": next_island_id
+		"next_island_id": next_island_id,
+		"machines": machines.duplicate(true),
+		"next_machine_id": next_machine_id
 	}
 
 func get_hall(building_id: String) -> Dictionary:

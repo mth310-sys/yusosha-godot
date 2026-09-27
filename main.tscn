@@ -14,7 +14,7 @@ zoom = Vector2(0.72, 0.72)
 [node name="InfoPanel" type="PanelContainer" parent="UI"]
 offset_left = 20.0
 offset_top = 20.0
-offset_right = 330.0
+offset_right = 385.0
 offset_bottom = 112.0
 
 [node name="Margin" type="MarginContainer" parent="UI/InfoPanel"]
@@ -24,4 +24,19 @@ theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 10
 
 [node name="Text" type="Label" parent="UI/InfoPanel/Margin"]
-text = "遊創舎 WORLD MAP 01\n土地: 50 × 50 マス\n矢印キー: 移動  /  ホイール: ズーム  /  右・中ドラッグ: 移動"
+text = "遊創舎 WORLD MAP 02\n土地: 50 × 50 マス\n矢印: 移動 / ホイール: ズーム / 右・中ドラッグ: 移動"
+
+[node name="TilePanel" type="PanelContainer" parent="UI"]
+offset_left = 20.0
+offset_top = 125.0
+offset_right = 310.0
+offset_bottom = 195.0
+
+[node name="Margin" type="MarginContainer" parent="UI/TilePanel"]
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 8
+
+[node name="Text" type="Label" parent="UI/TilePanel/Margin"]
+text = "マスを選択してください\n左クリック: 選択"

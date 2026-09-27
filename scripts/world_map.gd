@@ -227,7 +227,7 @@ func _paint_road(tile: Vector2i) -> void:
 	if not is_valid_tile(tile):
 		return
 	var cell: Dictionary = map_data[tile.y][tile.x]
-	if cell["type"] == "road":
+	if cell["type"] == "road" or not is_cell_free(tile):
 		return
 	cell["type"] = "road"
 	cell["occupied"] = true

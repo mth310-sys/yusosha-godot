@@ -36,6 +36,7 @@ var machine_mode := false
 var machines: Dictionary = {}
 var next_machine_id := 1
 var selected_machine_id := ""
+var rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	map_width = 32
@@ -52,6 +53,7 @@ func _ready() -> void:
 		next_machine_id = int(saved_hall.get("next_machine_id", 1))
 	camera.position = Vector2(0.0, map_height * tile_height * 0.5)
 	camera.zoom = Vector2(0.9, 0.9)
+	rng.randomize()
 	_update_info()
 	queue_redraw()
 
@@ -194,7 +196,7 @@ func _update_machine_panel() -> void:
 	var model: Dictionary = MachineCatalog.get_model(str(machine.get("model_id", "")))
 	var power_text := "ON" if bool(machine.get("power_on", true)) else "OFF"
 	var operating_text := "稼働中" if bool(machine.get("operating", false)) else "停止"
-	machine_text.text = "台詳細\n台番号: %d\n機種: %s\n設定: %d\n電源: %s / %s\nゲーム数: %d\nIN: %d枚\nOUT: %d枚\n差枚: %+d枚\n売上: %d円\n\n1〜6: 設定変更" % [
+	machine_text.text = "台詳細\n台番号: %d\n機種: %s\n設定: %d\n電源: %s / %s\nゲーム数: %d\nIN: %d枚\nOUT: %d枚\n差枚: %+d枚\n売上: %d円\n\n1〜6: 設定変更 / T: 営業テスト" % [
 		int(machine.get("number", 0)),
 		str(model.get("name", "不明")),
 		int(machine.get("setting", 1)),
@@ -207,6 +209,32 @@ func _update_machine_panel() -> void:
 		int(machine.get("sales_yen", 0))
 	]
 	machine_panel.visible = true
+
+func _run_selected_machine_test() -> void:
+	if selected_machine_id == "" or not machines.has(selected_machine_id):
+		return
+	var machine: Dictionary = machines[selected_machine_id]
+	if not bool(machine.get("power_on", true)):
+		return
+	var setting: int = clampi(int(machine.get("setting", 1)), 1, 6)
+	var test_games: int = rng.randi_range(180, 320)
+	var coin_in: int = test_games * 3
+	# 仮の営業モデル。設定が高いほど期待払出率を上げる。
+	var payout_rates := [0.965, 0.980, 0.995, 1.015, 1.040, 1.070]
+	var expected_out: float = float(coin_in) * payout_rates[setting - 1]
+	var variance: float = rng.randf_range(-0.12, 0.12)
+	var coin_out: int = maxi(0, int(round(expected_out * (1.0 + variance))))
+	var net: int = coin_out - coin_in
+	var sales: int = maxi(0, -net * 20)
+	machine["operating"] = true
+	machine["games"] = int(machine.get("games", 0)) + test_games
+	machine["coin_in"] = int(machine.get("coin_in", 0)) + coin_in
+	machine["coin_out"] = int(machine.get("coin_out", 0)) + coin_out
+	machine["net_coins"] = int(machine.get("coin_out", 0)) - int(machine.get("coin_in", 0))
+	machine["sales_yen"] = int(machine.get("sales_yen", 0)) + sales
+	machine["operating"] = false
+	_update_machine_panel()
+	queue_redraw()
 
 func _set_selected_machine_setting(value: int) -> void:
 	if selected_machine_id == "" or not machines.has(selected_machine_id):
@@ -310,6 +338,9 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if selected_machine_id != "" and event.keycode == KEY_T:
+			_run_selected_machine_test()
+			return
 		if selected_machine_id != "" and event.keycode >= KEY_1 and event.keycode <= KEY_6:
 			_set_selected_machine_setting(int(event.keycode - KEY_1 + 1))
 			return
@@ -375,12 +406,12 @@ func _refresh_hover() -> void:
 
 func _update_info() -> void:
 	if machine_mode:
-		info_text.text = "遊創舎 HALL MAP 07\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
+		info_text.text = "遊創舎 HALL MAP 08\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 07\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 08\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 05\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 08\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

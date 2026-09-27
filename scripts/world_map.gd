@@ -117,8 +117,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			lot_mode = true
 			road_mode = false
 			demolition_mode = false
-			lot_mode = false
-			lot_start = Vector2i(-1, -1)
 			painting_road = false
 			demolishing = false
 			lot_start = Vector2i(-1, -1)
@@ -151,6 +149,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE:
 			road_mode = false
 			demolition_mode = false
+			lot_mode = false
+			lot_start = Vector2i(-1, -1)
 			painting_road = false
 			demolishing = false
 			_update_mode_info()
@@ -276,13 +276,13 @@ func _create_lot(a: Vector2i, b: Vector2i) -> void:
 
 func _update_mode_info() -> void:
 	if lot_mode:
-		mode_info.text = "敷地モード: ON\\n始点 → 終点をクリック / Esc: 終了"
+		mode_info.text = "敷地モード: ON\n始点 → 終点をクリック / Esc: 終了"
 	elif road_mode:
 		mode_info.text = "道路モード: ON\n左クリック/ドラッグ: 敷設 / X: 撤去 / Esc: 終了"
 	elif demolition_mode:
 		mode_info.text = "撤去モード: ON\n左クリック/ドラッグ: 道路撤去 / R: 敷設 / Esc: 終了"
 	else:
-		mode_info.text = "通常モード\nR: 道路敷設 / X: 道路撤去"
+		mode_info.text = "通常モード\nR: 道路敷設 / X: 道路撤去 / L: 敷地"
 
 func _tile_under_mouse() -> Vector2i:
 	return world_to_grid(get_global_mouse_position())
@@ -305,7 +305,7 @@ func _update_tile_info() -> void:
 			tile_info.text = "選択マス: (%d, %d)\n種別: %s / 使用中: %s" % [selected_tile.x, selected_tile.y, cell["type"], "はい" if cell["occupied"] else "いいえ"]
 	elif is_valid_tile(hovered_tile):
 		if lot_mode:
-			tile_info.text = "カーソル: (%d, %d)\\n%s" % [hovered_tile.x, hovered_tile.y, "終点を選択" if is_valid_tile(lot_start) else "敷地の始点を選択"]
+			tile_info.text = "カーソル: (%d, %d)\n%s" % [hovered_tile.x, hovered_tile.y, "終点を選択" if is_valid_tile(lot_start) else "敷地の始点を選択"]
 		elif road_mode:
 			tile_info.text = "カーソル: (%d, %d)\n道路を敷設できます" % [hovered_tile.x, hovered_tile.y]
 		elif demolition_mode:

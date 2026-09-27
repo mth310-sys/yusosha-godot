@@ -66,7 +66,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_set_zoom(camera.zoom.x / 1.12)
 
 	elif event is InputEventMouseMotion and dragging:
-		var movement := event.position - last_mouse_position
+		var movement: Vector2 = event.position - last_mouse_position
 		camera.position -= movement / camera.zoom.x
 		last_mouse_position = event.position
 

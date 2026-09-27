@@ -21,6 +21,8 @@ const ISLAND_HEIGHT := 2
 
 @onready var camera: Camera2D = $Camera2D
 @onready var info_text: Label = $UI/InfoPanel/Margin/Text
+@onready var machine_panel: PanelContainer = $UI/MachinePanel
+@onready var machine_text: Label = $UI/MachinePanel/Margin/Text
 
 var dragging := false
 var last_mouse_position := Vector2.ZERO
@@ -33,6 +35,7 @@ var islands: Dictionary = {}
 var machine_mode := false
 var machines: Dictionary = {}
 var next_machine_id := 1
+var selected_machine_id := ""
 
 func _ready() -> void:
 	map_width = 32
@@ -172,6 +175,45 @@ func _draw_machine(machine: Dictionary) -> void:
 	draw_rect(Rect2(center - Vector2(4.5, 8.5), Vector2(9.0, 6.0)), MACHINE_SCREEN)
 	draw_string(ThemeDB.fallback_font, center + Vector2(-5.0, 5.0), str(machine["number"]), HORIZONTAL_ALIGNMENT_CENTER, 10.0, 8, Color.WHITE)
 
+func _machine_at(tile: Vector2i) -> String:
+	for machine_id in machines:
+		if machines[machine_id]["position"] == tile:
+			return machine_id
+	return ""
+
+func _select_machine(tile: Vector2i) -> void:
+	selected_machine_id = _machine_at(tile)
+	_update_machine_panel()
+	queue_redraw()
+
+func _update_machine_panel() -> void:
+	if selected_machine_id == "" or not machines.has(selected_machine_id):
+		machine_panel.visible = false
+		return
+	var machine: Dictionary = machines[selected_machine_id]
+	var model: Dictionary = MachineCatalog.get_model(str(machine.get("model_id", "")))
+	var power_text := "ON" if bool(machine.get("power_on", true)) else "OFF"
+	var operating_text := "稼働中" if bool(machine.get("operating", false)) else "停止"
+	machine_text.text = "台詳細\n台番号: %d\n機種: %s\n設定: %d\n電源: %s / %s\nゲーム数: %d\nIN: %d枚\nOUT: %d枚\n差枚: %+d枚\n売上: %d円\n\n1〜6: 設定変更" % [
+		int(machine.get("number", 0)),
+		str(model.get("name", "不明")),
+		int(machine.get("setting", 1)),
+		power_text,
+		operating_text,
+		int(machine.get("games", 0)),
+		int(machine.get("coin_in", 0)),
+		int(machine.get("coin_out", 0)),
+		int(machine.get("net_coins", 0)),
+		int(machine.get("sales_yen", 0))
+	]
+	machine_panel.visible = true
+
+func _set_selected_machine_setting(value: int) -> void:
+	if selected_machine_id == "" or not machines.has(selected_machine_id):
+		return
+	machines[selected_machine_id]["setting"] = clampi(value, 1, 6)
+	_update_machine_panel()
+
 func _find_empty_slot_at(tile: Vector2i) -> Dictionary:
 	for island_id in islands:
 		var slots: Array = islands[island_id].get("machine_slots", [])
@@ -268,6 +310,9 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if selected_machine_id != "" and event.keycode >= KEY_1 and event.keycode <= KEY_6:
+			_set_selected_machine_setting(int(event.keycode - KEY_1 + 1))
+			return
 		if island_mode and (event.keycode == KEY_Q or event.keycode == KEY_E):
 			island_rotated = not island_rotated
 			_update_info()
@@ -304,6 +349,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_place_island(_tile_under_mouse())
 		elif event.button_index == MOUSE_BUTTON_LEFT and event.pressed and machine_mode:
 			_place_machine(_tile_under_mouse())
+		elif event.button_index == MOUSE_BUTTON_LEFT and event.pressed and not island_mode and not machine_mode:
+			_select_machine(_tile_under_mouse())
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			_set_zoom(camera.zoom.x * 1.12)
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
@@ -328,10 +375,10 @@ func _refresh_hover() -> void:
 
 func _update_info() -> void:
 	if machine_mode:
-		info_text.text = "遊創舎 HALL MAP 06\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
+		info_text.text = "遊創舎 HALL MAP 07\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 05\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 07\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
 		info_text.text = "遊創舎 HALL MAP 05\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / Esc: 屋外へ戻る"
 

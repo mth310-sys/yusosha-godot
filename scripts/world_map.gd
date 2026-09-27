@@ -10,16 +10,16 @@ const LAND_B := Color("739450")
 const GRID_COLOR := Color(0.18, 0.27, 0.13, 0.42)
 const BORDER_COLOR := Color("d9e7b5")
 const HOVER_COLOR := Color(1.0, 1.0, 1.0, 0.22)
-const SELECT_COLOR := Color(1.0, 0.78, 0.18, 0.48)
+const SELECT_COLOR := Color(1.0, 0.78, 0.18, 0.48)\nconst ROAD_COLOR := Color("4b5058")\nconst ROAD_GRID_COLOR := Color(0.72, 0.74, 0.78, 0.45)
 
 @onready var camera: Camera2D = $Camera2D
-@onready var tile_info: Label = $UI/TilePanel/Margin/Text
+@onready var tile_info: Label = $UI/TilePanel/Margin/Text\n@onready var mode_info: Label = $UI/ModePanel/Margin/Text
 
 var dragging := false
 var last_mouse_position := Vector2.ZERO
 var hovered_tile := Vector2i(-1, -1)
 var selected_tile := Vector2i(-1, -1)
-var map_data: Array = []
+var map_data: Array = []\nvar road_mode := false\nvar painting_road := false
 
 func _ready() -> void:
 	_build_map_data()
@@ -96,12 +96,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.button_index == MOUSE_BUTTON_MIDDLE or event.button_index == MOUSE_BUTTON_RIGHT:
 			dragging = event.pressed
 			last_mouse_position = event.position
-		elif event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			var tile := _tile_under_mouse()
-			if is_valid_tile(tile):
-				selected_tile = tile
-				_update_tile_info()
-				queue_redraw()
+		elif event.button_index == MOUSE_BUTTON_LEFT:
+			if road_mode:
+				painting_road = event.pressed
+				if event.pressed:
+					_paint_road(_tile_under_mouse())
+			elif event.pressed:
+				var tile := _tile_under_mouse()
+				if is_valid_tile(tile):
+					selected_tile = tile
+					_update_tile_info()
+					queue_redraw()
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			_set_zoom(camera.zoom.x * 1.12)
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
@@ -112,7 +117,28 @@ func _unhandled_input(event: InputEvent) -> void:
 			var movement: Vector2 = event.position - last_mouse_position
 			camera.position -= movement / camera.zoom.x
 			last_mouse_position = event.position
+		elif road_mode and painting_road:
+			_paint_road(_tile_under_mouse())
 		_refresh_hover()
+
+func _paint_road(tile: Vector2i) -> void:
+	if not is_valid_tile(tile):
+		return
+	var cell: Dictionary = map_data[tile.y][tile.x]
+	if cell["type"] == "road":
+		return
+	cell["type"] = "road"
+	cell["occupied"] = true
+	cell["object_id"] = "road"
+	selected_tile = tile
+	_update_tile_info()
+	queue_redraw()
+
+func _update_mode_info() -> void:
+	if road_mode:
+		mode_info.text = "道路モード: ON\n左クリック/ドラッグ: 敷設  /  Esc: 終了"
+	else:
+		mode_info.text = "通常モード\nR: 道路モード"
 
 func _tile_under_mouse() -> Vector2i:
 	return world_to_grid(get_global_mouse_position())
@@ -136,9 +162,12 @@ func _update_tile_info() -> void:
 			"はい" if cell["occupied"] else "いいえ"
 		]
 	elif is_valid_tile(hovered_tile):
-		tile_info.text = "カーソル: (%d, %d)\n左クリックで選択" % [hovered_tile.x, hovered_tile.y]
+		if road_mode:
+			tile_info.text = "カーソル: (%d, %d)\n道路を敷設できます" % [hovered_tile.x, hovered_tile.y]
+		else:
+			tile_info.text = "カーソル: (%d, %d)\n左クリックで選択" % [hovered_tile.x, hovered_tile.y]
 	else:
-		tile_info.text = "マスを選択してください\n左クリック: 選択"
+		tile_info.text = "道路モード中" if road_mode else "マスを選択してください\n左クリック: 選択"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom := clampf(value, 0.35, 2.0)

@@ -21,7 +21,8 @@ func make_cell(cell_type: String) -> Dictionary:
 		"type": cell_type,
 		"occupied": false,
 		"object_id": "",
-		"road_shape": ""
+		"road_shape": "",
+		"lot_id": 0
 	}
 
 func grid_to_world(x: int, y: int) -> Vector2:

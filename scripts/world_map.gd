@@ -1,9 +1,4 @@
-extends Node2D
-
-const MAP_WIDTH := 50
-const MAP_HEIGHT := 50
-const TILE_WIDTH := 64.0
-const TILE_HEIGHT := 32.0
+extends GridMapBase
 
 const LAND_A := Color("789b55")
 const LAND_B := Color("739450")
@@ -23,51 +18,22 @@ var dragging := false
 var last_mouse_position := Vector2.ZERO
 var hovered_tile := Vector2i(-1, -1)
 var selected_tile := Vector2i(-1, -1)
-var map_data: Array = []
 var road_mode := false
 var painting_road := false
 var demolition_mode := false
 var demolishing := false
 
 func _ready() -> void:
-	_build_map_data()
-	camera.position = Vector2(0.0, MAP_HEIGHT * TILE_HEIGHT * 0.5)
+	build_map("land")
+	camera.position = Vector2(0.0, map_height * tile_height * 0.5)
 	camera.zoom = Vector2(0.72, 0.72)
 	_update_tile_info()
 	_update_mode_info()
 	queue_redraw()
 
-func _build_map_data() -> void:
-	map_data.clear()
-	for y in range(MAP_HEIGHT):
-		var row: Array = []
-		for x in range(MAP_WIDTH):
-			row.append({"type": "land", "occupied": false, "object_id": "", "road_shape": ""})
-		map_data.append(row)
-
-func grid_to_world(x: int, y: int) -> Vector2:
-	return Vector2((x - y) * TILE_WIDTH * 0.5, (x + y) * TILE_HEIGHT * 0.5)
-
-func world_to_grid(world_position: Vector2) -> Vector2i:
-	var gx: float = world_position.x / TILE_WIDTH + world_position.y / TILE_HEIGHT
-	var gy: float = world_position.y / TILE_HEIGHT - world_position.x / TILE_WIDTH
-	return Vector2i(floori(gx + 0.5), floori(gy + 0.5))
-
-func is_valid_tile(tile: Vector2i) -> bool:
-	return tile.x >= 0 and tile.x < MAP_WIDTH and tile.y >= 0 and tile.y < MAP_HEIGHT
-
-func tile_points(x: int, y: int) -> PackedVector2Array:
-	var center: Vector2 = grid_to_world(x, y)
-	return PackedVector2Array([
-		center + Vector2(0.0, -TILE_HEIGHT * 0.5),
-		center + Vector2(TILE_WIDTH * 0.5, 0.0),
-		center + Vector2(0.0, TILE_HEIGHT * 0.5),
-		center + Vector2(-TILE_WIDTH * 0.5, 0.0)
-	])
-
 func _draw() -> void:
-	for y in range(MAP_HEIGHT):
-		for x in range(MAP_WIDTH):
+	for y in range(map_height):
+		for x in range(map_width):
 			var points: PackedVector2Array = tile_points(x, y)
 			var cell: Dictionary = map_data[y][x]
 			var tile_color: Color = ROAD_COLOR if cell["type"] == "road" else (LAND_A if (x + y) % 2 == 0 else LAND_B)
@@ -84,10 +50,10 @@ func _draw() -> void:
 		draw_colored_polygon(selected_points, SELECT_COLOR)
 		draw_polyline(selected_points + PackedVector2Array([selected_points[0]]), Color.WHITE, 2.0, true)
 
-	var top: Vector2 = grid_to_world(0, 0) + Vector2(0.0, -TILE_HEIGHT * 0.5)
-	var right: Vector2 = grid_to_world(MAP_WIDTH - 1, 0) + Vector2(TILE_WIDTH * 0.5, 0.0)
-	var bottom: Vector2 = grid_to_world(MAP_WIDTH - 1, MAP_HEIGHT - 1) + Vector2(0.0, TILE_HEIGHT * 0.5)
-	var left: Vector2 = grid_to_world(0, MAP_HEIGHT - 1) + Vector2(-TILE_WIDTH * 0.5, 0.0)
+	var top: Vector2 = grid_to_world(0, 0) + Vector2(0.0, -tile_height * 0.5)
+	var right: Vector2 = grid_to_world(map_width - 1, 0) + Vector2(tile_width * 0.5, 0.0)
+	var bottom: Vector2 = grid_to_world(map_width - 1, map_height - 1) + Vector2(0.0, tile_height * 0.5)
+	var left: Vector2 = grid_to_world(0, map_height - 1) + Vector2(-tile_width * 0.5, 0.0)
 	draw_polyline(PackedVector2Array([top, right, bottom, left, top]), BORDER_COLOR, 3.0, true)
 
 func _is_road(tile: Vector2i) -> bool:

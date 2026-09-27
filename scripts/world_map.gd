@@ -12,7 +12,8 @@ const BORDER_COLOR := Color("d9e7b5")
 const HOVER_COLOR := Color(1.0, 1.0, 1.0, 0.22)
 const SELECT_COLOR := Color(1.0, 0.78, 0.18, 0.48)
 const ROAD_COLOR := Color("4b5058")
-const ROAD_GRID_COLOR := Color(0.72, 0.74, 0.78, 0.45)\nconst ROAD_MARK_COLOR := Color(0.95, 0.82, 0.30, 0.92)
+const ROAD_GRID_COLOR := Color(0.72, 0.74, 0.78, 0.45)
+const ROAD_MARK_COLOR := Color(0.95, 0.82, 0.30, 0.92)
 
 @onready var camera: Camera2D = $Camera2D
 @onready var tile_info: Label = $UI/TilePanel/Margin/Text
@@ -39,18 +40,11 @@ func _build_map_data() -> void:
 	for y in range(MAP_HEIGHT):
 		var row: Array = []
 		for x in range(MAP_WIDTH):
-			row.append({
-				"type": "land",
-				"occupied": false,
-				"object_id": ""
-			})
+			row.append({"type": "land", "occupied": false, "object_id": "", "road_shape": ""})
 		map_data.append(row)
 
 func grid_to_world(x: int, y: int) -> Vector2:
-	return Vector2(
-		(x - y) * TILE_WIDTH * 0.5,
-		(x + y) * TILE_HEIGHT * 0.5
-	)
+	return Vector2((x - y) * TILE_WIDTH * 0.5, (x + y) * TILE_HEIGHT * 0.5)
 
 func world_to_grid(world_position: Vector2) -> Vector2i:
 	var gx: float = world_position.x / TILE_WIDTH + world_position.y / TILE_HEIGHT
@@ -78,10 +72,11 @@ func _draw() -> void:
 			var line_color: Color = ROAD_GRID_COLOR if cell["type"] == "road" else GRID_COLOR
 			draw_colored_polygon(points, tile_color)
 			draw_polyline(points + PackedVector2Array([points[0]]), line_color, 1.0, true)
+			if cell["type"] == "road":
+				_draw_road_connections(Vector2i(x, y))
 
 	if is_valid_tile(hovered_tile) and hovered_tile != selected_tile:
 		draw_colored_polygon(tile_points(hovered_tile.x, hovered_tile.y), HOVER_COLOR)
-
 	if is_valid_tile(selected_tile):
 		var selected_points: PackedVector2Array = tile_points(selected_tile.x, selected_tile.y)
 		draw_colored_polygon(selected_points, SELECT_COLOR)
@@ -94,22 +89,15 @@ func _draw() -> void:
 	draw_polyline(PackedVector2Array([top, right, bottom, left, top]), BORDER_COLOR, 3.0, true)
 
 func _is_road(tile: Vector2i) -> bool:
-	if not is_valid_tile(tile):
-		return false
-	return map_data[tile.y][tile.x]["type"] == "road"
+	return is_valid_tile(tile) and map_data[tile.y][tile.x]["type"] == "road"
 
 func _road_connections(tile: Vector2i) -> Array[Vector2i]:
-	var connections: Array[Vector2i] = []
-	var directions: Array[Vector2i] = [
-		Vector2i(0, -1),
-		Vector2i(1, 0),
-		Vector2i(0, 1),
-		Vector2i(-1, 0)
-	]
+	var result: Array[Vector2i] = []
+	var directions: Array[Vector2i] = [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]
 	for direction in directions:
 		if _is_road(tile + direction):
-			connections.append(direction)
-	return connections
+			result.append(direction)
+	return result
 
 func _road_shape(tile: Vector2i) -> String:
 	var connections: Array[Vector2i] = _road_connections(tile)
@@ -122,9 +110,7 @@ func _road_shape(tile: Vector2i) -> String:
 		return "cross"
 	if count == 3:
 		return "t_junction"
-	var a: Vector2i = connections[0]
-	var b: Vector2i = connections[1]
-	if a + b == Vector2i.ZERO:
+	if connections[0] + connections[1] == Vector2i.ZERO:
 		return "straight"
 	return "corner"
 
@@ -136,8 +122,7 @@ func _draw_road_connections(tile: Vector2i) -> void:
 		return
 	for direction in connections:
 		var neighbor_center: Vector2 = grid_to_world(tile.x + direction.x, tile.y + direction.y)
-		var edge: Vector2 = center.lerp(neighbor_center, 0.5)
-		draw_line(center, edge, ROAD_MARK_COLOR, 2.2, true)
+		draw_line(center, center.lerp(neighbor_center, 0.5), ROAD_MARK_COLOR, 2.2, true)
 	draw_circle(center, 2.8, ROAD_MARK_COLOR)
 
 func _process(delta: float) -> void:
@@ -155,7 +140,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_update_tile_info()
 			queue_redraw()
 			return
-		elif event.keycode == KEY_ESCAPE:
+		if event.keycode == KEY_ESCAPE:
 			road_mode = false
 			painting_road = false
 			_update_mode_info()
@@ -182,7 +167,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			_set_zoom(camera.zoom.x * 1.12)
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			_set_zoom(camera.zoom.x / 1.12)
-
 	elif event is InputEventMouseMotion:
 		if dragging:
 			var movement: Vector2 = event.position - last_mouse_position
@@ -201,6 +185,7 @@ func _paint_road(tile: Vector2i) -> void:
 	cell["type"] = "road"
 	cell["occupied"] = true
 	cell["object_id"] = "road"
+	_update_road_shapes_around(tile)
 	selected_tile = tile
 	_update_tile_info()
 	queue_redraw()
@@ -239,18 +224,9 @@ func _update_tile_info() -> void:
 	if is_valid_tile(selected_tile):
 		var cell: Dictionary = map_data[selected_tile.y][selected_tile.x]
 		if cell["type"] == "road":
-			tile_info.text = "選択マス: (%d, %d)\n種別: road / 形状: %s" % [
-				selected_tile.x,
-				selected_tile.y,
-				cell.get("road_shape", _road_shape(selected_tile))
-			]
+			tile_info.text = "選択マス: (%d, %d)\n種別: road / 形状: %s" % [selected_tile.x, selected_tile.y, cell.get("road_shape", _road_shape(selected_tile))]
 		else:
-			tile_info.text = "選択マス: (%d, %d)\n種別: %s / 使用中: %s" % [
-				selected_tile.x,
-				selected_tile.y,
-				cell["type"],
-				"はい" if cell["occupied"] else "いいえ"
-			]
+			tile_info.text = "選択マス: (%d, %d)\n種別: %s / 使用中: %s" % [selected_tile.x, selected_tile.y, cell["type"], "はい" if cell["occupied"] else "いいえ"]
 	elif is_valid_tile(hovered_tile):
 		if road_mode:
 			tile_info.text = "カーソル: (%d, %d)\n道路を敷設できます" % [hovered_tile.x, hovered_tile.y]

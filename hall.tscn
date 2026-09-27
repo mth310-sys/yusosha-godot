@@ -23,3 +23,19 @@ theme_override_constants/margin_bottom = 10
 
 [node name="Text" type="Label" parent="UI/InfoPanel/Margin"]
 text = "遊創舎 HALL MAP 01\n店内: 32 × 24 マス\n矢印: 移動 / ホイール: ズーム / Esc: 屋外へ戻る"
+
+[node name="MachinePanel" type="PanelContainer" parent="UI"]
+visible = false
+offset_left = 930.0
+offset_top = 20.0
+offset_right = 1260.0
+offset_bottom = 300.0
+
+[node name="Margin" type="MarginContainer" parent="UI/MachinePanel"]
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="Text" type="Label" parent="UI/MachinePanel/Margin"]
+text = "台詳細"

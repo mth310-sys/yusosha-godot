@@ -35,6 +35,7 @@ var lot_start := Vector2i(-1, -1)
 var next_lot_id := 1
 var building_mode := false
 var next_building_id := 1
+var buildings: Dictionary = {}
 
 func _ready() -> void:
 	build_map("land")
@@ -337,6 +338,17 @@ func _place_building(origin: Vector2i) -> void:
 	if not _can_place_building(origin):
 		return
 	var building_id := "hall_%d" % next_building_id
+	var lot_id: int = int(get_cell(origin).get("lot_id", 0))
+	var entrance := origin + Vector2i(BUILDING_WIDTH / 2, BUILDING_HEIGHT - 1)
+	buildings[building_id] = {
+		"id": building_id,
+		"type": "pachinko_hall",
+		"name": "仮ホール %d" % next_building_id,
+		"lot_id": lot_id,
+		"origin": origin,
+		"size": Vector2i(BUILDING_WIDTH, BUILDING_HEIGHT),
+		"entrance": entrance
+	}
 	for tile in _building_tiles(origin):
 		var cell: Dictionary = get_cell(tile)
 		cell["occupied"] = true
@@ -376,7 +388,12 @@ func _update_tile_info() -> void:
 		if cell["type"] == "road":
 			tile_info.text = "選択マス: (%d, %d)\n種別: road / 形状: %s" % [selected_tile.x, selected_tile.y, cell.get("road_shape", _road_shape(selected_tile))]
 		else:
-			tile_info.text = "選択マス: (%d, %d)\n種別: %s / 使用中: %s" % [selected_tile.x, selected_tile.y, cell["type"], "はい" if cell["occupied"] else "いいえ"]
+			var object_id: String = str(cell.get("object_id", ""))
+			if buildings.has(object_id):
+				var building: Dictionary = buildings[object_id]
+				tile_info.text = "%s\n建物ID: %s / 敷地 #%d" % [building["name"], building["id"], building["lot_id"]]
+			else:
+				tile_info.text = "選択マス: (%d, %d)\n種別: %s / 使用中: %s" % [selected_tile.x, selected_tile.y, cell["type"], "はい" if cell["occupied"] else "いいえ"]
 	elif is_valid_tile(hovered_tile):
 		if building_mode:
 			tile_info.text = "カーソル: (%d, %d)\n仮ホール 6×5: %s" % [hovered_tile.x, hovered_tile.y, "配置可能" if _can_place_building(hovered_tile) else "配置不可"]

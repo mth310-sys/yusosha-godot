@@ -12,6 +12,8 @@ const ISLAND_COLOR := Color("8a5b3d")
 const ISLAND_EDGE := Color("d7aa78")
 const ISLAND_PREVIEW_OK := Color(0.25, 0.90, 0.45, 0.38)
 const ISLAND_PREVIEW_BAD := Color(0.95, 0.25, 0.25, 0.38)
+const MACHINE_SLOT_EMPTY := Color("f4d35e")
+const MACHINE_SLOT_EDGE := Color("fff2b2")
 const ISLAND_WIDTH := 6
 const ISLAND_HEIGHT := 2
 
@@ -84,6 +86,9 @@ func _draw() -> void:
 			if get_cell(tile)["type"] == "wall":
 				_draw_wall_tile(tile)
 
+	for island_id in islands:
+		_draw_machine_slots(islands[island_id])
+
 	if island_mode and is_valid_tile(hovered_tile):
 		_draw_island_preview(hovered_tile)
 
@@ -104,6 +109,49 @@ func _draw_wall_tile(tile: Vector2i) -> void:
 	draw_colored_polygon(side_left, WALL_SIDE)
 	draw_colored_polygon(top, WALL_TOP)
 	draw_polyline(top + PackedVector2Array([top[0]]), BORDER_COLOR, 1.0, true)
+
+func _build_machine_slots(origin: Vector2i, rotated: bool, island_id: String) -> Array:
+	var slots: Array = []
+	for index in range(ISLAND_WIDTH):
+		if rotated:
+			slots.append({
+				"slot_id": "%s_A_%02d" % [island_id, index + 1],
+				"island_id": island_id,
+				"position": origin + Vector2i(0, index),
+				"facing": "west",
+				"machine_id": ""
+			})
+			slots.append({
+				"slot_id": "%s_B_%02d" % [island_id, index + 1],
+				"island_id": island_id,
+				"position": origin + Vector2i(1, index),
+				"facing": "east",
+				"machine_id": ""
+			})
+		else:
+			slots.append({
+				"slot_id": "%s_A_%02d" % [island_id, index + 1],
+				"island_id": island_id,
+				"position": origin + Vector2i(index, 0),
+				"facing": "north",
+				"machine_id": ""
+			})
+			slots.append({
+				"slot_id": "%s_B_%02d" % [island_id, index + 1],
+				"island_id": island_id,
+				"position": origin + Vector2i(index, 1),
+				"facing": "south",
+				"machine_id": ""
+			})
+	return slots
+
+func _draw_machine_slots(island: Dictionary) -> void:
+	var slots: Array = island.get("machine_slots", [])
+	for slot in slots:
+		var tile: Vector2i = slot["position"]
+		var center: Vector2 = grid_to_world(tile.x, tile.y)
+		draw_circle(center, 4.5, MACHINE_SLOT_EMPTY)
+		draw_circle(center, 4.5, MACHINE_SLOT_EDGE, false, 1.2, true)
 
 func _island_size() -> Vector2i:
 	return Vector2i(ISLAND_HEIGHT, ISLAND_WIDTH) if island_rotated else Vector2i(ISLAND_WIDTH, ISLAND_HEIGHT)
@@ -140,7 +188,8 @@ func _place_island(origin: Vector2i) -> void:
 		"id": island_id,
 		"origin": origin,
 		"size": size,
-		"direction": "vertical" if island_rotated else "horizontal"
+		"direction": "vertical" if island_rotated else "horizontal",
+		"machine_slots": _build_machine_slots(origin, island_rotated, island_id)
 	}
 	for tile in _island_tiles(origin):
 		var cell: Dictionary = get_cell(tile)
@@ -209,7 +258,7 @@ func _refresh_hover() -> void:
 func _update_info() -> void:
 	if island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 03\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 04\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
 		info_text.text = "遊創舎 HALL MAP 03\n店内: 32 × 24 マス\nI: 島配置 / Esc: 屋外へ戻る"
 

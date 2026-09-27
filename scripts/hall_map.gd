@@ -191,14 +191,24 @@ func _place_machine(tile: Vector2i) -> void:
 		if slot["slot_id"] == slot_id:
 			var machine_id := "machine_%d" % next_machine_id
 			slot["machine_id"] = machine_id
+			var model: Dictionary = MachineCatalog.get_default_model()
 			machines[machine_id] = {
 				"id": machine_id,
 				"number": next_machine_id,
-				"type": "prototype_slot",
+				"model_id": str(model.get("id", MachineCatalog.DEFAULT_MODEL_ID)),
 				"island_id": island_id,
 				"slot_id": slot_id,
 				"position": slot["position"],
-				"facing": slot["facing"]
+				"facing": slot["facing"],
+				"setting": 1,
+				"power_on": true,
+				"operating": false,
+				"occupied_by": "",
+				"games": 0,
+				"coin_in": 0,
+				"coin_out": 0,
+				"net_coins": 0,
+				"sales_yen": 0
 			}
 			next_machine_id += 1
 			queue_redraw()
@@ -318,7 +328,7 @@ func _refresh_hover() -> void:
 
 func _update_info() -> void:
 	if machine_mode:
-		info_text.text = "遊創舎 HALL MAP 05\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
+		info_text.text = "遊創舎 HALL MAP 06\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
 	elif island_mode:
 		var size: Vector2i = _island_size()
 		info_text.text = "遊創舎 HALL MAP 05\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]

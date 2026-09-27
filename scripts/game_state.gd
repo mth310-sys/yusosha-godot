@@ -6,6 +6,7 @@ var world_buildings: Dictionary = {}
 var next_lot_id := 1
 var next_building_id := 1
 var selected_building_id := ""
+var hall_states: Dictionary = {}
 
 func store_world(map_data: Array, buildings: Dictionary, lot_id: int, building_id: int) -> void:
 	world_map_data = map_data.duplicate(true)
@@ -13,6 +14,16 @@ func store_world(map_data: Array, buildings: Dictionary, lot_id: int, building_i
 	next_lot_id = lot_id
 	next_building_id = building_id
 	world_initialized = true
+
+func store_hall(building_id: String, map_data: Array, islands: Dictionary, next_island_id: int) -> void:
+	hall_states[building_id] = {
+		"map_data": map_data.duplicate(true),
+		"islands": islands.duplicate(true),
+		"next_island_id": next_island_id
+	}
+
+func get_hall(building_id: String) -> Dictionary:
+	return hall_states.get(building_id, {})
 
 func clear_world() -> void:
 	world_initialized = false

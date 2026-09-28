@@ -571,15 +571,19 @@ func _place_island(origin: Vector2i) -> void:
 func _process(delta: float) -> void:
 	var visuals_changed := false
 	if not visible_customers.is_empty():
-		customer_animation_time += delta
-		for customer in visible_customers:
+		for index in range(visible_customers.size() - 1, -1, -1):
+			var customer: Dictionary = visible_customers[index]
 			var path: Array = customer.get("path", [])
+			if path.is_empty():
+				visible_customers.remove_at(index)
+				continue
 			var speed: float = 2.2 / maxf(1.0, float(path.size() - 1))
-			customer["progress"] = minf(1.0, float(customer.get("progress", 0.0)) + delta * speed)
-		visuals_changed = true
-		if customer_animation_time >= 4.0:
-			visible_customers.clear()
-			customer_animation_time = 0.0
+			var progress: float = float(customer.get("progress", 0.0)) + delta * speed
+			if progress >= 1.0:
+				visible_customers.remove_at(index)
+			else:
+				customer["progress"] = progress
+			visuals_changed = true
 		if visuals_changed:
 			queue_redraw()
 	var direction: Vector2 = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
@@ -660,12 +664,12 @@ func _refresh_hover() -> void:
 
 func _update_info() -> void:
 	if machine_mode:
-		info_text.text = "遊創舎 HALL MAP 14\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
+		info_text.text = "遊創舎 HALL MAP 15\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 14\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 15\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 14\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 15\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

@@ -186,12 +186,19 @@ func _draw_machine(machine: Dictionary) -> void:
 
 func _draw_visible_customers() -> void:
 	for customer in visible_customers:
-		var from_tile: Vector2i = customer["from"]
-		var to_tile: Vector2i = customer["to"]
+		var path: Array = customer.get("path", [])
+		if path.is_empty():
+			continue
 		var progress: float = float(customer.get("progress", 0.0))
+		var max_segment: int = maxi(0, path.size() - 1)
+		var path_position: float = progress * float(max_segment)
+		var segment: int = mini(int(floor(path_position)), maxi(0, max_segment - 1))
+		var local_progress: float = path_position - float(segment)
+		var from_tile: Vector2i = path[segment]
+		var to_tile: Vector2i = path[mini(segment + 1, max_segment)]
 		var from_pos: Vector2 = grid_to_world(from_tile.x, from_tile.y) + Vector2(0.0, -8.0)
-		var to_pos: Vector2 = grid_to_world(to_tile.x, to_tile.y) + Vector2(0.0, -10.0)
-		var pos: Vector2 = from_pos.lerp(to_pos, progress)
+		var to_pos: Vector2 = grid_to_world(to_tile.x, to_tile.y) + Vector2(0.0, -8.0)
+		var pos: Vector2 = from_pos.lerp(to_pos, local_progress)
 		draw_circle(pos, 6.0, CUSTOMER_COLOR)
 		draw_circle(pos, 6.0, CUSTOMER_EDGE, false, 1.3, true)
 
@@ -209,18 +216,59 @@ func _customer_target_tile(machine: Dictionary) -> Vector2i:
 		"east":
 			offset = Vector2i(1, 0)
 	var target := tile + offset
-	if is_valid_tile(target) and get_cell(target)["type"] != "wall":
+	if _is_walkable(target):
 		return target
-	return tile
+	return Vector2i(-1, -1)
 
-func _spawn_customer_visual(customer: Dictionary, machine: Dictionary) -> void:
-	if entrance_tiles.is_empty():
+func _is_walkable(tile: Vector2i) -> bool:
+	if not is_valid_tile(tile):
+		return false
+	var cell: Dictionary = get_cell(tile)
+	return cell["type"] == "floor" or cell["type"] == "entrance"
+
+func _find_customer_path(start: Vector2i, goal: Vector2i) -> Array:
+	if not _is_walkable(start) or not _is_walkable(goal):
+		return []
+	var frontier: Array[Vector2i] = [start]
+	var came_from: Dictionary = {start: start}
+	var index := 0
+	while index < frontier.size():
+		var current: Vector2i = frontier[index]
+		index += 1
+		if current == goal:
+			break
+		for next_tile in neighbors4(current):
+			if not _is_walkable(next_tile) or came_from.has(next_tile):
+				continue
+			came_from[next_tile] = current
+			frontier.append(next_tile)
+	if not came_from.has(goal):
+		return []
+	var path: Array = []
+	var current: Vector2i = goal
+	while current != start:
+		path.push_front(current)
+		current = came_from[current]
+	path.push_front(start)
+	return path
+
+func _path_from_entrance_to_machine(machine: Dictionary) -> Array:
+	var target: Vector2i = _customer_target_tile(machine)
+	if target == Vector2i(-1, -1):
+		return []
+	for entrance in entrance_tiles:
+		var path: Array = _find_customer_path(entrance, target)
+		if not path.is_empty():
+			return path
+	return []
+
+func _spawn_customer_visual(customer: Dictionary, machine: Dictionary, path: Array) -> void:
+	if path.is_empty():
 		return
 	visible_customers.append({
 		"id": customer["id"],
 		"type": customer["type"],
-		"from": entrance_tiles[rng.randi_range(0, entrance_tiles.size() - 1)],
-		"to": _customer_target_tile(machine),
+		"path": path.duplicate(),
 		"progress": 0.0
 	})
 
@@ -327,6 +375,8 @@ func _choose_customer_machine(customer: Dictionary) -> String:
 		var machine: Dictionary = machines[machine_id]
 		if not bool(machine.get("power_on", true)):
 			continue
+		if _path_from_entrance_to_machine(machine).is_empty():
+			continue
 		var popularity: float = float(machine.get("daily_popularity", 1.0))
 		var bias: float = float(customer.get("popularity_bias", 1.0))
 		var weight: float = maxf(0.05, pow(popularity, bias))
@@ -374,7 +424,10 @@ func _run_full_day() -> void:
 		if machine_id == "":
 			continue
 		var machine: Dictionary = machines[machine_id]
-		_spawn_customer_visual(customer, machine)
+		var customer_path: Array = _path_from_entrance_to_machine(machine)
+		if customer_path.is_empty():
+			continue
+		_spawn_customer_visual(customer, machine, customer_path)
 		machine["operating"] = true
 		machine["occupied_by"] = customer["id"]
 		var result: Dictionary = _run_customer_session(machine, customer)
@@ -512,7 +565,9 @@ func _process(delta: float) -> void:
 	if not visible_customers.is_empty():
 		customer_animation_time += delta
 		for customer in visible_customers:
-			customer["progress"] = minf(1.0, float(customer.get("progress", 0.0)) + delta * 0.55)
+			var path: Array = customer.get("path", [])
+			var speed: float = 2.2 / maxf(1.0, float(path.size() - 1))
+			customer["progress"] = minf(1.0, float(customer.get("progress", 0.0)) + delta * speed)
 		visuals_changed = true
 		if customer_animation_time >= 4.0:
 			visible_customers.clear()
@@ -597,12 +652,12 @@ func _refresh_hover() -> void:
 
 func _update_info() -> void:
 	if machine_mode:
-		info_text.text = "遊創舎 HALL MAP 12\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
+		info_text.text = "遊創舎 HALL MAP 13\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 12\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 13\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 12\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 13\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

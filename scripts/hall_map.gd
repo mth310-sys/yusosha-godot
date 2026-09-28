@@ -231,23 +231,55 @@ func _simulate_machine(machine: Dictionary, min_games: int, max_games: int) -> D
 	machine["sales_yen"] = int(machine.get("sales_yen", 0)) + sales
 	return {"games": games, "coin_in": coin_in, "coin_out": coin_out, "net": net, "sales": sales}
 
+func _choose_customer_machine() -> String:
+	var available: Array[String] = []
+	for machine_id in machines:
+		var machine: Dictionary = machines[machine_id]
+		if bool(machine.get("power_on", true)):
+			available.append(str(machine_id))
+	if available.is_empty():
+		return ""
+	return available[rng.randi_range(0, available.size() - 1)]
+
+func _run_customer_session(machine: Dictionary) -> Dictionary:
+	var session_games: int = rng.randi_range(80, 650)
+	return _simulate_machine(machine, session_games, session_games)
+
 func _run_full_day() -> void:
 	if machines.is_empty():
 		return
+	var customer_count: int = rng.randi_range(maxi(8, machines.size()), maxi(20, machines.size() * 5))
+	var served_customers := 0
 	var total_games := 0
 	var total_in := 0
 	var total_out := 0
 	var total_sales := 0
-	for machine_id in machines:
-		var result: Dictionary = _simulate_machine(machines[machine_id], 1800, 7000)
+	var machine_visits: Dictionary = {}
+	for customer_index in range(customer_count):
+		var machine_id: String = _choose_customer_machine()
+		if machine_id == "":
+			continue
+		var machine: Dictionary = machines[machine_id]
+		machine["operating"] = true
+		machine["occupied_by"] = "customer_%d" % (customer_index + 1)
+		var result: Dictionary = _run_customer_session(machine)
+		machine["operating"] = false
+		machine["occupied_by"] = ""
+		machine_visits[machine_id] = int(machine_visits.get(machine_id, 0)) + 1
+		served_customers += 1
 		total_games += int(result["games"])
 		total_in += int(result["coin_in"])
 		total_out += int(result["coin_out"])
 		total_sales += int(result["sales"])
 	var total_net: int = total_out - total_in
 	var gross_profit: int = (total_in - total_out) * 20
-	daily_text.text = "1営業日 結果\n設置台数: %d台\n総ゲーム数: %dG\nIN: %d枚 / OUT: %d枚\n差枚: %+d枚\n売上: %d円\n粗利: %+d円" % [
-		machines.size(), total_games, total_in, total_out, total_net, total_sales, gross_profit
+	var active_machines := 0
+	for machine_id in machine_visits:
+		if int(machine_visits[machine_id]) > 0:
+			active_machines += 1
+	daily_text.text = "1営業日 結果\n来店客: %d人 / 遊技客: %d人\n稼働台: %d / %d台\n総ゲーム数: %dG\nIN: %d枚 / OUT: %d枚\n差枚: %+d枚\n売上: %d円\n粗利: %+d円" % [
+		customer_count, served_customers, active_machines, machines.size(),
+		total_games, total_in, total_out, total_net, total_sales, gross_profit
 	]
 	daily_panel.visible = true
 	_update_machine_panel()
@@ -438,12 +470,12 @@ func _refresh_hover() -> void:
 
 func _update_info() -> void:
 	if machine_mode:
-		info_text.text = "遊創舎 HALL MAP 09\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
+		info_text.text = "遊創舎 HALL MAP 10\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 09\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 10\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 09\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 10\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

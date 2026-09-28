@@ -231,24 +231,88 @@ func _simulate_machine(machine: Dictionary, min_games: int, max_games: int) -> D
 	machine["sales_yen"] = int(machine.get("sales_yen", 0)) + sales
 	return {"games": games, "coin_in": coin_in, "coin_out": coin_out, "net": net, "sales": sales}
 
-func _choose_customer_machine() -> String:
-	var available: Array[String] = []
+func _create_customer(customer_index: int) -> Dictionary:
+	var roll: float = rng.randf()
+	var customer_type := "一般客"
+	var budget_min := 10000
+	var budget_max := 40000
+	var min_games := 120
+	var max_games := 500
+	var popularity_bias := 1.0
+	if roll < 0.20:
+		customer_type = "ライト客"
+		budget_min = 5000
+		budget_max = 20000
+		min_games = 60
+		max_games = 250
+		popularity_bias = 1.4
+	elif roll < 0.45:
+		customer_type = "常連"
+		budget_min = 15000
+		budget_max = 50000
+		min_games = 220
+		max_games = 700
+		popularity_bias = 0.8
+	elif roll < 0.60:
+		customer_type = "勝負客"
+		budget_min = 30000
+		budget_max = 100000
+		min_games = 350
+		max_games = 1000
+		popularity_bias = 1.1
+	return {
+		"id": "customer_%d" % customer_index,
+		"type": customer_type,
+		"budget": rng.randi_range(budget_min, budget_max),
+		"min_games": min_games,
+		"max_games": max_games,
+		"popularity_bias": popularity_bias
+	}
+
+func _prepare_daily_machine_popularity() -> void:
 	for machine_id in machines:
 		var machine: Dictionary = machines[machine_id]
-		if bool(machine.get("power_on", true)):
-			available.append(str(machine_id))
-	if available.is_empty():
-		return ""
-	return available[rng.randi_range(0, available.size() - 1)]
+		machine["daily_popularity"] = rng.randf_range(0.75, 1.25)
 
-func _run_customer_session(machine: Dictionary) -> Dictionary:
-	var session_games: int = rng.randi_range(80, 650)
+func _choose_customer_machine(customer: Dictionary) -> String:
+	var candidates: Array[String] = []
+	var weights: Array[float] = []
+	var total_weight := 0.0
+	for machine_id in machines:
+		var machine: Dictionary = machines[machine_id]
+		if not bool(machine.get("power_on", true)):
+			continue
+		var popularity: float = float(machine.get("daily_popularity", 1.0))
+		var bias: float = float(customer.get("popularity_bias", 1.0))
+		var weight: float = maxf(0.05, pow(popularity, bias))
+		candidates.append(str(machine_id))
+		weights.append(weight)
+		total_weight += weight
+	if candidates.is_empty():
+		return ""
+	var pick: float = rng.randf() * total_weight
+	var running := 0.0
+	for index in range(candidates.size()):
+		running += weights[index]
+		if pick <= running:
+			return candidates[index]
+	return candidates[candidates.size() - 1]
+
+func _run_customer_session(machine: Dictionary, customer: Dictionary) -> Dictionary:
+	var budget: int = int(customer.get("budget", 10000))
+	var max_affordable_games: int = maxi(1, budget / 60)
+	var min_games: int = int(customer.get("min_games", 80))
+	var max_games: int = mini(int(customer.get("max_games", 650)), max_affordable_games)
+	min_games = mini(min_games, max_games)
+	var session_games: int = rng.randi_range(min_games, max_games)
 	return _simulate_machine(machine, session_games, session_games)
 
 func _run_full_day() -> void:
 	if machines.is_empty():
 		return
 	var customer_count: int = rng.randi_range(maxi(8, machines.size()), maxi(20, machines.size() * 5))
+	_prepare_daily_machine_popularity()
+	var type_counts := {"一般客": 0, "常連": 0, "ライト客": 0, "勝負客": 0}
 	var served_customers := 0
 	var total_games := 0
 	var total_in := 0
@@ -256,13 +320,16 @@ func _run_full_day() -> void:
 	var total_sales := 0
 	var machine_visits: Dictionary = {}
 	for customer_index in range(customer_count):
-		var machine_id: String = _choose_customer_machine()
+		var customer: Dictionary = _create_customer(customer_index + 1)
+		var customer_type: String = str(customer["type"])
+		type_counts[customer_type] = int(type_counts.get(customer_type, 0)) + 1
+		var machine_id: String = _choose_customer_machine(customer)
 		if machine_id == "":
 			continue
 		var machine: Dictionary = machines[machine_id]
 		machine["operating"] = true
-		machine["occupied_by"] = "customer_%d" % (customer_index + 1)
-		var result: Dictionary = _run_customer_session(machine)
+		machine["occupied_by"] = customer["id"]
+		var result: Dictionary = _run_customer_session(machine, customer)
 		machine["operating"] = false
 		machine["occupied_by"] = ""
 		machine_visits[machine_id] = int(machine_visits.get(machine_id, 0)) + 1
@@ -277,9 +344,10 @@ func _run_full_day() -> void:
 	for machine_id in machine_visits:
 		if int(machine_visits[machine_id]) > 0:
 			active_machines += 1
-	daily_text.text = "1営業日 結果\n来店客: %d人 / 遊技客: %d人\n稼働台: %d / %d台\n総ゲーム数: %dG\nIN: %d枚 / OUT: %d枚\n差枚: %+d枚\n売上: %d円\n粗利: %+d円" % [
-		customer_count, served_customers, active_machines, machines.size(),
-		total_games, total_in, total_out, total_net, total_sales, gross_profit
+	daily_text.text = "1営業日 結果\n来店客: %d人 / 遊技客: %d人\n一般:%d 常連:%d ライト:%d 勝負:%d\n稼働台: %d / %d台\n総ゲーム数: %dG\nIN: %d枚 / OUT: %d枚\n差枚: %+d枚\n売上: %d円\n粗利: %+d円" % [
+		customer_count, served_customers,
+		int(type_counts["一般客"]), int(type_counts["常連"]), int(type_counts["ライト客"]), int(type_counts["勝負客"]),
+		active_machines, machines.size(), total_games, total_in, total_out, total_net, total_sales, gross_profit
 	]
 	daily_panel.visible = true
 	_update_machine_panel()
@@ -470,12 +538,12 @@ func _refresh_hover() -> void:
 
 func _update_info() -> void:
 	if machine_mode:
-		info_text.text = "遊創舎 HALL MAP 10\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
+		info_text.text = "遊創舎 HALL MAP 11\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 10\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 11\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 10\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 11\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

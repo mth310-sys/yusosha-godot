@@ -202,23 +202,32 @@ func _draw_visible_customers() -> void:
 		draw_circle(pos, 6.0, CUSTOMER_COLOR)
 		draw_circle(pos, 6.0, CUSTOMER_EDGE, false, 1.3, true)
 
-func _customer_target_tile(machine: Dictionary) -> Vector2i:
+func _customer_target_tiles(machine: Dictionary) -> Array[Vector2i]:
 	var tile: Vector2i = machine["position"]
 	var facing: String = str(machine.get("facing", "south"))
-	var offset := Vector2i(0, 1)
+	var preferred := Vector2i(0, 1)
 	match facing:
 		"north":
-			offset = Vector2i(0, -1)
+			preferred = Vector2i(0, -1)
 		"south":
-			offset = Vector2i(0, 1)
+			preferred = Vector2i(0, 1)
 		"west":
-			offset = Vector2i(-1, 0)
+			preferred = Vector2i(-1, 0)
 		"east":
-			offset = Vector2i(1, 0)
-	var target := tile + offset
-	if _is_walkable(target):
-		return target
-	return Vector2i(-1, -1)
+			preferred = Vector2i(1, 0)
+	var offsets: Array[Vector2i] = [
+		preferred,
+		Vector2i(0, -1),
+		Vector2i(0, 1),
+		Vector2i(-1, 0),
+		Vector2i(1, 0)
+	]
+	var result: Array[Vector2i] = []
+	for offset in offsets:
+		var target := tile + offset
+		if _is_walkable(target) and not result.has(target):
+			result.append(target)
+	return result
 
 func _is_walkable(tile: Vector2i) -> bool:
 	if not is_valid_tile(tile):
@@ -253,13 +262,12 @@ func _find_customer_path(start: Vector2i, goal: Vector2i) -> Array:
 	return path
 
 func _path_from_entrance_to_machine(machine: Dictionary) -> Array:
-	var target: Vector2i = _customer_target_tile(machine)
-	if target == Vector2i(-1, -1):
-		return []
-	for entrance in entrance_tiles:
-		var path: Array = _find_customer_path(entrance, target)
-		if not path.is_empty():
-			return path
+	var targets: Array[Vector2i] = _customer_target_tiles(machine)
+	for target in targets:
+		for entrance in entrance_tiles:
+			var path: Array = _find_customer_path(entrance, target)
+			if not path.is_empty():
+				return path
 	return []
 
 func _spawn_customer_visual(customer: Dictionary, machine: Dictionary, path: Array) -> void:
@@ -652,12 +660,12 @@ func _refresh_hover() -> void:
 
 func _update_info() -> void:
 	if machine_mode:
-		info_text.text = "遊創舎 HALL MAP 13\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
+		info_text.text = "遊創舎 HALL MAP 14\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 13\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 14\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 13\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 14\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

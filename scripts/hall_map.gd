@@ -43,6 +43,13 @@ var selected_machine_id := ""
 var rng := RandomNumberGenerator.new()
 var visible_customers: Array[Dictionary] = []
 var customer_animation_time := 0.0
+var business_running := false
+var business_time := 0.0
+var business_duration := 45.0
+var next_customer_spawn := 0.0
+var business_customer_index := 0
+var business_target_customers := 0
+var business_totals := {"customers": 0, "games": 0, "coin_in": 0, "coin_out": 0, "sales": 0}
 
 func _ready() -> void:
 	map_width = 32
@@ -189,16 +196,21 @@ func _draw_visible_customers() -> void:
 		var path: Array = customer.get("path", [])
 		if path.is_empty():
 			continue
-		var progress: float = float(customer.get("progress", 0.0))
-		var max_segment: int = maxi(0, path.size() - 1)
-		var path_position: float = progress * float(max_segment)
-		var segment: int = mini(int(floor(path_position)), maxi(0, max_segment - 1))
-		var local_progress: float = path_position - float(segment)
-		var from_tile: Vector2i = path[segment]
-		var to_tile: Vector2i = path[mini(segment + 1, max_segment)]
-		var from_pos: Vector2 = grid_to_world(from_tile.x, from_tile.y) + Vector2(0.0, -8.0)
-		var to_pos: Vector2 = grid_to_world(to_tile.x, to_tile.y) + Vector2(0.0, -8.0)
-		var pos: Vector2 = from_pos.lerp(to_pos, local_progress)
+		var pos := Vector2.ZERO
+		if str(customer.get("state", "walking")) == "playing":
+			var tile: Vector2i = path[path.size() - 1]
+			pos = grid_to_world(tile.x, tile.y) + Vector2(0.0, -8.0)
+		else:
+			var progress: float = float(customer.get("progress", 0.0))
+			var max_segment: int = maxi(0, path.size() - 1)
+			var path_position: float = progress * float(max_segment)
+			var segment: int = mini(int(floor(path_position)), maxi(0, max_segment - 1))
+			var local_progress: float = path_position - float(segment)
+			var from_tile: Vector2i = path[segment]
+			var to_tile: Vector2i = path[mini(segment + 1, max_segment)]
+			var from_pos: Vector2 = grid_to_world(from_tile.x, from_tile.y) + Vector2(0.0, -8.0)
+			var to_pos: Vector2 = grid_to_world(to_tile.x, to_tile.y) + Vector2(0.0, -8.0)
+			pos = from_pos.lerp(to_pos, local_progress)
 		draw_circle(pos, 6.0, CUSTOMER_COLOR)
 		draw_circle(pos, 6.0, CUSTOMER_EDGE, false, 1.3, true)
 
@@ -276,8 +288,13 @@ func _spawn_customer_visual(customer: Dictionary, machine: Dictionary, path: Arr
 	visible_customers.append({
 		"id": customer["id"],
 		"type": customer["type"],
+		"customer": customer.duplicate(true),
+		"machine_id": machine["id"],
 		"path": path.duplicate(),
-		"progress": 0.0
+		"progress": 0.0,
+		"state": "walking",
+		"play_time": 0.0,
+		"play_duration": rng.randf_range(3.0, 8.0)
 	})
 
 func _machine_at(tile: Vector2i) -> String:
@@ -383,6 +400,8 @@ func _choose_customer_machine(customer: Dictionary) -> String:
 		var machine: Dictionary = machines[machine_id]
 		if not bool(machine.get("power_on", true)):
 			continue
+		if str(machine.get("occupied_by", "")) != "":
+			continue
 		if _path_from_entrance_to_machine(machine).is_empty():
 			continue
 		var popularity: float = float(machine.get("daily_popularity", 1.0))
@@ -411,56 +430,64 @@ func _run_customer_session(machine: Dictionary, customer: Dictionary) -> Diction
 	return _simulate_machine(machine, session_games, session_games)
 
 func _run_full_day() -> void:
-	if machines.is_empty():
+	if machines.is_empty() or business_running:
 		return
-	var customer_count: int = rng.randi_range(maxi(8, machines.size()), maxi(20, machines.size() * 5))
+	business_running = true
+	business_time = 0.0
+	next_customer_spawn = 0.2
+	business_customer_index = 0
+	business_target_customers = rng.randi_range(maxi(8, machines.size()), maxi(20, machines.size() * 5))
+	business_totals = {"customers": 0, "games": 0, "coin_in": 0, "coin_out": 0, "sales": 0}
 	visible_customers.clear()
-	customer_animation_time = 0.0
 	_prepare_daily_machine_popularity()
-	var type_counts := {"一般客": 0, "常連": 0, "ライト客": 0, "勝負客": 0}
-	var served_customers := 0
-	var total_games := 0
-	var total_in := 0
-	var total_out := 0
-	var total_sales := 0
-	var machine_visits: Dictionary = {}
-	for customer_index in range(customer_count):
-		var customer: Dictionary = _create_customer(customer_index + 1)
-		var customer_type: String = str(customer["type"])
-		type_counts[customer_type] = int(type_counts.get(customer_type, 0)) + 1
-		var machine_id: String = _choose_customer_machine(customer)
-		if machine_id == "":
-			continue
-		var machine: Dictionary = machines[machine_id]
-		var customer_path: Array = _path_from_entrance_to_machine(machine)
-		if customer_path.is_empty():
-			continue
-		_spawn_customer_visual(customer, machine, customer_path)
-		machine["operating"] = true
-		machine["occupied_by"] = customer["id"]
-		var result: Dictionary = _run_customer_session(machine, customer)
-		machine["operating"] = false
-		machine["occupied_by"] = ""
-		machine_visits[machine_id] = int(machine_visits.get(machine_id, 0)) + 1
-		served_customers += 1
-		total_games += int(result["games"])
-		total_in += int(result["coin_in"])
-		total_out += int(result["coin_out"])
-		total_sales += int(result["sales"])
-	var total_net: int = total_out - total_in
-	var gross_profit: int = (total_in - total_out) * 20
-	var active_machines := 0
-	for machine_id in machine_visits:
-		if int(machine_visits[machine_id]) > 0:
-			active_machines += 1
-	daily_text.text = "1営業日 結果\n来店客: %d人 / 遊技客: %d人\n一般:%d 常連:%d ライト:%d 勝負:%d\n稼働台: %d / %d台\n総ゲーム数: %dG\nIN: %d枚 / OUT: %d枚\n差枚: %+d枚\n売上: %d円\n粗利: %+d円" % [
-		customer_count, served_customers,
-		int(type_counts["一般客"]), int(type_counts["常連"]), int(type_counts["ライト客"]), int(type_counts["勝負客"]),
-		active_machines, machines.size(), total_games, total_in, total_out, total_net, total_sales, gross_profit
-	]
 	daily_panel.visible = true
+	_update_business_panel()
+
+func _spawn_business_customer() -> void:
+	business_customer_index += 1
+	var customer: Dictionary = _create_customer(business_customer_index)
+	var machine_id: String = _choose_customer_machine(customer)
+	if machine_id == "":
+		return
+	var machine: Dictionary = machines[machine_id]
+	var path: Array = _path_from_entrance_to_machine(machine)
+	if path.is_empty():
+		return
+	machine["occupied_by"] = customer["id"]
+	_spawn_customer_visual(customer, machine, path)
+	business_totals["customers"] = int(business_totals["customers"]) + 1
+
+func _finish_customer_session(customer_visual: Dictionary) -> void:
+	var machine_id: String = str(customer_visual.get("machine_id", ""))
+	if not machines.has(machine_id):
+		return
+	var machine: Dictionary = machines[machine_id]
+	var customer: Dictionary = customer_visual.get("customer", {})
+	var result: Dictionary = _run_customer_session(machine, customer)
+	machine["operating"] = false
+	machine["occupied_by"] = ""
+	business_totals["games"] = int(business_totals["games"]) + int(result["games"])
+	business_totals["coin_in"] = int(business_totals["coin_in"]) + int(result["coin_in"])
+	business_totals["coin_out"] = int(business_totals["coin_out"]) + int(result["coin_out"])
+	business_totals["sales"] = int(business_totals["sales"]) + int(result["sales"])
+
+func _update_business_panel() -> void:
+	var display_minutes: int = int((business_time / business_duration) * 780.0)
+	var hour: int = 9 + display_minutes / 60
+	var minute: int = display_minutes % 60
+	var total_in: int = int(business_totals["coin_in"])
+	var total_out: int = int(business_totals["coin_out"])
+	var status := "営業中" if business_running else "営業終了"
+	daily_text.text = "%s  %02d:%02d\n来店: %d / %d人\n店内客: %d人\n総ゲーム数: %dG\nIN: %d枚 / OUT: %d枚\n差枚: %+d枚\n粗利: %+d円" % [
+		status, mini(hour, 22), minute,
+		int(business_totals["customers"]), business_target_customers, visible_customers.size(),
+		int(business_totals["games"]), total_in, total_out, total_out - total_in, (total_in - total_out) * 20
+	]
+
+func _finish_business_day() -> void:
+	business_running = false
+	_update_business_panel()
 	_update_machine_panel()
-	queue_redraw()
 
 func _run_selected_machine_test() -> void:
 	if selected_machine_id == "" or not machines.has(selected_machine_id):
@@ -570,9 +597,16 @@ func _place_island(origin: Vector2i) -> void:
 
 func _process(delta: float) -> void:
 	var visuals_changed := false
-	if not visible_customers.is_empty():
-		for index in range(visible_customers.size() - 1, -1, -1):
-			var customer: Dictionary = visible_customers[index]
+	if business_running:
+		business_time += delta
+		if business_customer_index < business_target_customers and business_time >= next_customer_spawn:
+			_spawn_business_customer()
+			next_customer_spawn = business_time + rng.randf_range(0.5, 1.8)
+		_update_business_panel()
+	for index in range(visible_customers.size() - 1, -1, -1):
+		var customer: Dictionary = visible_customers[index]
+		var state: String = str(customer.get("state", "walking"))
+		if state == "walking":
 			var path: Array = customer.get("path", [])
 			if path.is_empty():
 				visible_customers.remove_at(index)
@@ -580,12 +614,25 @@ func _process(delta: float) -> void:
 			var speed: float = 2.2 / maxf(1.0, float(path.size() - 1))
 			var progress: float = float(customer.get("progress", 0.0)) + delta * speed
 			if progress >= 1.0:
-				visible_customers.remove_at(index)
+				customer["progress"] = 1.0
+				customer["state"] = "playing"
+				var machine_id: String = str(customer.get("machine_id", ""))
+				if machines.has(machine_id):
+					machines[machine_id]["operating"] = true
 			else:
 				customer["progress"] = progress
 			visuals_changed = true
-		if visuals_changed:
-			queue_redraw()
+		elif state == "playing":
+			customer["play_time"] = float(customer.get("play_time", 0.0)) + delta
+			if float(customer["play_time"]) >= float(customer.get("play_duration", 5.0)):
+				_finish_customer_session(customer)
+				visible_customers.remove_at(index)
+				_update_business_panel()
+			visuals_changed = true
+	if business_running and business_time >= business_duration and business_customer_index >= business_target_customers and visible_customers.is_empty():
+		_finish_business_day()
+	if visuals_changed:
+		queue_redraw()
 	var direction: Vector2 = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	if direction != Vector2.ZERO:
 		camera.position += direction * 700.0 * delta / camera.zoom.x
@@ -664,12 +711,12 @@ func _refresh_hover() -> void:
 
 func _update_info() -> void:
 	if machine_mode:
-		info_text.text = "遊創舎 HALL MAP 15\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
+		info_text.text = "遊創舎 HALL MAP 16\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 15\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 16\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 15\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 16\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 営業開始 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

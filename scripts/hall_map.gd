@@ -18,6 +18,8 @@ const MACHINE_BODY := Color("4056a1")
 const MACHINE_SCREEN := Color("9ee7ff")
 const ISLAND_WIDTH := 6
 const ISLAND_HEIGHT := 2
+const CUSTOMER_COLOR := Color("f26b5e")
+const CUSTOMER_EDGE := Color("fff4df")
 
 @onready var camera: Camera2D = $Camera2D
 @onready var info_text: Label = $UI/InfoPanel/Margin/Text
@@ -39,6 +41,8 @@ var machines: Dictionary = {}
 var next_machine_id := 1
 var selected_machine_id := ""
 var rng := RandomNumberGenerator.new()
+var visible_customers: Array[Dictionary] = []
+var customer_animation_time := 0.0
 
 func _ready() -> void:
 	map_width = 32
@@ -104,6 +108,7 @@ func _draw() -> void:
 		_draw_machine_slots(islands[island_id])
 	for machine_id in machines:
 		_draw_machine(machines[machine_id])
+	_draw_visible_customers()
 
 	if island_mode and is_valid_tile(hovered_tile):
 		_draw_island_preview(hovered_tile)
@@ -178,6 +183,46 @@ func _draw_machine(machine: Dictionary) -> void:
 	draw_rect(body, MACHINE_BODY)
 	draw_rect(Rect2(center - Vector2(4.5, 8.5), Vector2(9.0, 6.0)), MACHINE_SCREEN)
 	draw_string(ThemeDB.fallback_font, center + Vector2(-5.0, 5.0), str(machine["number"]), HORIZONTAL_ALIGNMENT_CENTER, 10.0, 8, Color.WHITE)
+
+func _draw_visible_customers() -> void:
+	for customer in visible_customers:
+		var from_tile: Vector2i = customer["from"]
+		var to_tile: Vector2i = customer["to"]
+		var progress: float = float(customer.get("progress", 0.0))
+		var from_pos: Vector2 = grid_to_world(from_tile.x, from_tile.y) + Vector2(0.0, -8.0)
+		var to_pos: Vector2 = grid_to_world(to_tile.x, to_tile.y) + Vector2(0.0, -10.0)
+		var pos: Vector2 = from_pos.lerp(to_pos, progress)
+		draw_circle(pos, 6.0, CUSTOMER_COLOR)
+		draw_circle(pos, 6.0, CUSTOMER_EDGE, false, 1.3, true)
+
+func _customer_target_tile(machine: Dictionary) -> Vector2i:
+	var tile: Vector2i = machine["position"]
+	var facing: String = str(machine.get("facing", "south"))
+	var offset := Vector2i(0, 1)
+	match facing:
+		"north":
+			offset = Vector2i(0, -1)
+		"south":
+			offset = Vector2i(0, 1)
+		"west":
+			offset = Vector2i(-1, 0)
+		"east":
+			offset = Vector2i(1, 0)
+	var target := tile + offset
+	if is_valid_tile(target) and get_cell(target)["type"] != "wall":
+		return target
+	return tile
+
+func _spawn_customer_visual(customer: Dictionary, machine: Dictionary) -> void:
+	if entrance_tiles.is_empty():
+		return
+	visible_customers.append({
+		"id": customer["id"],
+		"type": customer["type"],
+		"from": entrance_tiles[rng.randi_range(0, entrance_tiles.size() - 1)],
+		"to": _customer_target_tile(machine),
+		"progress": 0.0
+	})
 
 func _machine_at(tile: Vector2i) -> String:
 	for machine_id in machines:
@@ -311,6 +356,8 @@ func _run_full_day() -> void:
 	if machines.is_empty():
 		return
 	var customer_count: int = rng.randi_range(maxi(8, machines.size()), maxi(20, machines.size() * 5))
+	visible_customers.clear()
+	customer_animation_time = 0.0
 	_prepare_daily_machine_popularity()
 	var type_counts := {"一般客": 0, "常連": 0, "ライト客": 0, "勝負客": 0}
 	var served_customers := 0
@@ -327,6 +374,7 @@ func _run_full_day() -> void:
 		if machine_id == "":
 			continue
 		var machine: Dictionary = machines[machine_id]
+		_spawn_customer_visual(customer, machine)
 		machine["operating"] = true
 		machine["occupied_by"] = customer["id"]
 		var result: Dictionary = _run_customer_session(machine, customer)
@@ -460,6 +508,17 @@ func _place_island(origin: Vector2i) -> void:
 	queue_redraw()
 
 func _process(delta: float) -> void:
+	var visuals_changed := false
+	if not visible_customers.is_empty():
+		customer_animation_time += delta
+		for customer in visible_customers:
+			customer["progress"] = minf(1.0, float(customer.get("progress", 0.0)) + delta * 0.55)
+		visuals_changed = true
+		if customer_animation_time >= 4.0:
+			visible_customers.clear()
+			customer_animation_time = 0.0
+		if visuals_changed:
+			queue_redraw()
 	var direction: Vector2 = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	if direction != Vector2.ZERO:
 		camera.position += direction * 700.0 * delta / camera.zoom.x
@@ -538,12 +597,12 @@ func _refresh_hover() -> void:
 
 func _update_info() -> void:
 	if machine_mode:
-		info_text.text = "遊創舎 HALL MAP 11\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
+		info_text.text = "遊創舎 HALL MAP 12\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 11\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 12\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 11\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 12\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 1日営業 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

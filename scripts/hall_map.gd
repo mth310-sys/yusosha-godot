@@ -27,6 +27,7 @@ const CUSTOMER_EDGE := Color("fff4df")
 @onready var machine_text: Label = $UI/MachinePanel/Margin/Text
 @onready var daily_panel: PanelContainer = $UI/DailyPanel
 @onready var daily_text: Label = $UI/DailyPanel/Margin/Text
+@onready var ranking_text: Label = $UI/RankingPanel/Margin/Text
 
 var dragging := false
 var last_mouse_position := Vector2.ZERO
@@ -51,6 +52,7 @@ var next_customer_spawn := 0.0
 var business_customer_index := 0
 var business_target_customers := 0
 var business_totals := {"customers": 0, "games": 0, "coin_in": 0, "coin_out": 0, "sales": 0}
+var last_ranking_hour := 9
 
 func _ready() -> void:
 	map_width = 32
@@ -69,6 +71,7 @@ func _ready() -> void:
 	camera.zoom = Vector2(0.9, 0.9)
 	rng.randomize()
 	_update_info()
+	_update_ranking_panel(9)
 	queue_redraw()
 
 func _build_shell() -> void:
@@ -441,6 +444,8 @@ func _run_full_day() -> void:
 		return
 	business_running = true
 	business_time = 0.0
+	last_ranking_hour = 9
+	_update_ranking_panel(9)
 	next_customer_spawn = 0.2
 	business_customer_index = 0
 	business_target_customers = rng.randi_range(maxi(8, machines.size()), maxi(20, machines.size() * 5))
@@ -491,8 +496,45 @@ func _update_business_panel() -> void:
 		int(business_totals["games"]), total_in, total_out, total_out - total_in, (total_in - total_out) * 20
 	]
 
+func _update_ranking_panel(update_hour: int) -> void:
+	var ranking: Array[Dictionary] = []
+	for machine_id in machines:
+		var machine: Dictionary = machines[machine_id]
+		var model: Dictionary = MachineCatalog.get_model(str(machine.get("model_id", MachineCatalog.DEFAULT_MODEL_ID)))
+		ranking.append({
+			"number": int(machine.get("number", 0)),
+			"name": str(model.get("name", "不明")),
+			"games": int(machine.get("games", 0)),
+			"net": int(machine.get("net_coins", 0))
+		})
+	ranking.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a["net"]) > int(b["net"]))
+	var lines: Array[String] = ["データカウンター  %02d:00更新" % update_hour, "差枚ランキング TOP5", ""]
+	var count: int = mini(5, ranking.size())
+	for index in range(count):
+		var row: Dictionary = ranking[index]
+		lines.append("%d位  #%02d  %s" % [index + 1, int(row["number"]), str(row["name"])])
+		lines.append("      %dG  %+d枚" % [int(row["games"]), int(row["net"])])
+	if count == 0:
+		lines.append("設置台なし")
+	if update_hour < 23:
+		lines.append("")
+		lines.append("次回更新  %02d:00" % (update_hour + 1))
+	else:
+		lines.append("")
+		lines.append("本日の最終結果")
+	ranking_text.text = "\n".join(lines)
+
+func _check_hourly_ranking_update() -> void:
+	var display_minutes: int = mini(840, int((business_time / business_duration) * 840.0))
+	var current_hour: int = mini(23, 9 + display_minutes / 60)
+	while last_ranking_hour < current_hour:
+		last_ranking_hour += 1
+		_update_ranking_panel(last_ranking_hour)
+
 func _finish_business_day() -> void:
 	business_running = false
+	last_ranking_hour = 23
+	_update_ranking_panel(23)
 	_update_business_panel()
 	_update_machine_panel()
 
@@ -610,6 +652,7 @@ func _process(delta: float) -> void:
 			_spawn_business_customer()
 			next_customer_spawn = business_time + rng.randf_range(0.5, 1.8)
 		_update_business_panel()
+		_check_hourly_ranking_update()
 	for index in range(visible_customers.size() - 1, -1, -1):
 		var customer: Dictionary = visible_customers[index]
 		var state: String = str(customer.get("state", "walking"))
@@ -723,12 +766,12 @@ func _refresh_hover() -> void:
 func _update_info() -> void:
 	if machine_mode:
 		var model: Dictionary = MachineCatalog.get_model_by_index(placement_model_index)
-		info_text.text = "遊創舎 HALL MAP 18\n実機配置: %s [%s]\n1〜5: 機種変更 / 左クリック: 配置 / Esc: 終了" % [str(model.get("name", "不明")), str(model.get("category", ""))]
+		info_text.text = "遊創舎 HALL MAP 19\n実機配置: %s [%s]\n1〜5: 機種変更 / 左クリック: 配置 / Esc: 終了" % [str(model.get("name", "不明")), str(model.get("category", ""))]
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 18\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 19\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 18\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 営業開始 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 19\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 営業開始 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

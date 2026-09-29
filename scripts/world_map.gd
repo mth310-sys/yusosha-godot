@@ -72,8 +72,8 @@ func _generate_initial_city() -> void:
 			_set_generated_road(Vector2i(x, y))
 
 	# Two vacant candidate sites: one medium and one large.
-	_generate_lot_rect(Vector2i(17, 17), Vector2i(23, 23))
-	_generate_lot_rect(Vector2i(26, 26), Vector2i(41, 33))
+	_generate_lot_rect(Vector2i(17, 17), Vector2i(23, 22))
+	_generate_lot_rect(Vector2i(26, 26), Vector2i(33, 32))
 
 	# Everything else becomes an existing town.
 	_generate_city_blocks()
@@ -84,7 +84,7 @@ func _generate_city_blocks() -> void:
 		Vector2i(1, 1), Vector2i(9, 1), Vector2i(17, 1), Vector2i(26, 1), Vector2i(35, 1), Vector2i(43, 1),
 		Vector2i(1, 9), Vector2i(9, 9), Vector2i(17, 9), Vector2i(26, 9), Vector2i(35, 9), Vector2i(43, 9),
 		Vector2i(1, 17), Vector2i(9, 17), Vector2i(26, 17), Vector2i(35, 17), Vector2i(43, 17),
-		Vector2i(1, 26), Vector2i(9, 26), Vector2i(17, 26), Vector2i(43, 26),
+		Vector2i(1, 26), Vector2i(9, 26), Vector2i(17, 26), Vector2i(34, 26), Vector2i(43, 26),
 		Vector2i(1, 35), Vector2i(9, 35), Vector2i(17, 35), Vector2i(26, 35), Vector2i(35, 35), Vector2i(43, 35),
 		Vector2i(1, 43), Vector2i(9, 43), Vector2i(17, 43), Vector2i(26, 43), Vector2i(35, 43), Vector2i(43, 43)
 	]
@@ -92,13 +92,26 @@ func _generate_city_blocks() -> void:
 		_fill_city_block(origin)
 
 func _fill_city_block(origin: Vector2i) -> void:
+	# Deterministic variation: blocks no longer share one identical 2x2 pattern.
+	var variant: int = (origin.x * 3 + origin.y * 5) % 4
 	for y in range(origin.y, mini(origin.y + 7, map_height - 1)):
 		for x in range(origin.x, mini(origin.x + 7, map_width - 1)):
 			var tile := Vector2i(x, y)
 			if _is_road(tile) or int(get_cell(tile).get("lot_id", 0)) > 0:
 				continue
-			# Leave a one-tile rhythm between small city buildings.
-			if ((x - origin.x) % 3 == 2) or ((y - origin.y) % 3 == 2):
+			var local_x: int = x - origin.x
+			var local_y: int = y - origin.y
+			var gap := false
+			match variant:
+				0:
+					gap = local_x % 3 == 2 or local_y % 3 == 2
+				1:
+					gap = local_x % 4 == 3 or local_y % 3 == 2
+				2:
+					gap = local_x % 3 == 2 or local_y % 4 == 3
+				_:
+					gap = local_x % 4 == 3 or local_y % 4 == 3
+			if gap:
 				continue
 			var cell: Dictionary = get_cell(tile)
 			cell["type"] = "city"

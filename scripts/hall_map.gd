@@ -479,14 +479,14 @@ func _finish_customer_session(customer_visual: Dictionary) -> void:
 	business_totals["sales"] = int(business_totals["sales"]) + int(result["sales"])
 
 func _update_business_panel() -> void:
-	var display_minutes: int = int((business_time / business_duration) * 780.0)
+	var display_minutes: int = mini(840, int((business_time / business_duration) * 840.0))
 	var hour: int = 9 + display_minutes / 60
 	var minute: int = display_minutes % 60
 	var total_in: int = int(business_totals["coin_in"])
 	var total_out: int = int(business_totals["coin_out"])
 	var status := "営業中" if business_running else "営業終了"
 	daily_text.text = "%s  %02d:%02d\n来店: %d / %d人\n店内客: %d人\n総ゲーム数: %dG\nIN: %d枚 / OUT: %d枚\n差枚: %+d枚\n粗利: %+d円" % [
-		status, mini(hour, 22), minute,
+		status, mini(hour, 23), minute,
 		int(business_totals["customers"]), business_target_customers, visible_customers.size(),
 		int(business_totals["games"]), total_in, total_out, total_out - total_in, (total_in - total_out) * 20
 	]
@@ -723,12 +723,12 @@ func _refresh_hover() -> void:
 func _update_info() -> void:
 	if machine_mode:
 		var model: Dictionary = MachineCatalog.get_model_by_index(placement_model_index)
-		info_text.text = "遊創舎 HALL MAP 17\n実機配置: %s [%s]\n1〜5: 機種変更 / 左クリック: 配置 / Esc: 終了" % [str(model.get("name", "不明")), str(model.get("category", ""))]
+		info_text.text = "遊創舎 HALL MAP 18\n実機配置: %s [%s]\n1〜5: 機種変更 / 左クリック: 配置 / Esc: 終了" % [str(model.get("name", "不明")), str(model.get("category", ""))]
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 17\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 18\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 17\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 営業開始 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 18\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 営業開始 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

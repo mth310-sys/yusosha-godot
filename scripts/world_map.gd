@@ -98,7 +98,7 @@ func _generate_city_blocks() -> void:
 		{"o":Vector2i(3,40),"s":Vector2i(6,6),"t":"house"}, {"o":Vector2i(14,40),"s":Vector2i(7,6),"t":"parking"}, {"o":Vector2i(28,43),"s":Vector2i(7,5),"t":"house"}, {"o":Vector2i(40,41),"s":Vector2i(6,6),"t":"commercial"}
 	]
 	for data in buildings_data:
-		_place_city_feature(data["o"], data["s"], str(data["t"]))
+		_place_city_feature_if_free(data["o"], data["s"], str(data["t"]))
 
 	# Secondary infill gives the town a lived-in density without adding more roads.
 	var infill: Array[Dictionary] = [
@@ -116,11 +116,16 @@ func _generate_city_blocks() -> void:
 
 
 func _place_city_feature_if_free(origin: Vector2i, size: Vector2i, feature_type: String) -> void:
+	for y in range(origin.y - 1, mini(origin.y + size.y + 1, map_height)):
+		for x in range(origin.x - 1, mini(origin.x + size.x + 1, map_width)):
+			var tile := Vector2i(x, y)
+			if not is_valid_tile(tile):
+				continue
+			if _is_road(tile):
+				return
 	for y in range(origin.y, mini(origin.y + size.y, map_height)):
 		for x in range(origin.x, mini(origin.x + size.x, map_width)):
 			var tile := Vector2i(x, y)
-			if not is_valid_tile(tile) or _is_road(tile):
-				return
 			var cell: Dictionary = get_cell(tile)
 			if int(cell.get("lot_id", 0)) > 0 or bool(cell.get("occupied", false)):
 				return
@@ -226,17 +231,28 @@ func _draw() -> void:
 
 
 func _draw_street_details() -> void:
-	# Sparse roadside trees and signs; visual only, no collision.
-	for y in [5, 15, 35, 45]:
-		var p := grid_to_world(23, y)
-		_draw_tree(p + Vector2(-18, 0))
-	for x in [5, 15, 35, 45]:
-		var p := grid_to_world(x, 23)
-		_draw_tree(p + Vector2(0, -10))
-	for tile in [Vector2i(22,12), Vector2i(27,37), Vector2i(12,22), Vector2i(37,27)]:
+	# Decoration is placed only on non-road land cells beside the avenue.
+	var tree_tiles: Array[Vector2i] = [
+		Vector2i(22,5), Vector2i(27,15), Vector2i(22,35), Vector2i(27,45),
+		Vector2i(5,22), Vector2i(15,27), Vector2i(35,22), Vector2i(45,27)
+	]
+	for tile in tree_tiles:
+		if _can_draw_roadside_detail(tile):
+			_draw_tree(grid_to_world(tile.x, tile.y))
+	var sign_tiles: Array[Vector2i] = [Vector2i(22,13), Vector2i(27,36), Vector2i(13,22), Vector2i(36,27)]
+	for tile in sign_tiles:
+		if not _can_draw_roadside_detail(tile):
+			continue
 		var p := grid_to_world(tile.x, tile.y)
 		draw_line(p, p + Vector2(0,-24), Color("55585a"), 2.0)
 		draw_rect(Rect2(p + Vector2(-8,-34), Vector2(16,10)), Color("e2b94f"))
+
+func _can_draw_roadside_detail(tile: Vector2i) -> bool:
+	if not is_valid_tile(tile) or _is_road(tile):
+		return false
+	var cell: Dictionary = get_cell(tile)
+	return not bool(cell.get("occupied", false)) and int(cell.get("lot_id", 0)) == 0
+
 
 func _feature_diamond(origin: Vector2i, size: Vector2i, inset: int = 0) -> PackedVector2Array:
 	var x0: int = origin.x + inset

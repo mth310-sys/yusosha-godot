@@ -53,6 +53,7 @@ var business_customer_index := 0
 var business_target_customers := 0
 var business_totals := {"customers": 0, "games": 0, "coin_in": 0, "coin_out": 0, "sales": 0}
 var last_ranking_hour := 9
+var closing_started := false
 
 func _ready() -> void:
 	map_width = 32
@@ -443,6 +444,7 @@ func _run_full_day() -> void:
 	if machines.is_empty() or business_running:
 		return
 	business_running = true
+	closing_started = false
 	business_time = 0.0
 	last_ranking_hour = 9
 	_update_ranking_panel(9)
@@ -495,6 +497,27 @@ func _update_business_panel() -> void:
 		int(business_totals["customers"]), business_target_customers, visible_customers.size(),
 		int(business_totals["games"]), total_in, total_out, total_out - total_in, (total_in - total_out) * 20
 	]
+
+func _start_closing() -> void:
+	if closing_started:
+		return
+	closing_started = true
+	business_time = business_duration
+	business_customer_index = business_target_customers
+	for customer in visible_customers:
+		var machine_id: String = str(customer.get("machine_id", ""))
+		if machines.has(machine_id):
+			var machine: Dictionary = machines[machine_id]
+			if str(customer.get("state", "")) == "playing":
+				_finish_customer_session(customer)
+			else:
+				machine["operating"] = false
+				machine["occupied_by"] = ""
+	visible_customers.clear()
+	last_ranking_hour = 23
+	_update_ranking_panel(23)
+	_update_business_panel()
+	queue_redraw()
 
 func _update_ranking_panel(update_hour: int) -> void:
 	var ranking: Array[Dictionary] = []
@@ -647,10 +670,12 @@ func _place_island(origin: Vector2i) -> void:
 func _process(delta: float) -> void:
 	var visuals_changed := false
 	if business_running:
-		business_time += delta
-		if business_customer_index < business_target_customers and business_time >= next_customer_spawn:
+		business_time = minf(business_duration, business_time + delta)
+		if business_time < business_duration and business_customer_index < business_target_customers and business_time >= next_customer_spawn:
 			_spawn_business_customer()
-			next_customer_spawn = business_time + rng.randf_range(0.5, 1.8)
+			next_customer_spawn = business_time + rng.randf_range(0.35, 1.0)
+		if business_time >= business_duration:
+			_start_closing()
 		_update_business_panel()
 		_check_hourly_ranking_update()
 	for index in range(visible_customers.size() - 1, -1, -1):
@@ -661,7 +686,7 @@ func _process(delta: float) -> void:
 			if path.is_empty():
 				visible_customers.remove_at(index)
 				continue
-			var speed: float = 2.2 / maxf(1.0, float(path.size() - 1))
+			var speed: float = 8.0 / maxf(1.0, float(path.size() - 1))
 			var progress: float = float(customer.get("progress", 0.0)) + delta * speed
 			if progress >= 1.0:
 				customer["progress"] = 1.0
@@ -679,7 +704,7 @@ func _process(delta: float) -> void:
 				visible_customers.remove_at(index)
 				_update_business_panel()
 			visuals_changed = true
-	if business_running and business_time >= business_duration and business_customer_index >= business_target_customers and visible_customers.is_empty():
+	if business_running and closing_started and visible_customers.is_empty():
 		_finish_business_day()
 	if visuals_changed:
 		queue_redraw()
@@ -766,12 +791,12 @@ func _refresh_hover() -> void:
 func _update_info() -> void:
 	if machine_mode:
 		var model: Dictionary = MachineCatalog.get_model_by_index(placement_model_index)
-		info_text.text = "遊創舎 HALL MAP 19\n実機配置: %s [%s]\n1〜5: 機種変更 / 左クリック: 配置 / Esc: 終了" % [str(model.get("name", "不明")), str(model.get("category", ""))]
+		info_text.text = "遊創舎 HALL MAP 20\n実機配置: %s [%s]\n1〜5: 機種変更 / 左クリック: 配置 / Esc: 終了" % [str(model.get("name", "不明")), str(model.get("category", ""))]
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 19\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 20\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 19\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 営業開始 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 20\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 営業開始 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

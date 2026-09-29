@@ -15,6 +15,9 @@ const LOT_PREVIEW_COLOR := Color(0.30, 0.78, 1.0, 0.18)
 const BUILDING_COLOR := Color(0.72, 0.36, 0.20, 0.88)
 const BUILDING_PREVIEW_OK := Color(0.25, 0.90, 0.45, 0.38)
 const BUILDING_PREVIEW_BAD := Color(0.95, 0.25, 0.25, 0.38)
+const CITY_BUILDING_A := Color("9a8f80")
+const CITY_BUILDING_B := Color("b0a38f")
+const CITY_BUILDING_ROOF := Color("d0c4ad")
 const BUILDING_WIDTH := 6
 const BUILDING_HEIGHT := 5
 
@@ -54,16 +57,13 @@ func _ready() -> void:
 
 
 func _generate_initial_city() -> void:
-	# Fixed town layout. Roads divide the map into blocks and lots vary in size.
-	# Two-tile central avenues.
+	# Fixed town layout. Only two plots are available for the player.
 	for x in range(24, 26):
 		for y in range(map_height):
 			_set_generated_road(Vector2i(x, y))
 	for y in range(24, 26):
 		for x in range(map_width):
 			_set_generated_road(Vector2i(x, y))
-
-	# One-tile local streets, connected to the central avenues and map edges.
 	for y in [8, 16, 34, 42]:
 		for x in range(map_width):
 			_set_generated_road(Vector2i(x, y))
@@ -71,44 +71,40 @@ func _generate_initial_city() -> void:
 		for y in range(map_height):
 			_set_generated_road(Vector2i(x, y))
 
-	# Lots deliberately vary from compact to large hall sites.
-	# North-west.
-	_generate_lot_rect(Vector2i(1, 1), Vector2i(7, 7))
-	_generate_lot_rect(Vector2i(9, 1), Vector2i(15, 7))
-	_generate_lot_rect(Vector2i(17, 1), Vector2i(23, 7))
-	_generate_lot_rect(Vector2i(1, 9), Vector2i(7, 15))
-	_generate_lot_rect(Vector2i(9, 9), Vector2i(15, 15))
-	_generate_lot_rect(Vector2i(17, 9), Vector2i(23, 15))
-	_generate_lot_rect(Vector2i(1, 17), Vector2i(15, 23))
+	# Two vacant candidate sites: one medium and one large.
 	_generate_lot_rect(Vector2i(17, 17), Vector2i(23, 23))
-
-	# North-east.
-	_generate_lot_rect(Vector2i(26, 1), Vector2i(33, 7))
-	_generate_lot_rect(Vector2i(35, 1), Vector2i(41, 7))
-	_generate_lot_rect(Vector2i(43, 1), Vector2i(48, 15))
-	_generate_lot_rect(Vector2i(26, 9), Vector2i(33, 15))
-	_generate_lot_rect(Vector2i(35, 9), Vector2i(41, 15))
-	_generate_lot_rect(Vector2i(26, 17), Vector2i(41, 23))
-	_generate_lot_rect(Vector2i(43, 17), Vector2i(48, 23))
-
-	# South-west.
-	_generate_lot_rect(Vector2i(1, 26), Vector2i(15, 33))
-	_generate_lot_rect(Vector2i(17, 26), Vector2i(23, 33))
-	_generate_lot_rect(Vector2i(1, 35), Vector2i(7, 41))
-	_generate_lot_rect(Vector2i(9, 35), Vector2i(23, 41))
-	_generate_lot_rect(Vector2i(1, 43), Vector2i(7, 48))
-	_generate_lot_rect(Vector2i(9, 43), Vector2i(15, 48))
-	_generate_lot_rect(Vector2i(17, 43), Vector2i(23, 48))
-
-	# South-east: keep several large commercial plots.
 	_generate_lot_rect(Vector2i(26, 26), Vector2i(41, 33))
-	_generate_lot_rect(Vector2i(43, 26), Vector2i(48, 33))
-	_generate_lot_rect(Vector2i(26, 35), Vector2i(33, 48))
-	_generate_lot_rect(Vector2i(35, 35), Vector2i(48, 41))
-	_generate_lot_rect(Vector2i(35, 43), Vector2i(41, 48))
-	_generate_lot_rect(Vector2i(43, 43), Vector2i(48, 48))
 
+	# Everything else becomes an existing town.
+	_generate_city_blocks()
 	_recalculate_all_road_shapes()
+
+func _generate_city_blocks() -> void:
+	var block_origins: Array[Vector2i] = [
+		Vector2i(1, 1), Vector2i(9, 1), Vector2i(17, 1), Vector2i(26, 1), Vector2i(35, 1), Vector2i(43, 1),
+		Vector2i(1, 9), Vector2i(9, 9), Vector2i(17, 9), Vector2i(26, 9), Vector2i(35, 9), Vector2i(43, 9),
+		Vector2i(1, 17), Vector2i(9, 17), Vector2i(26, 17), Vector2i(35, 17), Vector2i(43, 17),
+		Vector2i(1, 26), Vector2i(9, 26), Vector2i(17, 26), Vector2i(43, 26),
+		Vector2i(1, 35), Vector2i(9, 35), Vector2i(17, 35), Vector2i(26, 35), Vector2i(35, 35), Vector2i(43, 35),
+		Vector2i(1, 43), Vector2i(9, 43), Vector2i(17, 43), Vector2i(26, 43), Vector2i(35, 43), Vector2i(43, 43)
+	]
+	for origin in block_origins:
+		_fill_city_block(origin)
+
+func _fill_city_block(origin: Vector2i) -> void:
+	for y in range(origin.y, mini(origin.y + 7, map_height - 1)):
+		for x in range(origin.x, mini(origin.x + 7, map_width - 1)):
+			var tile := Vector2i(x, y)
+			if _is_road(tile) or int(get_cell(tile).get("lot_id", 0)) > 0:
+				continue
+			# Leave a one-tile rhythm between small city buildings.
+			if ((x - origin.x) % 3 == 2) or ((y - origin.y) % 3 == 2):
+				continue
+			var cell: Dictionary = get_cell(tile)
+			cell["type"] = "city"
+			cell["occupied"] = true
+			cell["object_id"] = "city_building"
+
 
 func _set_generated_road(tile: Vector2i) -> void:
 	if not is_valid_tile(tile):
@@ -146,12 +142,21 @@ func _draw() -> void:
 			var points: PackedVector2Array = tile_points(x, y)
 			var cell: Dictionary = map_data[y][x]
 			var tile_color: Color = ROAD_COLOR if cell["type"] == "road" else (LAND_A if (x + y) % 2 == 0 else LAND_B)
+			if cell["type"] == "city":
+				tile_color = CITY_BUILDING_A if (x + y) % 2 == 0 else CITY_BUILDING_B
 			var line_color: Color = ROAD_GRID_COLOR if cell["type"] == "road" else GRID_COLOR
 			draw_colored_polygon(points, tile_color)
 			draw_polyline(points + PackedVector2Array([points[0]]), line_color, 1.0, true)
 			if int(cell.get("lot_id", 0)) > 0:
 				draw_colored_polygon(points, LOT_COLOR)
 				draw_polyline(points + PackedVector2Array([points[0]]), LOT_BORDER_COLOR, 1.4, true)
+			if cell["type"] == "city":
+				var center: Vector2 = grid_to_world(x, y)
+				var roof := PackedVector2Array()
+				for point in points:
+					roof.append(point + Vector2(0.0, -7.0))
+				draw_colored_polygon(roof, CITY_BUILDING_ROOF)
+				draw_polyline(roof + PackedVector2Array([roof[0]]), Color(0.35, 0.32, 0.28, 0.7), 1.0, true)
 			if str(cell.get("object_id", "")).begins_with("hall_"):
 				draw_colored_polygon(points, BUILDING_COLOR)
 			if cell["type"] == "road":
@@ -476,7 +481,7 @@ func _update_mode_info() -> void:
 	elif demolition_mode:
 		mode_info.text = "撤去モード: ON\n左クリック/ドラッグ: 道路撤去 / R: 敷設 / Esc: 終了"
 	else:
-		mode_info.text = "通常モード\n初期街マップ生成済み / B: 建物\nR: 道路 / X: 撤去 / L: 敷地編集"
+		mode_info.text = "通常モード\n街区生成済み / 建築候補地: 2か所\nB: 建物 / R: 道路 / X: 撤去 / L: 敷地編集"
 
 func _tile_under_mouse() -> Vector2i:
 	return world_to_grid(get_global_mouse_position())

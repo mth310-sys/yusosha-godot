@@ -18,6 +18,11 @@ const BUILDING_PREVIEW_BAD := Color(0.95, 0.25, 0.25, 0.38)
 const CITY_BUILDING_A := Color("9a8f80")
 const CITY_BUILDING_B := Color("b0a38f")
 const CITY_BUILDING_ROOF := Color("d0c4ad")
+const HOUSE_COLOR := Color("b99172")
+const SHOP_COLOR := Color("6f8794")
+const COMMERCIAL_COLOR := Color("9a7d62")
+const PARK_COLOR := Color("5f914d")
+const PARKING_COLOR := Color("777b7d")
 const BUILDING_WIDTH := 6
 const BUILDING_HEIGHT := 5
 
@@ -85,24 +90,24 @@ func _generate_initial_city() -> void:
 func _generate_city_blocks() -> void:
 	# Large districts with fewer buildings; roads no longer define every building plot.
 	var buildings_data: Array[Dictionary] = [
-		{"o":Vector2i(2,2),"s":Vector2i(5,5)}, {"o":Vector2i(13,2),"s":Vector2i(7,5)}, {"o":Vector2i(27,2),"s":Vector2i(7,5)}, {"o":Vector2i(40,3),"s":Vector2i(6,6)},
-		{"o":Vector2i(2,14),"s":Vector2i(6,6)}, {"o":Vector2i(13,14),"s":Vector2i(7,6)}, {"o":Vector2i(28,13),"s":Vector2i(6,7)}, {"o":Vector2i(39,13),"s":Vector2i(7,6)},
-		{"o":Vector2i(3,28),"s":Vector2i(7,6)}, {"o":Vector2i(13,29),"s":Vector2i(7,6)}, {"o":Vector2i(28,36),"s":Vector2i(6,7)}, {"o":Vector2i(40,28),"s":Vector2i(6,7)},
-		{"o":Vector2i(3,40),"s":Vector2i(6,6)}, {"o":Vector2i(14,40),"s":Vector2i(7,6)}, {"o":Vector2i(28,43),"s":Vector2i(7,5)}, {"o":Vector2i(40,41),"s":Vector2i(6,6)}
+		{"o":Vector2i(2,2),"s":Vector2i(5,5),"t":"house"}, {"o":Vector2i(13,2),"s":Vector2i(7,5),"t":"park"}, {"o":Vector2i(27,2),"s":Vector2i(7,5),"t":"shop"}, {"o":Vector2i(40,3),"s":Vector2i(6,6),"t":"house"},
+		{"o":Vector2i(2,14),"s":Vector2i(6,6),"t":"house"}, {"o":Vector2i(13,14),"s":Vector2i(7,6),"t":"commercial"}, {"o":Vector2i(28,13),"s":Vector2i(6,7),"t":"parking"}, {"o":Vector2i(39,13),"s":Vector2i(7,6),"t":"shop"},
+		{"o":Vector2i(3,28),"s":Vector2i(7,6),"t":"shop"}, {"o":Vector2i(13,29),"s":Vector2i(7,6),"t":"house"}, {"o":Vector2i(28,36),"s":Vector2i(6,7),"t":"commercial"}, {"o":Vector2i(40,28),"s":Vector2i(6,7),"t":"park"},
+		{"o":Vector2i(3,40),"s":Vector2i(6,6),"t":"house"}, {"o":Vector2i(14,40),"s":Vector2i(7,6),"t":"parking"}, {"o":Vector2i(28,43),"s":Vector2i(7,5),"t":"house"}, {"o":Vector2i(40,41),"s":Vector2i(6,6),"t":"commercial"}
 	]
 	for data in buildings_data:
-		_place_city_building(data["o"], data["s"])
+		_place_city_feature(data["o"], data["s"], str(data["t"]))
 
-func _place_city_building(origin: Vector2i, size: Vector2i) -> void:
+func _place_city_feature(origin: Vector2i, size: Vector2i, feature_type: String) -> void:
 	for y in range(origin.y, mini(origin.y + size.y, map_height)):
 		for x in range(origin.x, mini(origin.x + size.x, map_width)):
 			var tile := Vector2i(x, y)
 			if _is_road(tile) or int(get_cell(tile).get("lot_id", 0)) > 0:
 				continue
 			var cell: Dictionary = get_cell(tile)
-			cell["type"] = "city"
+			cell["type"] = feature_type
 			cell["occupied"] = true
-			cell["object_id"] = "city_building"
+			cell["object_id"] = "city_" + feature_type
 
 
 func _set_generated_road(tile: Vector2i) -> void:
@@ -141,22 +146,38 @@ func _draw() -> void:
 			var points: PackedVector2Array = tile_points(x, y)
 			var cell: Dictionary = map_data[y][x]
 			var tile_color: Color = ROAD_COLOR if cell["type"] == "road" else (LAND_A if (x + y) % 2 == 0 else LAND_B)
-			if cell["type"] == "city":
-				tile_color = CITY_BUILDING_A if (x + y) % 2 == 0 else CITY_BUILDING_B
+			match str(cell["type"]):
+				"house":
+					tile_color = HOUSE_COLOR
+				"shop":
+					tile_color = SHOP_COLOR
+				"commercial":
+					tile_color = COMMERCIAL_COLOR
+				"park":
+					tile_color = PARK_COLOR
+				"parking":
+					tile_color = PARKING_COLOR
 			var line_color: Color = ROAD_GRID_COLOR if cell["type"] == "road" else GRID_COLOR
 			draw_colored_polygon(points, tile_color)
-			if cell["type"] != "city":
+			if str(cell["type"]) not in ["house", "shop", "commercial", "park", "parking"]:
 				draw_polyline(points + PackedVector2Array([points[0]]), line_color, 1.0, true)
 			if int(cell.get("lot_id", 0)) > 0:
 				draw_colored_polygon(points, LOT_COLOR)
 				draw_polyline(points + PackedVector2Array([points[0]]), LOT_BORDER_COLOR, 1.4, true)
-			if cell["type"] == "city":
-				var center: Vector2 = grid_to_world(x, y)
+			if str(cell["type"]) in ["house", "shop", "commercial"]:
 				var roof := PackedVector2Array()
+				var roof_height := 7.0 if cell["type"] == "house" else (10.0 if cell["type"] == "shop" else 14.0)
 				for point in points:
-					roof.append(point + Vector2(0.0, -7.0))
-				draw_colored_polygon(roof, CITY_BUILDING_ROOF)
+					roof.append(point + Vector2(0.0, -roof_height))
+				draw_colored_polygon(roof, CITY_BUILDING_ROOF.lightened(0.05 if cell["type"] == "house" else 0.0))
 				draw_polyline(roof + PackedVector2Array([roof[0]]), Color(0.35, 0.32, 0.28, 0.7), 1.0, true)
+			elif cell["type"] == "park":
+				var center := grid_to_world(x, y)
+				if (x + y) % 3 == 0:
+					draw_circle(center + Vector2(0.0, -5.0), 5.0, Color("3f6f3a"))
+			elif cell["type"] == "parking":
+				var center := grid_to_world(x, y)
+				draw_line(center + Vector2(-8, -2), center + Vector2(8, -2), Color(0.88,0.88,0.78,0.7), 1.0)
 			if str(cell.get("object_id", "")).begins_with("hall_"):
 				draw_colored_polygon(points, BUILDING_COLOR)
 			if cell["type"] == "road":

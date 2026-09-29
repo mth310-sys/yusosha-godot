@@ -80,38 +80,39 @@ func _generate_initial_city() -> void:
 	_recalculate_all_road_shapes()
 
 func _generate_city_blocks() -> void:
-	var block_origins: Array[Vector2i] = [
-		Vector2i(1, 1), Vector2i(9, 1), Vector2i(17, 1), Vector2i(26, 1), Vector2i(35, 1), Vector2i(43, 1),
-		Vector2i(1, 9), Vector2i(9, 9), Vector2i(17, 9), Vector2i(26, 9), Vector2i(35, 9), Vector2i(43, 9),
-		Vector2i(1, 17), Vector2i(9, 17), Vector2i(26, 17), Vector2i(35, 17), Vector2i(43, 17),
-		Vector2i(1, 26), Vector2i(9, 26), Vector2i(17, 26), Vector2i(34, 26), Vector2i(43, 26),
-		Vector2i(1, 35), Vector2i(9, 35), Vector2i(17, 35), Vector2i(26, 35), Vector2i(35, 35), Vector2i(43, 35),
-		Vector2i(1, 43), Vector2i(9, 43), Vector2i(17, 43), Vector2i(26, 43), Vector2i(35, 43), Vector2i(43, 43)
+	# Larger, lower-density buildings establish a consistent world scale.
+	var blocks: Array[Dictionary] = [
+		{"o": Vector2i(1,1), "s": Vector2i(6,6)}, {"o": Vector2i(9,1), "s": Vector2i(6,6)}, {"o": Vector2i(17,1), "s": Vector2i(6,6)},
+		{"o": Vector2i(26,1), "s": Vector2i(7,6)}, {"o": Vector2i(35,1), "s": Vector2i(6,6)}, {"o": Vector2i(43,1), "s": Vector2i(6,6)},
+		{"o": Vector2i(1,9), "s": Vector2i(6,6)}, {"o": Vector2i(9,9), "s": Vector2i(6,6)}, {"o": Vector2i(17,9), "s": Vector2i(6,6)},
+		{"o": Vector2i(26,9), "s": Vector2i(7,6)}, {"o": Vector2i(35,9), "s": Vector2i(6,6)}, {"o": Vector2i(43,9), "s": Vector2i(6,6)},
+		{"o": Vector2i(1,17), "s": Vector2i(6,6)}, {"o": Vector2i(9,17), "s": Vector2i(6,6)},
+		{"o": Vector2i(26,17), "s": Vector2i(7,6)}, {"o": Vector2i(35,17), "s": Vector2i(6,6)}, {"o": Vector2i(43,17), "s": Vector2i(6,6)},
+		{"o": Vector2i(1,26), "s": Vector2i(6,7)}, {"o": Vector2i(9,26), "s": Vector2i(6,7)}, {"o": Vector2i(17,26), "s": Vector2i(6,7)},
+		{"o": Vector2i(34,26), "s": Vector2i(7,7)}, {"o": Vector2i(43,26), "s": Vector2i(6,7)},
+		{"o": Vector2i(1,35), "s": Vector2i(6,6)}, {"o": Vector2i(9,35), "s": Vector2i(6,6)}, {"o": Vector2i(17,35), "s": Vector2i(6,6)},
+		{"o": Vector2i(26,35), "s": Vector2i(7,6)}, {"o": Vector2i(35,35), "s": Vector2i(6,6)}, {"o": Vector2i(43,35), "s": Vector2i(6,6)},
+		{"o": Vector2i(1,43), "s": Vector2i(6,6)}, {"o": Vector2i(9,43), "s": Vector2i(6,6)}, {"o": Vector2i(17,43), "s": Vector2i(6,6)},
+		{"o": Vector2i(26,43), "s": Vector2i(7,6)}, {"o": Vector2i(35,43), "s": Vector2i(6,6)}, {"o": Vector2i(43,43), "s": Vector2i(6,6)}
 	]
-	for origin in block_origins:
-		_fill_city_block(origin)
+	for data in blocks:
+		_place_city_building(data["o"], data["s"])
 
-func _fill_city_block(origin: Vector2i) -> void:
-	# Deterministic variation: blocks no longer share one identical 2x2 pattern.
-	var variant: int = (origin.x * 3 + origin.y * 5) % 4
-	for y in range(origin.y, mini(origin.y + 7, map_height - 1)):
-		for x in range(origin.x, mini(origin.x + 7, map_width - 1)):
+func _place_city_building(origin: Vector2i, size: Vector2i) -> void:
+	# One substantial building per block, with a green setback around it.
+	var inset_x: int = 1 if size.x >= 6 else 0
+	var inset_y: int = 1 if size.y >= 6 else 0
+	var width: int = maxi(3, size.x - 2)
+	var height: int = maxi(3, size.y - 2)
+	# Deterministic size variation keeps the skyline from becoming uniform.
+	if (origin.x + origin.y) % 3 == 0:
+		width = maxi(3, width - 1)
+	if (origin.x * 2 + origin.y) % 4 == 0:
+		height = maxi(3, height - 1)
+	for y in range(origin.y + inset_y, mini(origin.y + inset_y + height, map_height)):
+		for x in range(origin.x + inset_x, mini(origin.x + inset_x + width, map_width)):
 			var tile := Vector2i(x, y)
 			if _is_road(tile) or int(get_cell(tile).get("lot_id", 0)) > 0:
-				continue
-			var local_x: int = x - origin.x
-			var local_y: int = y - origin.y
-			var gap := false
-			match variant:
-				0:
-					gap = local_x % 3 == 2 or local_y % 3 == 2
-				1:
-					gap = local_x % 4 == 3 or local_y % 3 == 2
-				2:
-					gap = local_x % 3 == 2 or local_y % 4 == 3
-				_:
-					gap = local_x % 4 == 3 or local_y % 4 == 3
-			if gap:
 				continue
 			var cell: Dictionary = get_cell(tile)
 			cell["type"] = "city"
@@ -159,7 +160,8 @@ func _draw() -> void:
 				tile_color = CITY_BUILDING_A if (x + y) % 2 == 0 else CITY_BUILDING_B
 			var line_color: Color = ROAD_GRID_COLOR if cell["type"] == "road" else GRID_COLOR
 			draw_colored_polygon(points, tile_color)
-			draw_polyline(points + PackedVector2Array([points[0]]), line_color, 1.0, true)
+			if cell["type"] != "city":
+				draw_polyline(points + PackedVector2Array([points[0]]), line_color, 1.0, true)
 			if int(cell.get("lot_id", 0)) > 0:
 				draw_colored_polygon(points, LOT_COLOR)
 				draw_polyline(points + PackedVector2Array([points[0]]), LOT_BORDER_COLOR, 1.4, true)

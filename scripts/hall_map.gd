@@ -40,6 +40,7 @@ var machine_mode := false
 var machines: Dictionary = {}
 var next_machine_id := 1
 var selected_machine_id := ""
+var placement_model_index := 0
 var rng := RandomNumberGenerator.new()
 var visible_customers: Array[Dictionary] = []
 var customer_animation_time := 0.0
@@ -186,8 +187,10 @@ func _draw_machine_slots(island: Dictionary) -> void:
 func _draw_machine(machine: Dictionary) -> void:
 	var tile: Vector2i = machine["position"]
 	var center: Vector2 = grid_to_world(tile.x, tile.y)
+	var model: Dictionary = MachineCatalog.get_model(str(machine.get("model_id", MachineCatalog.DEFAULT_MODEL_ID)))
+	var body_color := Color(str(model.get("body_color", "4056a1")))
 	var body := Rect2(center - Vector2(7.0, 12.0), Vector2(14.0, 20.0))
-	draw_rect(body, MACHINE_BODY)
+	draw_rect(body, body_color)
 	draw_rect(Rect2(center - Vector2(4.5, 8.5), Vector2(9.0, 6.0)), MACHINE_SCREEN)
 	draw_string(ThemeDB.fallback_font, center + Vector2(-5.0, 5.0), str(machine["number"]), HORIZONTAL_ALIGNMENT_CENTER, 10.0, 8, Color.WHITE)
 
@@ -336,9 +339,11 @@ func _simulate_machine(machine: Dictionary, min_games: int, max_games: int) -> D
 	var setting: int = clampi(int(machine.get("setting", 1)), 1, 6)
 	var games: int = rng.randi_range(min_games, max_games)
 	var coin_in: int = games * 3
-	var payout_rates := [0.965, 0.980, 0.995, 1.015, 1.040, 1.070]
-	var expected_out: float = float(coin_in) * payout_rates[setting - 1]
-	var variance: float = rng.randf_range(-0.12, 0.12)
+	var model: Dictionary = MachineCatalog.get_model(str(machine.get("model_id", MachineCatalog.DEFAULT_MODEL_ID)))
+	var payout_rates: Array = model.get("payout_rates", [0.965, 0.980, 0.995, 1.015, 1.040, 1.070])
+	var expected_out: float = float(coin_in) * float(payout_rates[setting - 1])
+	var volatility: float = float(model.get("volatility", 0.12))
+	var variance: float = rng.randf_range(-volatility, volatility)
 	var coin_out: int = maxi(0, int(round(expected_out * (1.0 + variance))))
 	var net: int = coin_out - coin_in
 	var sales: int = maxi(0, -net * 20)
@@ -390,7 +395,9 @@ func _create_customer(customer_index: int) -> Dictionary:
 func _prepare_daily_machine_popularity() -> void:
 	for machine_id in machines:
 		var machine: Dictionary = machines[machine_id]
-		machine["daily_popularity"] = rng.randf_range(0.75, 1.25)
+		var model: Dictionary = MachineCatalog.get_model(str(machine.get("model_id", MachineCatalog.DEFAULT_MODEL_ID)))
+		var base_popularity: float = float(model.get("popularity", 1.0))
+		machine["daily_popularity"] = base_popularity * rng.randf_range(0.85, 1.15)
 
 func _choose_customer_machine(customer: Dictionary) -> String:
 	var candidates: Array[String] = []
@@ -526,7 +533,7 @@ func _place_machine(tile: Vector2i) -> void:
 		if slot["slot_id"] == slot_id:
 			var machine_id := "machine_%d" % next_machine_id
 			slot["machine_id"] = machine_id
-			var model: Dictionary = MachineCatalog.get_default_model()
+			var model: Dictionary = MachineCatalog.get_model_by_index(placement_model_index)
 			machines[machine_id] = {
 				"id": machine_id,
 				"number": next_machine_id,
@@ -646,6 +653,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if selected_machine_id != "" and event.keycode == KEY_T:
 			_run_selected_machine_test()
 			return
+		if machine_mode and event.keycode >= KEY_1 and event.keycode <= KEY_5:
+			placement_model_index = int(event.keycode - KEY_1)
+			_update_info()
+			return
 		if selected_machine_id != "" and event.keycode >= KEY_1 and event.keycode <= KEY_6:
 			_set_selected_machine_setting(int(event.keycode - KEY_1 + 1))
 			return
@@ -711,12 +722,13 @@ func _refresh_hover() -> void:
 
 func _update_info() -> void:
 	if machine_mode:
-		info_text.text = "遊創舎 HALL MAP 16\\n実機配置モード: S\\n黄色の空き位置を左クリック / Esc: 終了"
+		var model: Dictionary = MachineCatalog.get_model_by_index(placement_model_index)
+		info_text.text = "遊創舎 HALL MAP 17\n実機配置: %s [%s]\n1〜5: 機種変更 / 左クリック: 配置 / Esc: 終了" % [str(model.get("name", "不明")), str(model.get("category", ""))]
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 16\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 17\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 16\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 営業開始 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 17\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 営業開始 / Esc: 屋外へ戻る"
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

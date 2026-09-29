@@ -70,3 +70,20 @@ theme_override_constants/margin_bottom = 12
 
 [node name="Text" type="Label" parent="UI/RankingPanel/Margin"]
 text = "データカウンター\n営業開始前"
+
+[node name="ResultPanel" type="PanelContainer" parent="UI"]
+visible = false
+offset_left = 410.0
+offset_top = 170.0
+offset_right = 870.0
+offset_bottom = 510.0
+
+[node name="Margin" type="MarginContainer" parent="UI/ResultPanel"]
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 18
+
+[node name="Text" type="Label" parent="UI/ResultPanel/Margin"]
+text = "本日の営業結果"
+horizontal_alignment = 1

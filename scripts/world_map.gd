@@ -9,8 +9,8 @@ const SELECT_COLOR := Color(1.0, 0.78, 0.18, 0.48)
 const ROAD_COLOR := Color("4b5058")
 const ROAD_GRID_COLOR := Color(0.72, 0.74, 0.78, 0.45)
 const ROAD_MARK_COLOR := Color(0.95, 0.82, 0.30, 0.92)
-const LOT_COLOR := Color(0.20, 0.62, 0.92, 0.26)
-const LOT_BORDER_COLOR := Color(0.38, 0.78, 1.0, 0.82)
+const LOT_COLOR := Color(0.20, 0.62, 0.92, 0.14)
+const LOT_BORDER_COLOR := Color(0.38, 0.78, 1.0, 0.58)
 const LOT_PREVIEW_COLOR := Color(0.30, 0.78, 1.0, 0.18)
 const BUILDING_COLOR := Color(0.72, 0.36, 0.20, 0.88)
 const BUILDING_PREVIEW_OK := Color(0.25, 0.90, 0.45, 0.38)
@@ -54,38 +54,59 @@ func _ready() -> void:
 
 
 func _generate_initial_city() -> void:
-	# Fixed starter city: roads and purchasable lots already exist.
-	# Main vertical avenue.
-	for x in range(23, 27):
+	# Fixed town layout. Roads divide the map into blocks and lots vary in size.
+	# Two-tile central avenues.
+	for x in range(24, 26):
 		for y in range(map_height):
 			_set_generated_road(Vector2i(x, y))
-
-	# Main horizontal avenue.
-	for y in range(23, 27):
+	for y in range(24, 26):
 		for x in range(map_width):
 			_set_generated_road(Vector2i(x, y))
 
-	# Secondary access roads create several blocks without over-fragmenting lots.
-	for x in range(8, 10):
-		for y in range(4, 23):
+	# One-tile local streets, connected to the central avenues and map edges.
+	for y in [8, 16, 34, 42]:
+		for x in range(map_width):
 			_set_generated_road(Vector2i(x, y))
-	for x in range(40, 42):
-		for y in range(27, 46):
-			_set_generated_road(Vector2i(x, y))
-	for y in range(10, 12):
-		for x in range(10, 23):
-			_set_generated_road(Vector2i(x, y))
-	for y in range(38, 40):
-		for x in range(27, 40):
+	for x in [8, 16, 34, 42]:
+		for y in range(map_height):
 			_set_generated_road(Vector2i(x, y))
 
-	# Predefined lots. Sizes are intentionally large enough for the current 6x5 hall.
-	_generate_lot_rect(Vector2i(11, 12), Vector2i(22, 22))
-	_generate_lot_rect(Vector2i(27, 11), Vector2i(39, 22))
-	_generate_lot_rect(Vector2i(10, 27), Vector2i(22, 37))
-	_generate_lot_rect(Vector2i(27, 27), Vector2i(39, 37))
-	_generate_lot_rect(Vector2i(1, 12), Vector2i(7, 22))
-	_generate_lot_rect(Vector2i(42, 27), Vector2i(48, 39))
+	# Lots deliberately vary from compact to large hall sites.
+	# North-west.
+	_generate_lot_rect(Vector2i(1, 1), Vector2i(7, 7))
+	_generate_lot_rect(Vector2i(9, 1), Vector2i(15, 7))
+	_generate_lot_rect(Vector2i(17, 1), Vector2i(23, 7))
+	_generate_lot_rect(Vector2i(1, 9), Vector2i(7, 15))
+	_generate_lot_rect(Vector2i(9, 9), Vector2i(15, 15))
+	_generate_lot_rect(Vector2i(17, 9), Vector2i(23, 15))
+	_generate_lot_rect(Vector2i(1, 17), Vector2i(15, 23))
+	_generate_lot_rect(Vector2i(17, 17), Vector2i(23, 23))
+
+	# North-east.
+	_generate_lot_rect(Vector2i(26, 1), Vector2i(33, 7))
+	_generate_lot_rect(Vector2i(35, 1), Vector2i(41, 7))
+	_generate_lot_rect(Vector2i(43, 1), Vector2i(48, 15))
+	_generate_lot_rect(Vector2i(26, 9), Vector2i(33, 15))
+	_generate_lot_rect(Vector2i(35, 9), Vector2i(41, 15))
+	_generate_lot_rect(Vector2i(26, 17), Vector2i(41, 23))
+	_generate_lot_rect(Vector2i(43, 17), Vector2i(48, 23))
+
+	# South-west.
+	_generate_lot_rect(Vector2i(1, 26), Vector2i(15, 33))
+	_generate_lot_rect(Vector2i(17, 26), Vector2i(23, 33))
+	_generate_lot_rect(Vector2i(1, 35), Vector2i(7, 41))
+	_generate_lot_rect(Vector2i(9, 35), Vector2i(23, 41))
+	_generate_lot_rect(Vector2i(1, 43), Vector2i(7, 48))
+	_generate_lot_rect(Vector2i(9, 43), Vector2i(15, 48))
+	_generate_lot_rect(Vector2i(17, 43), Vector2i(23, 48))
+
+	# South-east: keep several large commercial plots.
+	_generate_lot_rect(Vector2i(26, 26), Vector2i(41, 33))
+	_generate_lot_rect(Vector2i(43, 26), Vector2i(48, 33))
+	_generate_lot_rect(Vector2i(26, 35), Vector2i(33, 48))
+	_generate_lot_rect(Vector2i(35, 35), Vector2i(48, 41))
+	_generate_lot_rect(Vector2i(35, 43), Vector2i(41, 48))
+	_generate_lot_rect(Vector2i(43, 43), Vector2i(48, 48))
 
 	_recalculate_all_road_shapes()
 

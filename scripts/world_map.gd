@@ -100,6 +100,32 @@ func _generate_city_blocks() -> void:
 	for data in buildings_data:
 		_place_city_feature(data["o"], data["s"], str(data["t"]))
 
+	# Secondary infill gives the town a lived-in density without adding more roads.
+	var infill: Array[Dictionary] = [
+		{"o":Vector2i(2,8),"s":Vector2i(4,3),"t":"house"}, {"o":Vector2i(17,7),"s":Vector2i(4,3),"t":"house"},
+		{"o":Vector2i(29,8),"s":Vector2i(4,3),"t":"house"}, {"o":Vector2i(43,9),"s":Vector2i(4,3),"t":"shop"},
+		{"o":Vector2i(2,21),"s":Vector2i(4,3),"t":"house"}, {"o":Vector2i(12,21),"s":Vector2i(4,3),"t":"house"},
+		{"o":Vector2i(40,20),"s":Vector2i(5,3),"t":"house"}, {"o":Vector2i(29,20),"s":Vector2i(4,3),"t":"shop"},
+		{"o":Vector2i(2,35),"s":Vector2i(4,3),"t":"house"}, {"o":Vector2i(14,36),"s":Vector2i(4,3),"t":"shop"},
+		{"o":Vector2i(40,35),"s":Vector2i(5,3),"t":"house"}, {"o":Vector2i(29,34),"s":Vector2i(4,3),"t":"house"},
+		{"o":Vector2i(7,44),"s":Vector2i(4,3),"t":"house"}, {"o":Vector2i(18,45),"s":Vector2i(4,3),"t":"house"},
+		{"o":Vector2i(35,44),"s":Vector2i(4,3),"t":"shop"}, {"o":Vector2i(44,44),"s":Vector2i(4,3),"t":"house"}
+	]
+	for data in infill:
+		_place_city_feature_if_free(data["o"], data["s"], str(data["t"]))
+
+
+func _place_city_feature_if_free(origin: Vector2i, size: Vector2i, feature_type: String) -> void:
+	for y in range(origin.y, mini(origin.y + size.y, map_height)):
+		for x in range(origin.x, mini(origin.x + size.x, map_width)):
+			var tile := Vector2i(x, y)
+			if not is_valid_tile(tile) or _is_road(tile):
+				return
+			var cell: Dictionary = get_cell(tile)
+			if int(cell.get("lot_id", 0)) > 0 or bool(cell.get("occupied", false)):
+				return
+	_place_city_feature(origin, size, feature_type)
+
 func _place_city_feature(origin: Vector2i, size: Vector2i, feature_type: String) -> void:
 	city_features.append({"origin": origin, "size": size, "type": feature_type})
 	for y in range(origin.y, mini(origin.y + size.y, map_height)):

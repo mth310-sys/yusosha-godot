@@ -219,49 +219,80 @@ func _draw_city_feature(feature: Dictionary) -> void:
 		return
 	match feature_type:
 		"house":
-			var yard := _feature_diamond(origin, size, 0)
-			draw_colored_polygon(yard, Color("789b55"))
-			var body := _feature_diamond(origin, size, 1)
-			if not body.is_empty():
-				draw_colored_polygon(body, HOUSE_COLOR)
-				var roof := PackedVector2Array()
-				for p in body:
-					roof.append(p + Vector2(0, -13))
-				draw_colored_polygon(roof, Color("b85f4d"))
-				draw_polyline(roof + PackedVector2Array([roof[0]]), Color("6f4037"), 1.5, true)
+			draw_colored_polygon(footprint, Color("789b55"))
+			# Residential block: several small houses instead of one oversized slab.
+			var house_specs: Array[Dictionary] = [
+				{"o": origin, "s": Vector2i(2,2), "roof": Color("b85f4d")},
+				{"o": origin + Vector2i(maxi(3, size.x - 3), 0), "s": Vector2i(3,2), "roof": Color("7e6b5d")},
+				{"o": origin + Vector2i(1, maxi(3, size.y - 3)), "s": Vector2i(2,2), "roof": Color("a66f52")}
+			]
+			for spec in house_specs:
+				_draw_small_building(spec["o"], spec["s"], Color("d9c8a9"), spec["roof"], 11.0)
+			_draw_tree(grid_to_world(origin.x + size.x / 2, origin.y + size.y / 2))
 		"shop":
-			draw_colored_polygon(footprint, Color("8a8d89"))
-			var body := _feature_diamond(origin, size, 1)
-			if not body.is_empty():
-				draw_colored_polygon(body, SHOP_COLOR)
-				var roof := PackedVector2Array()
-				for p in body:
-					roof.append(p + Vector2(0, -16))
-				draw_colored_polygon(roof, Color("d8d1c3"))
-				draw_line(roof[3], roof[2], Color("4f7385"), 3.0, true)
+			draw_colored_polygon(footprint, Color("858987"))
+			var shop_size := Vector2i(maxi(3, size.x - 2), maxi(3, size.y - 3))
+			_draw_small_building(origin + Vector2i(1,1), shop_size, SHOP_COLOR, Color("d8d1c3"), 15.0)
+			# Front parking stripes/sign.
+			var front_y: int = mini(origin.y + size.y - 1, map_height - 1)
+			for i in range(1, size.x, 2):
+				var c := grid_to_world(origin.x + i, front_y)
+				draw_line(c + Vector2(-9,-1), c + Vector2(9,-1), Color(0.92,0.92,0.8,0.8), 1.2, true)
+			var sign_pos := grid_to_world(origin.x, origin.y + size.y - 1)
+			draw_line(sign_pos, sign_pos + Vector2(0,-20), Color("555555"), 2.0)
+			draw_rect(Rect2(sign_pos + Vector2(-7,-29), Vector2(14,9)), Color("e6b84c"))
 		"commercial":
 			draw_colored_polygon(footprint, Color("858987"))
-			var body := _feature_diamond(origin, size, 1)
-			if not body.is_empty():
-				draw_colored_polygon(body, COMMERCIAL_COLOR)
-				var roof := PackedVector2Array()
-				for p in body:
-					roof.append(p + Vector2(0, -23))
-				draw_colored_polygon(roof, Color("c9b79f"))
-				draw_polyline(roof + PackedVector2Array([roof[0]]), Color("65584c"), 1.5, true)
+			var main_size := Vector2i(maxi(3, size.x - 3), maxi(3, size.y - 2))
+			_draw_small_building(origin + Vector2i(1,1), main_size, COMMERCIAL_COLOR, Color("c9b79f"), 22.0)
+			# Loading/service annex makes the lot less symmetrical.
+			if size.x >= 6:
+				_draw_small_building(origin + Vector2i(size.x - 2,2), Vector2i(2,2), Color("7b746d"), Color("aaa39a"), 10.0)
 		"park":
 			draw_colored_polygon(footprint, PARK_COLOR)
-			var center := grid_to_world(origin.x + size.x / 2, origin.y + size.y / 2)
-			draw_line(grid_to_world(origin.x, origin.y + size.y / 2), grid_to_world(origin.x + size.x - 1, origin.y + size.y / 2), Color("c6b78d"), 4.0, true)
-			for offset in [Vector2(-28,-10), Vector2(8,-20), Vector2(34,4), Vector2(-4,12)]:
-				draw_circle(center + offset, 8.0, Color("3f6f3a"))
-				draw_circle(center + offset + Vector2(0,-4), 5.0, Color("5f9a4f"))
+			var mid_y: int = origin.y + size.y / 2
+			draw_line(grid_to_world(origin.x, mid_y), grid_to_world(origin.x + size.x - 1, mid_y), Color("c6b78d"), 5.0, true)
+			var tree_tiles: Array[Vector2i] = [
+				origin + Vector2i(1,1),
+				origin + Vector2i(size.x - 2,1),
+				origin + Vector2i(1,size.y - 2),
+				origin + Vector2i(size.x - 2,size.y - 2),
+				origin + Vector2i(size.x / 2, size.y / 2)
+			]
+			for tile in tree_tiles:
+				_draw_tree(grid_to_world(tile.x, tile.y))
+			var center := grid_to_world(origin.x + size.x / 2, mid_y)
+			draw_circle(center, 7.0, Color("d6c79b"))
 		"parking":
 			draw_colored_polygon(footprint, PARKING_COLOR)
-			for i in range(1, size.x):
-				var a := grid_to_world(origin.x + i, origin.y) + Vector2(-12, 2)
-				var b := grid_to_world(origin.x + i, origin.y) + Vector2(12, -2)
-				draw_line(a, b, Color(0.9,0.9,0.78,0.8), 1.3, true)
+			for yoff in range(1, size.y, 2):
+				for xoff in range(1, size.x):
+					var c := grid_to_world(origin.x + xoff, origin.y + yoff)
+					draw_line(c + Vector2(-10,-2), c + Vector2(10,-2), Color(0.9,0.9,0.78,0.85), 1.1, true)
+			# A few parked cars as small isometric marks.
+			for car_tile in [origin + Vector2i(1,1), origin + Vector2i(maxi(1,size.x-2),1), origin + Vector2i(size.x/2,maxi(1,size.y-2))]:
+				var c := grid_to_world(car_tile.x, car_tile.y)
+				draw_colored_polygon(PackedVector2Array([c+Vector2(0,-5),c+Vector2(10,0),c+Vector2(0,5),c+Vector2(-10,0)]), Color("4f6575"))
+
+func _draw_small_building(origin: Vector2i, size: Vector2i, body_color: Color, roof_color: Color, height: float) -> void:
+	var body := _feature_diamond(origin, size, 0)
+	if body.is_empty():
+		return
+	draw_colored_polygon(body, body_color)
+	var roof := PackedVector2Array()
+	for p in body:
+		roof.append(p + Vector2(0,-height))
+	draw_colored_polygon(roof, roof_color)
+	draw_polyline(roof + PackedVector2Array([roof[0]]), roof_color.darkened(0.35), 1.3, true)
+	# Simple visible side gives the building actual volume.
+	draw_colored_polygon(PackedVector2Array([body[1], body[2], roof[2], roof[1]]), body_color.darkened(0.22))
+	draw_colored_polygon(PackedVector2Array([body[2], body[3], roof[3], roof[2]]), body_color.darkened(0.12))
+
+func _draw_tree(position: Vector2) -> void:
+	draw_line(position + Vector2(0,3), position + Vector2(0,-9), Color("6b4f36"), 2.0)
+	draw_circle(position + Vector2(0,-13), 7.0, Color("3f6f3a"))
+	draw_circle(position + Vector2(-4,-15), 4.5, Color("5f9a4f"))
+
 
 func _is_road(tile: Vector2i) -> bool:
 	return is_valid_tile(tile) and map_data[tile.y][tile.x]["type"] == "road"

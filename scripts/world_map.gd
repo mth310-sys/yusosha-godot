@@ -103,12 +103,12 @@ func _generate_city_blocks() -> void:
 	# Secondary infill gives the town a lived-in density without adding more roads.
 	var infill: Array[Dictionary] = [
 		{"o":Vector2i(2,8),"s":Vector2i(4,3),"t":"house"}, {"o":Vector2i(17,7),"s":Vector2i(4,3),"t":"house"},
-		{"o":Vector2i(29,8),"s":Vector2i(4,3),"t":"house"}, {"o":Vector2i(43,9),"s":Vector2i(4,3),"t":"shop"},
+		{"o":Vector2i(29,8),"s":Vector2i(4,3),"t":"apartment"}, {"o":Vector2i(43,9),"s":Vector2i(4,3),"t":"shop"},
 		{"o":Vector2i(2,21),"s":Vector2i(4,3),"t":"house"}, {"o":Vector2i(12,21),"s":Vector2i(4,3),"t":"house"},
-		{"o":Vector2i(40,20),"s":Vector2i(5,3),"t":"house"}, {"o":Vector2i(29,20),"s":Vector2i(4,3),"t":"shop"},
+		{"o":Vector2i(40,20),"s":Vector2i(5,3),"t":"apartment"}, {"o":Vector2i(29,20),"s":Vector2i(4,3),"t":"shop"},
 		{"o":Vector2i(2,35),"s":Vector2i(4,3),"t":"house"}, {"o":Vector2i(14,36),"s":Vector2i(4,3),"t":"shop"},
 		{"o":Vector2i(40,35),"s":Vector2i(5,3),"t":"house"}, {"o":Vector2i(29,34),"s":Vector2i(4,3),"t":"house"},
-		{"o":Vector2i(7,44),"s":Vector2i(4,3),"t":"house"}, {"o":Vector2i(18,45),"s":Vector2i(4,3),"t":"house"},
+		{"o":Vector2i(7,44),"s":Vector2i(4,3),"t":"house"}, {"o":Vector2i(18,45),"s":Vector2i(4,3),"t":"apartment"},
 		{"o":Vector2i(35,44),"s":Vector2i(4,3),"t":"shop"}, {"o":Vector2i(44,44),"s":Vector2i(4,3),"t":"house"}
 	]
 	for data in infill:
@@ -182,13 +182,15 @@ func _draw() -> void:
 					tile_color = SHOP_COLOR
 				"commercial":
 					tile_color = COMMERCIAL_COLOR
+				"apartment":
+					tile_color = Color("8d969e")
 				"park":
 					tile_color = PARK_COLOR
 				"parking":
 					tile_color = PARKING_COLOR
 			var line_color: Color = ROAD_GRID_COLOR if cell["type"] == "road" else GRID_COLOR
 			draw_colored_polygon(points, tile_color)
-			if str(cell["type"]) not in ["house", "shop", "commercial", "park", "parking"]:
+			if str(cell["type"]) not in ["house", "shop", "commercial", "apartment", "park", "parking"]:
 				draw_polyline(points + PackedVector2Array([points[0]]), line_color, 1.0, true)
 			if int(cell.get("lot_id", 0)) > 0:
 				draw_colored_polygon(points, LOT_COLOR)
@@ -202,6 +204,7 @@ func _draw() -> void:
 
 	for feature in city_features:
 		_draw_city_feature(feature)
+	_draw_street_details()
 
 	if lot_mode and is_valid_tile(lot_start) and is_valid_tile(hovered_tile):
 		_draw_lot_preview(lot_start, hovered_tile)
@@ -221,6 +224,19 @@ func _draw() -> void:
 	var left: Vector2 = grid_to_world(0, map_height - 1) + Vector2(-tile_width * 0.5, 0.0)
 	draw_polyline(PackedVector2Array([top, right, bottom, left, top]), BORDER_COLOR, 3.0, true)
 
+
+func _draw_street_details() -> void:
+	# Sparse roadside trees and signs; visual only, no collision.
+	for y in [5, 15, 35, 45]:
+		var p := grid_to_world(23, y)
+		_draw_tree(p + Vector2(-18, 0))
+	for x in [5, 15, 35, 45]:
+		var p := grid_to_world(x, 23)
+		_draw_tree(p + Vector2(0, -10))
+	for tile in [Vector2i(22,12), Vector2i(27,37), Vector2i(12,22), Vector2i(37,27)]:
+		var p := grid_to_world(tile.x, tile.y)
+		draw_line(p, p + Vector2(0,-24), Color("55585a"), 2.0)
+		draw_rect(Rect2(p + Vector2(-8,-34), Vector2(16,10)), Color("e2b94f"))
 
 func _feature_diamond(origin: Vector2i, size: Vector2i, inset: int = 0) -> PackedVector2Array:
 	var x0: int = origin.x + inset
@@ -252,8 +268,13 @@ func _draw_city_feature(feature: Dictionary) -> void:
 				{"o": origin + Vector2i(maxi(3, size.x - 3), 0), "s": Vector2i(3,2), "roof": Color("7e6b5d")},
 				{"o": origin + Vector2i(1, maxi(3, size.y - 3)), "s": Vector2i(2,2), "roof": Color("a66f52")}
 			]
-			for spec in house_specs:
-				_draw_small_building(spec["o"], spec["s"], Color("d9c8a9"), spec["roof"], 11.0)
+			for index in range(house_specs.size()):
+				var spec: Dictionary = house_specs[index]
+				var variant: int = (origin.x + origin.y + index) % 3
+				var wall_colors: Array[Color] = [Color("d9c8a9"), Color("d7d2c5"), Color("cbbba6")]
+				var roof_colors: Array[Color] = [spec["roof"], Color("6f7478"), Color("8b5a4a")]
+				var house_height: float = 11.0 if variant != 1 else 18.0
+				_draw_small_building(spec["o"], spec["s"], wall_colors[variant], roof_colors[variant], house_height)
 			_draw_tree(grid_to_world(origin.x + size.x / 2, origin.y + size.y / 2))
 		"shop":
 			draw_colored_polygon(footprint, Color("858987"))
@@ -270,10 +291,18 @@ func _draw_city_feature(feature: Dictionary) -> void:
 		"commercial":
 			draw_colored_polygon(footprint, Color("858987"))
 			var main_size := Vector2i(maxi(3, size.x - 3), maxi(3, size.y - 2))
-			_draw_small_building(origin + Vector2i(1,1), main_size, COMMERCIAL_COLOR, Color("c9b79f"), 22.0)
+			var commercial_height: float = 22.0 if (origin.x + origin.y) % 2 == 0 else 32.0
+			_draw_small_building(origin + Vector2i(1,1), main_size, COMMERCIAL_COLOR, Color("c9b79f"), commercial_height)
 			# Loading/service annex makes the lot less symmetrical.
 			if size.x >= 6:
 				_draw_small_building(origin + Vector2i(size.x - 2,2), Vector2i(2,2), Color("7b746d"), Color("aaa39a"), 10.0)
+		"apartment":
+			draw_colored_polygon(footprint, Color("858987"))
+			_draw_small_building(origin, size, Color("aeb5b8"), Color("747d82"), 34.0)
+			var front := grid_to_world(origin.x + size.x / 2, origin.y + size.y - 1)
+			for floor in range(3):
+				var yoff: float = -8.0 - floor * 7.0
+				draw_line(front + Vector2(-18,yoff), front + Vector2(18,yoff), Color("bfe0ea"), 2.0, true)
 		"park":
 			draw_colored_polygon(footprint, PARK_COLOR)
 			var mid_y: int = origin.y + size.y / 2
@@ -313,6 +342,10 @@ func _draw_small_building(origin: Vector2i, size: Vector2i, body_color: Color, r
 	# Simple visible side gives the building actual volume.
 	draw_colored_polygon(PackedVector2Array([body[1], body[2], roof[2], roof[1]]), body_color.darkened(0.22))
 	draw_colored_polygon(PackedVector2Array([body[2], body[3], roof[3], roof[2]]), body_color.darkened(0.12))
+	var facade_mid := (body[1] + body[2]) * 0.5
+	draw_rect(Rect2(facade_mid + Vector2(-5,-height * 0.45), Vector2(10,4)), Color("b9d5dc"))
+	if height >= 18.0:
+		draw_rect(Rect2(facade_mid + Vector2(-5,-height * 0.72), Vector2(10,4)), Color("b9d5dc"))
 
 func _draw_tree(position: Vector2) -> void:
 	draw_line(position + Vector2(0,3), position + Vector2(0,-9), Color("6b4f36"), 2.0)

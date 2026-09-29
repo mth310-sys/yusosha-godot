@@ -116,20 +116,26 @@ func _generate_city_blocks() -> void:
 
 
 func _place_city_feature_if_free(origin: Vector2i, size: Vector2i, feature_type: String) -> void:
-	for y in range(origin.y - 1, mini(origin.y + size.y + 1, map_height)):
-		for x in range(origin.x - 1, mini(origin.x + size.x + 1, map_width)):
+	# Reserve a two-tile visual buffer around roads. Isometric roofs/sides can
+	# extend outside their logical footprint, so one tile was not sufficient.
+	const ROAD_VISUAL_CLEARANCE := 2
+	for y in range(origin.y - ROAD_VISUAL_CLEARANCE, origin.y + size.y + ROAD_VISUAL_CLEARANCE):
+		for x in range(origin.x - ROAD_VISUAL_CLEARANCE, origin.x + size.x + ROAD_VISUAL_CLEARANCE):
 			var tile := Vector2i(x, y)
 			if not is_valid_tile(tile):
 				continue
 			if _is_road(tile):
 				return
-	for y in range(origin.y, mini(origin.y + size.y, map_height)):
-		for x in range(origin.x, mini(origin.x + size.x, map_width)):
+	for y in range(origin.y, origin.y + size.y):
+		for x in range(origin.x, origin.x + size.x):
 			var tile := Vector2i(x, y)
+			if not is_valid_tile(tile):
+				return
 			var cell: Dictionary = get_cell(tile)
 			if int(cell.get("lot_id", 0)) > 0 or bool(cell.get("occupied", false)):
 				return
 	_place_city_feature(origin, size, feature_type)
+
 
 func _place_city_feature(origin: Vector2i, size: Vector2i, feature_type: String) -> void:
 	city_features.append({"origin": origin, "size": size, "type": feature_type})
@@ -248,10 +254,19 @@ func _draw_street_details() -> void:
 		draw_rect(Rect2(p + Vector2(-8,-34), Vector2(16,10)), Color("e2b94f"))
 
 func _can_draw_roadside_detail(tile: Vector2i) -> bool:
-	if not is_valid_tile(tile) or _is_road(tile):
+	if not is_valid_tile(tile):
 		return false
 	var cell: Dictionary = get_cell(tile)
-	return not bool(cell.get("occupied", false)) and int(cell.get("lot_id", 0)) == 0
+	if bool(cell.get("occupied", false)) or int(cell.get("lot_id", 0)) > 0:
+		return false
+	# Decorations have screen-space width/height, so keep their whole immediate
+	# neighborhood off the road as well.
+	for y in range(tile.y - 1, tile.y + 2):
+		for x in range(tile.x - 1, tile.x + 2):
+			var nearby := Vector2i(x, y)
+			if is_valid_tile(nearby) and _is_road(nearby):
+				return false
+	return true
 
 
 func _feature_diamond(origin: Vector2i, size: Vector2i, inset: int = 0) -> PackedVector2Array:

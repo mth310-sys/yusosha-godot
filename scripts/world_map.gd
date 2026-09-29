@@ -44,6 +44,7 @@ var next_lot_id := 1
 var building_mode := false
 var next_building_id := 1
 var buildings: Dictionary = {}
+var city_features: Array[Dictionary] = []
 
 func _ready() -> void:
 	if GameState.world_initialized:
@@ -88,6 +89,7 @@ func _generate_initial_city() -> void:
 	_recalculate_all_road_shapes()
 
 func _generate_city_blocks() -> void:
+	city_features.clear()
 	# Large districts with fewer buildings; roads no longer define every building plot.
 	var buildings_data: Array[Dictionary] = [
 		{"o":Vector2i(2,2),"s":Vector2i(5,5),"t":"house"}, {"o":Vector2i(13,2),"s":Vector2i(7,5),"t":"park"}, {"o":Vector2i(27,2),"s":Vector2i(7,5),"t":"shop"}, {"o":Vector2i(40,3),"s":Vector2i(6,6),"t":"house"},
@@ -99,6 +101,7 @@ func _generate_city_blocks() -> void:
 		_place_city_feature(data["o"], data["s"], str(data["t"]))
 
 func _place_city_feature(origin: Vector2i, size: Vector2i, feature_type: String) -> void:
+	city_features.append({"origin": origin, "size": size, "type": feature_type})
 	for y in range(origin.y, mini(origin.y + size.y, map_height)):
 		for x in range(origin.x, mini(origin.x + size.x, map_width)):
 			var tile := Vector2i(x, y)
@@ -164,24 +167,15 @@ func _draw() -> void:
 			if int(cell.get("lot_id", 0)) > 0:
 				draw_colored_polygon(points, LOT_COLOR)
 				draw_polyline(points + PackedVector2Array([points[0]]), LOT_BORDER_COLOR, 1.4, true)
-			if str(cell["type"]) in ["house", "shop", "commercial"]:
-				var roof := PackedVector2Array()
-				var roof_height := 7.0 if cell["type"] == "house" else (10.0 if cell["type"] == "shop" else 14.0)
-				for point in points:
-					roof.append(point + Vector2(0.0, -roof_height))
-				draw_colored_polygon(roof, CITY_BUILDING_ROOF.lightened(0.05 if cell["type"] == "house" else 0.0))
-				draw_polyline(roof + PackedVector2Array([roof[0]]), Color(0.35, 0.32, 0.28, 0.7), 1.0, true)
-			elif cell["type"] == "park":
-				var center := grid_to_world(x, y)
-				if (x + y) % 3 == 0:
-					draw_circle(center + Vector2(0.0, -5.0), 5.0, Color("3f6f3a"))
-			elif cell["type"] == "parking":
-				var center := grid_to_world(x, y)
-				draw_line(center + Vector2(-8, -2), center + Vector2(8, -2), Color(0.88,0.88,0.78,0.7), 1.0)
+			
 			if str(cell.get("object_id", "")).begins_with("hall_"):
 				draw_colored_polygon(points, BUILDING_COLOR)
 			if cell["type"] == "road":
 				_draw_road_connections(Vector2i(x, y))
+
+
+	for feature in city_features:
+		_draw_city_feature(feature)
 
 	if lot_mode and is_valid_tile(lot_start) and is_valid_tile(hovered_tile):
 		_draw_lot_preview(lot_start, hovered_tile)
@@ -200,6 +194,74 @@ func _draw() -> void:
 	var bottom: Vector2 = grid_to_world(map_width - 1, map_height - 1) + Vector2(0.0, tile_height * 0.5)
 	var left: Vector2 = grid_to_world(0, map_height - 1) + Vector2(-tile_width * 0.5, 0.0)
 	draw_polyline(PackedVector2Array([top, right, bottom, left, top]), BORDER_COLOR, 3.0, true)
+
+
+func _feature_diamond(origin: Vector2i, size: Vector2i, inset: int = 0) -> PackedVector2Array:
+	var x0: int = origin.x + inset
+	var y0: int = origin.y + inset
+	var x1: int = origin.x + size.x - 1 - inset
+	var y1: int = origin.y + size.y - 1 - inset
+	if x1 < x0 or y1 < y0:
+		return PackedVector2Array()
+	return PackedVector2Array([
+		grid_to_world(x0, y0) + Vector2(0, -tile_height * 0.5),
+		grid_to_world(x1, y0) + Vector2(tile_width * 0.5, 0),
+		grid_to_world(x1, y1) + Vector2(0, tile_height * 0.5),
+		grid_to_world(x0, y1) + Vector2(-tile_width * 0.5, 0)
+	])
+
+func _draw_city_feature(feature: Dictionary) -> void:
+	var origin: Vector2i = feature["origin"]
+	var size: Vector2i = feature["size"]
+	var feature_type: String = str(feature["type"])
+	var footprint := _feature_diamond(origin, size, 0)
+	if footprint.is_empty():
+		return
+	match feature_type:
+		"house":
+			var yard := _feature_diamond(origin, size, 0)
+			draw_colored_polygon(yard, Color("789b55"))
+			var body := _feature_diamond(origin, size, 1)
+			if not body.is_empty():
+				draw_colored_polygon(body, HOUSE_COLOR)
+				var roof := PackedVector2Array()
+				for p in body:
+					roof.append(p + Vector2(0, -13))
+				draw_colored_polygon(roof, Color("b85f4d"))
+				draw_polyline(roof + PackedVector2Array([roof[0]]), Color("6f4037"), 1.5, true)
+		"shop":
+			draw_colored_polygon(footprint, Color("8a8d89"))
+			var body := _feature_diamond(origin, size, 1)
+			if not body.is_empty():
+				draw_colored_polygon(body, SHOP_COLOR)
+				var roof := PackedVector2Array()
+				for p in body:
+					roof.append(p + Vector2(0, -16))
+				draw_colored_polygon(roof, Color("d8d1c3"))
+				draw_line(roof[3], roof[2], Color("4f7385"), 3.0, true)
+		"commercial":
+			draw_colored_polygon(footprint, Color("858987"))
+			var body := _feature_diamond(origin, size, 1)
+			if not body.is_empty():
+				draw_colored_polygon(body, COMMERCIAL_COLOR)
+				var roof := PackedVector2Array()
+				for p in body:
+					roof.append(p + Vector2(0, -23))
+				draw_colored_polygon(roof, Color("c9b79f"))
+				draw_polyline(roof + PackedVector2Array([roof[0]]), Color("65584c"), 1.5, true)
+		"park":
+			draw_colored_polygon(footprint, PARK_COLOR)
+			var center := grid_to_world(origin.x + size.x / 2, origin.y + size.y / 2)
+			draw_line(grid_to_world(origin.x, origin.y + size.y / 2), grid_to_world(origin.x + size.x - 1, origin.y + size.y / 2), Color("c6b78d"), 4.0, true)
+			for offset in [Vector2(-28,-10), Vector2(8,-20), Vector2(34,4), Vector2(-4,12)]:
+				draw_circle(center + offset, 8.0, Color("3f6f3a"))
+				draw_circle(center + offset + Vector2(0,-4), 5.0, Color("5f9a4f"))
+		"parking":
+			draw_colored_polygon(footprint, PARKING_COLOR)
+			for i in range(1, size.x):
+				var a := grid_to_world(origin.x + i, origin.y) + Vector2(-12, 2)
+				var b := grid_to_world(origin.x + i, origin.y) + Vector2(12, -2)
+				draw_line(a, b, Color(0.9,0.9,0.78,0.8), 1.3, true)
 
 func _is_road(tile: Vector2i) -> bool:
 	return is_valid_tile(tile) and map_data[tile.y][tile.x]["type"] == "road"

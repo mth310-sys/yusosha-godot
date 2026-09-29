@@ -8,6 +8,17 @@ var next_building_id := 1
 var selected_building_id := ""
 var hall_states: Dictionary = {}
 
+var current_day := 1
+var cash_yen := 5000000
+var daily_history: Array[Dictionary] = []
+
+func record_business_day(result: Dictionary) -> void:
+	daily_history.append(result.duplicate(true))
+	cash_yen += int(result.get("profit_yen", 0))
+
+func advance_day() -> void:
+	current_day += 1
+
 func store_world(map_data: Array, buildings: Dictionary, lot_id: int, building_id: int) -> void:
 	world_map_data = map_data.duplicate(true)
 	world_buildings = buildings.duplicate(true)

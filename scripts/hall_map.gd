@@ -28,6 +28,8 @@ const CUSTOMER_EDGE := Color("fff4df")
 @onready var daily_panel: PanelContainer = $UI/DailyPanel
 @onready var daily_text: Label = $UI/DailyPanel/Margin/Text
 @onready var ranking_text: Label = $UI/RankingPanel/Margin/Text
+@onready var result_panel: PanelContainer = $UI/ResultPanel
+@onready var result_text: Label = $UI/ResultPanel/Margin/Text
 
 var dragging := false
 var last_mouse_position := Vector2.ZERO
@@ -54,6 +56,7 @@ var business_target_customers := 0
 var business_totals := {"customers": 0, "games": 0, "coin_in": 0, "coin_out": 0, "sales": 0}
 var last_ranking_hour := 9
 var closing_started := false
+var day_finalized := false
 
 func _ready() -> void:
 	map_width = 32
@@ -68,6 +71,7 @@ func _ready() -> void:
 		next_island_id = int(saved_hall["next_island_id"])
 		machines = saved_hall.get("machines", {}).duplicate(true)
 		next_machine_id = int(saved_hall.get("next_machine_id", 1))
+	_restore_entrance_tiles()
 	camera.position = Vector2(0.0, map_height * tile_height * 0.5)
 	camera.zoom = Vector2(0.9, 0.9)
 	rng.randomize()
@@ -94,6 +98,20 @@ func _build_shell() -> void:
 				cell["type"] = "wall"
 				cell["occupied"] = true
 				cell["object_id"] = "outer_wall"
+
+
+func _restore_entrance_tiles() -> void:
+	entrance_tiles.clear()
+	for y in range(map_height):
+		for x in range(map_width):
+			var tile := Vector2i(x, y)
+			if str(get_cell(tile).get("type", "")) == "entrance":
+				entrance_tiles.append(tile)
+	if entrance_tiles.is_empty():
+		entrance_tiles = [
+			Vector2i(map_width / 2 - 1, map_height - 1),
+			Vector2i(map_width / 2, map_height - 1)
+		]
 
 func _draw() -> void:
 	for y in range(map_height):
@@ -441,10 +459,11 @@ func _run_customer_session(machine: Dictionary, customer: Dictionary) -> Diction
 	return _simulate_machine(machine, session_games, session_games)
 
 func _run_full_day() -> void:
-	if machines.is_empty() or business_running:
+	if machines.is_empty() or business_running or day_finalized:
 		return
 	business_running = true
 	closing_started = false
+	result_panel.visible = false
 	business_time = 0.0
 	last_ranking_hour = 9
 	_update_ranking_panel(9)
@@ -555,11 +574,55 @@ func _check_hourly_ranking_update() -> void:
 		_update_ranking_panel(last_ranking_hour)
 
 func _finish_business_day() -> void:
+	if day_finalized:
+		return
 	business_running = false
+	day_finalized = true
 	last_ranking_hour = 23
 	_update_ranking_panel(23)
 	_update_business_panel()
 	_update_machine_panel()
+	var total_in: int = int(business_totals["coin_in"])
+	var total_out: int = int(business_totals["coin_out"])
+	var profit_yen: int = (total_in - total_out) * 20
+	var result := {
+		"day": GameState.current_day,
+		"customers": int(business_totals["customers"]),
+		"games": int(business_totals["games"]),
+		"coin_in": total_in,
+		"coin_out": total_out,
+		"net_coins": total_out - total_in,
+		"profit_yen": profit_yen
+	}
+	GameState.record_business_day(result)
+	result_text.text = "── %d日目 営業終了 ──\n\n来店客数: %d人\n総ゲーム数: %dG\n総IN: %d枚\n総OUT: %d枚\n店舗差枚: %+d枚\n\n本日粗利: %+d円\n所持金: %d円\n\nN: 翌日へ" % [
+		GameState.current_day,
+		int(result["customers"]),
+		int(result["games"]),
+		total_in,
+		total_out,
+		int(result["net_coins"]),
+		profit_yen,
+		GameState.cash_yen
+	]
+	result_panel.visible = true
+	_update_info()
+
+func _advance_to_next_day() -> void:
+	if business_running or not day_finalized:
+		return
+	GameState.advance_day()
+	day_finalized = false
+	closing_started = false
+	business_time = 0.0
+	business_totals = {"customers": 0, "games": 0, "coin_in": 0, "coin_out": 0, "sales": 0}
+	business_customer_index = 0
+	business_target_customers = 0
+	last_ranking_hour = 9
+	result_panel.visible = false
+	daily_panel.visible = false
+	_update_ranking_panel(9)
+	_update_info()
 
 func _run_selected_machine_test() -> void:
 	if selected_machine_id == "" or not machines.has(selected_machine_id):
@@ -715,6 +778,9 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_N and day_finalized:
+			_advance_to_next_day()
+			return
 		if event.keycode == KEY_D:
 			_run_full_day()
 			return
@@ -791,12 +857,12 @@ func _refresh_hover() -> void:
 func _update_info() -> void:
 	if machine_mode:
 		var model: Dictionary = MachineCatalog.get_model_by_index(placement_model_index)
-		info_text.text = "遊創舎 HALL MAP 20\n実機配置: %s [%s]\n1〜5: 機種変更 / 左クリック: 配置 / Esc: 終了" % [str(model.get("name", "不明")), str(model.get("category", ""))]
+		info_text.text = "遊創舎 HALL MAP 21\n実機配置: %s [%s]\n1〜5: 機種変更 / 左クリック: 配置 / Esc: 終了" % [str(model.get("name", "不明")), str(model.get("category", ""))]
 	elif island_mode:
 		var size: Vector2i = _island_size()
-		info_text.text = "遊創舎 HALL MAP 20\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
+		info_text.text = "遊創舎 HALL MAP 21\n島配置モード\n%d×%d / Q・E: 回転 / 左クリック: 配置 / Esc: 終了" % [size.x, size.y]
 	else:
-		info_text.text = "遊創舎 HALL MAP 20\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 営業開始 / Esc: 屋外へ戻る"
+		info_text.text = "遊創舎 HALL MAP 21  /  %d日目  /  所持金 %d円\n店内: 32 × 24 マス\nI: 島配置 / S: 実機配置 / D: 営業開始 / N: 翌日へ / Esc: 屋外へ戻る" % [GameState.current_day, GameState.cash_yen]
 
 func _set_zoom(value: float) -> void:
 	var new_zoom: float = clampf(value, 0.45, 2.0)

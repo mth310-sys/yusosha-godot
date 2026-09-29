@@ -45,11 +45,79 @@ func _ready() -> void:
 		next_building_id = GameState.next_building_id
 	else:
 		build_map("land")
+		_generate_initial_city()
 	camera.position = Vector2(0.0, map_height * tile_height * 0.5)
 	camera.zoom = Vector2(0.72, 0.72)
 	_update_tile_info()
 	_update_mode_info()
 	queue_redraw()
+
+
+func _generate_initial_city() -> void:
+	# Fixed starter city: roads and purchasable lots already exist.
+	# Main vertical avenue.
+	for x in range(23, 27):
+		for y in range(map_height):
+			_set_generated_road(Vector2i(x, y))
+
+	# Main horizontal avenue.
+	for y in range(23, 27):
+		for x in range(map_width):
+			_set_generated_road(Vector2i(x, y))
+
+	# Secondary access roads create several blocks without over-fragmenting lots.
+	for x in range(8, 10):
+		for y in range(4, 23):
+			_set_generated_road(Vector2i(x, y))
+	for x in range(40, 42):
+		for y in range(27, 46):
+			_set_generated_road(Vector2i(x, y))
+	for y in range(10, 12):
+		for x in range(10, 23):
+			_set_generated_road(Vector2i(x, y))
+	for y in range(38, 40):
+		for x in range(27, 40):
+			_set_generated_road(Vector2i(x, y))
+
+	# Predefined lots. Sizes are intentionally large enough for the current 6x5 hall.
+	_generate_lot_rect(Vector2i(11, 12), Vector2i(22, 22))
+	_generate_lot_rect(Vector2i(27, 11), Vector2i(39, 22))
+	_generate_lot_rect(Vector2i(10, 27), Vector2i(22, 37))
+	_generate_lot_rect(Vector2i(27, 27), Vector2i(39, 37))
+	_generate_lot_rect(Vector2i(1, 12), Vector2i(7, 22))
+	_generate_lot_rect(Vector2i(42, 27), Vector2i(48, 39))
+
+	_recalculate_all_road_shapes()
+
+func _set_generated_road(tile: Vector2i) -> void:
+	if not is_valid_tile(tile):
+		return
+	var cell: Dictionary = get_cell(tile)
+	cell["type"] = "road"
+	cell["occupied"] = true
+	cell["object_id"] = "road"
+	cell["lot_id"] = 0
+
+func _generate_lot_rect(a: Vector2i, b: Vector2i) -> void:
+	var lot_id := next_lot_id
+	var placed := false
+	for y in range(a.y, b.y + 1):
+		for x in range(a.x, b.x + 1):
+			var tile := Vector2i(x, y)
+			if not is_valid_tile(tile) or _is_road(tile):
+				continue
+			var cell: Dictionary = get_cell(tile)
+			cell["lot_id"] = lot_id
+			placed = true
+	if placed:
+		next_lot_id += 1
+
+func _recalculate_all_road_shapes() -> void:
+	for y in range(map_height):
+		for x in range(map_width):
+			var tile := Vector2i(x, y)
+			if _is_road(tile):
+				get_cell(tile)["road_shape"] = _road_shape(tile)
 
 func _draw() -> void:
 	for y in range(map_height):
@@ -387,7 +455,7 @@ func _update_mode_info() -> void:
 	elif demolition_mode:
 		mode_info.text = "撤去モード: ON\n左クリック/ドラッグ: 道路撤去 / R: 敷設 / Esc: 終了"
 	else:
-		mode_info.text = "通常モード\nR: 道路 / X: 撤去 / L: 敷地 / B: 建物"
+		mode_info.text = "通常モード\n初期街マップ生成済み / B: 建物\nR: 道路 / X: 撤去 / L: 敷地編集"
 
 func _tile_under_mouse() -> Vector2i:
 	return world_to_grid(get_global_mouse_position())

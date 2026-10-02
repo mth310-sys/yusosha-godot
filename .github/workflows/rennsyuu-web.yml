@@ -1,0 +1,70 @@
+name: Rennsyuu Godot Web
+
+on:
+  push:
+    branches: [rennsyuu-2d]
+    paths:
+      - 'rennsyuu/**'
+      - '.github/workflows/rennsyuu-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rennsyuu-godot-web
+  cancel-in-progress: true
+
+jobs:
+  export-web:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.7.2
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: rennsyuu-2d
+
+      - name: Prepare export templates
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates
+          mv /root/.local/share/godot/export_templates/* ~/.local/share/godot/export_templates/ 2>/dev/null || true
+
+      - name: Export Rennsyuu Web
+        working-directory: rennsyuu
+        run: |
+          rm -rf ../rennsyuu-web
+          mkdir -p ../rennsyuu-web
+          godot --headless --path . --export-release Web ../rennsyuu-web/index.html
+
+      - name: Save generated build
+        run: |
+          mkdir -p /tmp/rennsyuu-web
+          cp -a rennsyuu-web/. /tmp/rennsyuu-web/
+
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          clean: true
+
+      - name: Restore generated build
+        run: |
+          rm -rf rennsyuu-web
+          mkdir -p rennsyuu-web
+          cp -a /tmp/rennsyuu-web/. rennsyuu-web/
+
+      - name: Commit generated Web build to main
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f rennsyuu-web
+          if git diff --cached --quiet; then
+            echo "Rennsyuu Web build is already current."
+          else
+            git commit -m "build: publish Rennsyuu Godot Web"
+            git push origin HEAD:main
+          fi

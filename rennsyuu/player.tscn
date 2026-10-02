@@ -36,7 +36,7 @@ position = Vector2(5, -2)
 polygon = PackedVector2Array(-2, -1, 2, -1, 2, 1, -2, 1)
 
 [node name="RightPupil" type="Polygon2D" parent="Visual/Head/Face/RightEye" unique_id=1336273261]
-position = Vector2(-5, 2)
+position = Vector2(0, 0)
 color = Color(0.050980393, 0.050980393, 0.050980393, 1)
 polygon = PackedVector2Array(-1, -1, 1, -1, 1, 1, -1, 1)
 

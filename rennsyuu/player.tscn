@@ -1,0 +1,164 @@
+[gd_scene format=3 uid="uid://d0nufi8nxl22g"]
+
+[ext_resource type="Script" uid="uid://cdl5dq1on0dtn" path="res://player.gd" id="1_4flbx"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_opcge"]
+radius = 14.0
+height = 128.0
+
+[node name="Player" type="CharacterBody2D" unique_id=832888260]
+position = Vector2(300, 250)
+motion_mode = 1
+script = ExtResource("1_4flbx")
+
+[node name="Visual" type="Node2D" parent="." unique_id=1511106230]
+
+[node name="Head" type="Polygon2D" parent="Visual" unique_id=1461358123]
+position = Vector2(0, -40)
+color = Color(0.8666667, 0.77254903, 0.63529414, 1)
+polygon = PackedVector2Array(-9, -15, 9, -15, 13, -12, 15, -7, 15, 2, 13, 8, 9, 13, 4, 16, 0, 17, -4, 16, -9, 13, -13, 8, -15, 2, -15, -7, -13, -12)
+
+[node name="Face" type="Polygon2D" parent="Visual/Head" unique_id=1356970251]
+position = Vector2(0, 1)
+color = Color(0.8666667, 0.77254903, 0.63529414, 1)
+polygon = PackedVector2Array(-10, -10, 10, -10, 12, -5, 12, 4, 9, 10, 4, 14, 0, 15, -4, 14, -9, 10, -12, 4, -12, -5)
+
+[node name="LeftEye" type="Polygon2D" parent="Visual/Head/Face" unique_id=1404666474]
+position = Vector2(-5, -2)
+polygon = PackedVector2Array(-2, -1, 2, -1, 2, 1, -2, 1)
+
+[node name="LeftPupil" type="Polygon2D" parent="Visual/Head/Face/LeftEye" unique_id=1388864974]
+color = Color(0.050980393, 0.050980393, 0.050980393, 1)
+polygon = PackedVector2Array(-1, -1, 1, -1, 1, 1, -1, 1)
+
+[node name="RightEye" type="Polygon2D" parent="Visual/Head/Face" unique_id=149607560]
+position = Vector2(5, -2)
+polygon = PackedVector2Array(-2, -1, 2, -1, 2, 1, -2, 1)
+
+[node name="RightPupil" type="Polygon2D" parent="Visual/Head/Face/RightEye" unique_id=1336273261]
+position = Vector2(0, 0)
+color = Color(0.050980393, 0.050980393, 0.050980393, 1)
+polygon = PackedVector2Array(-1, -1, 1, -1, 1, 1, -1, 1)
+
+[node name="LeftBrow" type="Polygon2D" parent="Visual/Head/Face" unique_id=92602118]
+position = Vector2(-5, -6)
+color = Color(0.050980393, 0.050980393, 0.050980393, 1)
+polygon = PackedVector2Array(-3, -1, 3, -1, 3, 0, -3, 0)
+
+[node name="RightBrow" type="Polygon2D" parent="Visual/Head/Face" unique_id=783137572]
+position = Vector2(5, -6)
+color = Color(0.050980393, 0.050980393, 0.050980393, 1)
+polygon = PackedVector2Array(-3, -1, 3, -1, 3, 0, -3, 0)
+
+[node name="Nose" type="Polygon2D" parent="Visual/Head/Face" unique_id=875301634]
+position = Vector2(0, 2)
+color = Color(0.8666667, 0.77254903, 0.63529414, 1)
+polygon = PackedVector2Array(0, -2, 2, 2, 0, 3, -1, 2)
+
+[node name="Mouth" type="Polygon2D" parent="Visual/Head/Face" unique_id=1006338238]
+position = Vector2(0, 8)
+color = Color(0.67417955, 0.27195105, 0.31344968, 1)
+polygon = PackedVector2Array(-4, -1, 4, -1, 3, 1, -3, 1)
+
+[node name="LeftEar" type="Polygon2D" parent="Visual/Head" unique_id=790280229]
+position = Vector2(-15, 0)
+color = Color(0.8666667, 0.77254903, 0.63529414, 1)
+polygon = PackedVector2Array(-2, -4, 1, -5, 3, -2, 3, 3, 1, 5, -2, 4)
+
+[node name="RightEar" type="Polygon2D" parent="Visual/Head" unique_id=2114994630]
+position = Vector2(15, 0)
+color = Color(0.8666667, 0.77254903, 0.63529414, 1)
+polygon = PackedVector2Array(-2, -4, 1, -5, 3, -2, 3, 3, 1, 5, -2, 4)
+
+[node name="HairFront" type="Polygon2D" parent="Visual/Head" unique_id=2096566605]
+position = Vector2(0, -10)
+color = Color(1, 1, 0.06666667, 1)
+polygon = PackedVector2Array(-12, -5, 12, -5, 11, 1, 7, -1, 4, 4, 1, 0, -2, 5, -5, 0, -9, 2, -12, 0)
+
+[node name="Neck" type="Polygon2D" parent="Visual" unique_id=1843615020]
+position = Vector2(0, -25)
+color = Color(0.8666667, 0.77254903, 0.63529414, 1)
+polygon = PackedVector2Array(-5, -7, 5, -7, 5, 7, -5, 7)
+
+[node name="Chest" type="Polygon2D" parent="Visual" unique_id=1288900069]
+polygon = PackedVector2Array(-18, -16, 18, -16, 18, 16, -18, 16)
+
+[node name="Clavicle" type="Polygon2D" parent="Visual" unique_id=617174658]
+position = Vector2(0, -16)
+polygon = PackedVector2Array(-18, -3, 18, -3, 18, 3, -18, 3)
+
+[node name="Pelvis" type="Polygon2D" parent="Visual" unique_id=738074821]
+position = Vector2(0, 32)
+polygon = PackedVector2Array(-14, -10, 14, -10, 14, 10, -14, 10)
+
+[node name="LeftShoulder" type="Polygon2D" parent="Visual" unique_id=1030816992]
+position = Vector2(-24, -18)
+
+[node name="LeftUpperArm" type="Polygon2D" parent="Visual/LeftShoulder" unique_id=1905815046]
+polygon = PackedVector2Array(-4, 0, 4, 0, 4, 28, -4, 28)
+
+[node name="LeftElbow" type="Polygon2D" parent="Visual/LeftShoulder/LeftUpperArm" unique_id=200931769]
+position = Vector2(0, 28)
+
+[node name="LeftForearm" type="Polygon2D" parent="Visual/LeftShoulder/LeftUpperArm/LeftElbow" unique_id=323732649]
+color = Color(0.8666667, 0.77254903, 0.63529414, 1)
+polygon = PackedVector2Array(-4, 0, 4, 0, 4, 28, -4, 28)
+
+[node name="LeftHand" type="Polygon2D" parent="Visual/LeftShoulder/LeftUpperArm/LeftElbow/LeftForearm" unique_id=1801625044]
+position = Vector2(-4, 28)
+color = Color(0.8666667, 0.77254903, 0.63529414, 1)
+polygon = PackedVector2Array(-4, 0, 4, 0, 4, 8, -4, 8)
+
+[node name="RightShoulder" type="Polygon2D" parent="Visual" unique_id=1107257084]
+position = Vector2(24, -18)
+
+[node name="RightUpperArm" type="Polygon2D" parent="Visual/RightShoulder" unique_id=1645302860]
+polygon = PackedVector2Array(-4, 0, 4, 0, 4, 28, -4, 28)
+
+[node name="RightElbow" type="Polygon2D" parent="Visual/RightShoulder/RightUpperArm" unique_id=784653281]
+position = Vector2(0, 28)
+
+[node name="RightForearm" type="Polygon2D" parent="Visual/RightShoulder/RightUpperArm/RightElbow" unique_id=1074625475]
+color = Color(0.8666667, 0.77254903, 0.63529414, 1)
+polygon = PackedVector2Array(-4, 0, 4, 0, 4, 28, -4, 28)
+
+[node name="RightHand" type="Polygon2D" parent="Visual/RightShoulder/RightUpperArm/RightElbow/RightForearm" unique_id=1567322002]
+position = Vector2(0, 28)
+color = Color(0.8666667, 0.77254903, 0.63529414, 1)
+polygon = PackedVector2Array(-4, 0, 4, 0, 4, 8, -4, 8)
+
+[node name="LeftHip" type="Polygon2D" parent="Visual" unique_id=699505600]
+position = Vector2(-8, 37)
+
+[node name="LeftThigh" type="Polygon2D" parent="Visual/LeftHip" unique_id=1937930853]
+polygon = PackedVector2Array(-5, 5, 5, 0, 5, 34, -5, 34)
+
+[node name="LeftKnee" type="Polygon2D" parent="Visual/LeftHip/LeftThigh" unique_id=284841278]
+position = Vector2(0, 34)
+
+[node name="LeftShin" type="Polygon2D" parent="Visual/LeftHip/LeftThigh/LeftKnee" unique_id=506759610]
+polygon = PackedVector2Array(-4.5, 0, 4.5, 0, 4.5, 34, -4.5, 34)
+
+[node name="LeftFoot" type="Polygon2D" parent="Visual/LeftHip/LeftThigh/LeftKnee/LeftShin" unique_id=755134433]
+position = Vector2(0, 34)
+polygon = PackedVector2Array(-8, 0, 8, 0, 8, 6, -8, 6)
+
+[node name="RightHip" type="Polygon2D" parent="Visual" unique_id=501861168]
+position = Vector2(8, 37)
+
+[node name="RightThigh" type="Polygon2D" parent="Visual/RightHip" unique_id=698612006]
+polygon = PackedVector2Array(-5, 0, 5, 0, 5, 34, -5, 34)
+
+[node name="RightKnee" type="Polygon2D" parent="Visual/RightHip/RightThigh" unique_id=974689531]
+position = Vector2(0, 34)
+
+[node name="RightShin" type="Polygon2D" parent="Visual/RightHip/RightThigh/RightKnee" unique_id=1203263227]
+polygon = PackedVector2Array(-4.5, 0, 4.5, 0, 4.5, 34, -4.5, 34)
+
+[node name="RightFoot" type="Polygon2D" parent="Visual/RightHip/RightThigh/RightKnee/RightShin" unique_id=1332145920]
+position = Vector2(0, 34)
+polygon = PackedVector2Array(-8, 0, 8, 0, 8, 6, -8, 6)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1668280192]
+position = Vector2(0, 48)
+shape = SubResource("CapsuleShape2D_opcge")

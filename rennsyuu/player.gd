@@ -73,11 +73,11 @@ var walk_time := 0.0
 # 基準位置
 # =========================
 
-var head_base_y := -47.0
-var neck_base_y := -29.0
-var clavicle_base_y := -18.0
+var head_base_y := -34.0
+var neck_base_y := -16.0
+var clavicle_base_y := -8.0
 var chest_base_y := 0.0
-var pelvis_base_y := 27.0
+var pelvis_base_y := 22.0
 
 
 # =========================
